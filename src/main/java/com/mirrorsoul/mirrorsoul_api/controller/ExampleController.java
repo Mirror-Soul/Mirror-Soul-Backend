@@ -20,6 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class ExampleController {
 
+    /**
+     * Produce a success ApiResponse containing a greeting message.
+     *
+     * @return an ApiResponse whose payload is the string "Hello World"
+     */
     @ApiResponses({
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "COMMON2000", description = "성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "USER_4001", description = "이미 중복되는 email")

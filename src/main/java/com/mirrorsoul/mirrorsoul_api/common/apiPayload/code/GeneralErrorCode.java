@@ -13,8 +13,8 @@ public enum GeneralErrorCode implements BaseErrorCode {
     MISSING_AUTH_INFO(HttpStatus.UNAUTHORIZED, "AUTH_4010", "인증 정보가 누락되었습니다."),
     INVALID_LOGIN(HttpStatus.UNAUTHORIZED, "AUTH_4011", "올바르지 않은 아이디, 혹은 비밀번호입니다."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_4012", "유효하지 않은 토큰입니다."),
+    TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "AUTH_4013", "토큰이 만료되었습니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "AUTH_4030", "접근 권한이 없습니다."),
-    TOKEN_EXPIRED(HttpStatus.valueOf(419), "AUTH_4190", "토큰이 만료되었습니다."),
 
     // 요청/파라미터 에러
     MISSING_PARAMETER(HttpStatus.BAD_REQUEST, "REQ_4000", "필수 파라미터가 누락되었습니다."),

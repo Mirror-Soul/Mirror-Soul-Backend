@@ -3,6 +3,8 @@ package com.mirrorsoul.mirrorsoul_api.controller;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.ApiResponse;
 import com.mirrorsoul.mirrorsoul_api.dto.LoginRequest;
 import com.mirrorsoul.mirrorsoul_api.dto.LoginResponse;
+import com.mirrorsoul.mirrorsoul_api.dto.RefreshTokenRequest;
+import com.mirrorsoul.mirrorsoul_api.dto.RefreshTokenResponse;
 import com.mirrorsoul.mirrorsoul_api.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,5 +27,11 @@ public class AuthController {
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ApiResponse.onSuccess("로그인에 성공했습니다.", authService.login(request));
+    }
+
+    @Operation(summary = "Access token 재발급", description = "Refresh token을 검증한 뒤 새로운 access token을 발급합니다.")
+    @PostMapping("/refresh")
+    public ApiResponse<RefreshTokenResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        return ApiResponse.onSuccess("Access token이 재발급되었습니다.", authService.refresh(request));
     }
 }

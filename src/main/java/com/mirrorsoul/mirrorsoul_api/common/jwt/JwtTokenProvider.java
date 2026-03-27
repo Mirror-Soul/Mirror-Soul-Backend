@@ -1,7 +1,10 @@
 package com.mirrorsoul.mirrorsoul_api.common.jwt;
 
 import com.mirrorsoul.mirrorsoul_api.domain.User;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -30,6 +33,27 @@ public class JwtTokenProvider implements TokenProvider {
         return createToken(user, "refresh", jwtProperties.refreshTokenExpirationSeconds());
     }
 
+    @Override
+    public Long getUserIdFromToken(String token) {
+        Claims claims = parseClaims(token);
+        return Long.valueOf(claims.getSubject());
+    }
+
+    @Override
+    public void validateRefreshToken(String token) {
+        try {
+            Claims claims = parseClaims(token);
+            String tokenType = claims.get("tokenType", String.class);
+            if (!"refresh".equals(tokenType)) {
+                throw new JwtException("Invalid token type");
+            }
+        } catch (ExpiredJwtException e) {
+            throw e;
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new JwtException("Invalid refresh token", e);
+        }
+    }
+
     private String createToken(User user, String tokenType, long expirationSeconds) {
         Instant now = Instant.now();
 
@@ -41,5 +65,13 @@ public class JwtTokenProvider implements TokenProvider {
                 .expiration(Date.from(now.plusSeconds(expirationSeconds)))
                 .signWith(secretKey)
                 .compact();
+    }
+
+    private Claims parseClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }

@@ -48,6 +48,9 @@ public class User extends BaseTimeEntity {
     @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
 
+    @Column(name = "refresh_token", length = 500)
+    private String refreshToken;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserStatus status = UserStatus.ACTIVE;

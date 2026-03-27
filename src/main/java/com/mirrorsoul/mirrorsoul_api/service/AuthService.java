@@ -30,14 +30,14 @@ public class AuthService {
     @Transactional
     public LoginResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_LOGIN, "이메일 또는 비밀번호가 올바르지 않습니다."));
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_LOGIN, "Invalid email or password."));
 
         if (!UserStatus.ACTIVE.equals(user.getStatus())) {
-            throw new GeneralException(GeneralErrorCode.FORBIDDEN, "비활성화된 사용자입니다.");
+            throw new GeneralException(GeneralErrorCode.FORBIDDEN, "Inactive user.");
         }
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw new GeneralException(GeneralErrorCode.INVALID_LOGIN, "이메일 또는 비밀번호가 올바르지 않습니다.");
+            throw new GeneralException(GeneralErrorCode.INVALID_LOGIN, "Invalid email or password.");
         }
 
         String accessToken = tokenProvider.createAccessToken(user);
@@ -51,23 +51,60 @@ public class AuthService {
         try {
             tokenProvider.validateRefreshToken(request.refreshToken());
         } catch (ExpiredJwtException e) {
-            throw new GeneralException(GeneralErrorCode.TOKEN_EXPIRED, "Refresh token이 만료되었습니다.");
+            throw new GeneralException(GeneralErrorCode.TOKEN_EXPIRED, "Refresh token has expired.");
         } catch (JwtException | IllegalArgumentException e) {
-            throw new GeneralException(GeneralErrorCode.INVALID_TOKEN, "유효하지 않은 refresh token입니다.");
+            throw new GeneralException(GeneralErrorCode.INVALID_TOKEN, "Invalid refresh token.");
         }
 
         Long userId = tokenProvider.getUserIdFromToken(request.refreshToken());
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_TOKEN, "토큰에 해당하는 사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_TOKEN, "User for token not found."));
 
         if (!UserStatus.ACTIVE.equals(user.getStatus())) {
-            throw new GeneralException(GeneralErrorCode.FORBIDDEN, "비활성화된 사용자입니다.");
+            throw new GeneralException(GeneralErrorCode.FORBIDDEN, "Inactive user.");
         }
 
         if (!Objects.equals(user.getRefreshToken(), request.refreshToken())) {
-            throw new GeneralException(GeneralErrorCode.INVALID_TOKEN, "저장된 refresh token과 일치하지 않습니다.");
+            throw new GeneralException(GeneralErrorCode.INVALID_TOKEN, "Refresh token does not match stored value.");
         }
 
         return new RefreshTokenResponse(tokenProvider.createAccessToken(user));
+    }
+
+    @Transactional
+    public void logout(String authorizationHeader) {
+        String accessToken = extractBearerToken(authorizationHeader);
+
+        try {
+            tokenProvider.validateAccessToken(accessToken);
+        } catch (ExpiredJwtException e) {
+            throw new GeneralException(GeneralErrorCode.TOKEN_EXPIRED, "Access token has expired.");
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new GeneralException(GeneralErrorCode.INVALID_TOKEN, "Invalid access token.");
+        }
+
+        Long userId = tokenProvider.getUserIdFromToken(accessToken);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_TOKEN, "User for token not found."));
+
+        user.clearRefreshToken();
+    }
+
+    private String extractBearerToken(String authorizationHeader) {
+        if (authorizationHeader == null || authorizationHeader.isBlank()) {
+            throw new GeneralException(GeneralErrorCode.MISSING_AUTH_INFO, "Authorization header is required.");
+        }
+
+        String bearerPrefix = "Bearer ";
+        if (!authorizationHeader.startsWith(bearerPrefix)) {
+            throw new GeneralException(GeneralErrorCode.INVALID_TOKEN, "Authorization header must use Bearer token.");
+        }
+
+        String accessToken = authorizationHeader.substring(bearerPrefix.length()).trim();
+        if (accessToken.isEmpty()) {
+            throw new GeneralException(GeneralErrorCode.INVALID_TOKEN, "Access token is empty.");
+        }
+
+        return accessToken;
     }
 }

@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,5 +34,12 @@ public class AuthController {
     @PostMapping("/refresh")
     public ApiResponse<RefreshTokenResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
         return ApiResponse.onSuccess("Access token이 재발급되었습니다.", authService.refresh(request));
+    }
+
+    @Operation(summary = "로그아웃", description = "현재 access token 기준으로 사용자를 식별한 뒤 저장된 refresh token을 제거합니다.")
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout(@RequestHeader(value = "Authorization", required = false) String authorizationHeader) {
+        authService.logout(authorizationHeader);
+        return ApiResponse.onSuccess("로그아웃에 성공했습니다.");
     }
 }

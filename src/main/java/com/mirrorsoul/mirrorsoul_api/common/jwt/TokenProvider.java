@@ -7,4 +7,8 @@ public interface TokenProvider {
     String createAccessToken(User user);
 
     String createRefreshToken(User user);
+
+    Long getUserIdFromToken(String token);
+
+    void validateRefreshToken(String token);
 }

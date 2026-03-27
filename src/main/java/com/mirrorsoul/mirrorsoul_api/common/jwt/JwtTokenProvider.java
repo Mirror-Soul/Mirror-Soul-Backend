@@ -40,17 +40,26 @@ public class JwtTokenProvider implements TokenProvider {
     }
 
     @Override
+    public void validateAccessToken(String token) {
+        validateTokenType(token, "access");
+    }
+
+    @Override
     public void validateRefreshToken(String token) {
+        validateTokenType(token, "refresh");
+    }
+
+    private void validateTokenType(String token, String expectedTokenType) {
         try {
             Claims claims = parseClaims(token);
             String tokenType = claims.get("tokenType", String.class);
-            if (!"refresh".equals(tokenType)) {
+            if (!expectedTokenType.equals(tokenType)) {
                 throw new JwtException("Invalid token type");
             }
         } catch (ExpiredJwtException e) {
             throw e;
         } catch (JwtException | IllegalArgumentException e) {
-            throw new JwtException("Invalid refresh token", e);
+            throw new JwtException("Invalid token", e);
         }
     }
 

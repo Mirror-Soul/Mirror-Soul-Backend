@@ -1,12 +1,11 @@
 package com.mirrorsoul.mirrorsoul_api.domain;
 
-import com.mirrorsoul.mirrorsoul_api.domain.enums.Gender;
-import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.*;
 import jakarta.persistence.*;
 import java.time.LocalDate;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Entity
@@ -17,6 +16,7 @@ import lombok.NoArgsConstructor;
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
 public class User extends BaseTimeEntity {
 
     @Id

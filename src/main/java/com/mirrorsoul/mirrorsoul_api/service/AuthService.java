@@ -5,10 +5,10 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralExceptio
 import com.mirrorsoul.mirrorsoul_api.common.jwt.TokenProvider;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
-import com.mirrorsoul.mirrorsoul_api.dto.LoginRequest;
-import com.mirrorsoul.mirrorsoul_api.dto.LoginResponse;
-import com.mirrorsoul.mirrorsoul_api.dto.RefreshTokenRequest;
-import com.mirrorsoul.mirrorsoul_api.dto.RefreshTokenResponse;
+import com.mirrorsoul.mirrorsoul_api.dto.login.LoginRequest;
+import com.mirrorsoul.mirrorsoul_api.dto.login.LoginResponse;
+import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenRequest;
+import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenResponse;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;

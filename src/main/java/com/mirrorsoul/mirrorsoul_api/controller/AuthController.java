@@ -1,10 +1,10 @@
 package com.mirrorsoul.mirrorsoul_api.controller;
 
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.ApiResponse;
-import com.mirrorsoul.mirrorsoul_api.dto.LoginRequest;
-import com.mirrorsoul.mirrorsoul_api.dto.LoginResponse;
-import com.mirrorsoul.mirrorsoul_api.dto.RefreshTokenRequest;
-import com.mirrorsoul.mirrorsoul_api.dto.RefreshTokenResponse;
+import com.mirrorsoul.mirrorsoul_api.dto.login.LoginRequest;
+import com.mirrorsoul.mirrorsoul_api.dto.login.LoginResponse;
+import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenRequest;
+import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenResponse;
 import com.mirrorsoul.mirrorsoul_api.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

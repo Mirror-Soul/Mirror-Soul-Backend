@@ -1,4 +1,4 @@
-package com.mirrorsoul.mirrorsoul_api.dto;
+package com.mirrorsoul.mirrorsoul_api.dto.login;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

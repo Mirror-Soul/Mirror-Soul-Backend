@@ -39,6 +39,17 @@ public enum GeneralErrorCode implements BaseErrorCode {
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "SERVER_5001", "서버 내부 오류입니다."),
     SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "SERVER_5031", "서버가 일시적으로 불안정합니다."),
     EXTERNAL_SERVICE_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "SERVER_5041", "외부 서비스 응답 지연"),
+
+    // 유저 관련 에러
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_4040", "존재하지 않는 사용자입니다."),
+
+    // 이메일 인증 에러
+    EMAIL_NOT_FOUND(HttpStatus.BAD_REQUEST, "EMAIL_4000", "이메일 정보가 존재하지 않습니다."),
+    EMAIL_CODE_NOT_REQUESTED(HttpStatus.BAD_REQUEST, "EMAIL_4001", "인증번호 전송 이력이 없습니다."),
+    EMAIL_CODE_EXPIRED(HttpStatus.BAD_REQUEST, "EMAIL_4002", "인증번호가 만료되었습니다."),
+    EMAIL_CODE_MISMATCH(HttpStatus.BAD_REQUEST, "EMAIL_4003", "인증번호가 일치하지 않습니다."),
+    EMAIL_ALREADY_VERIFIED(HttpStatus.BAD_REQUEST, "EMAIL_4004", "이미 이메일 인증이 완료되었습니다."),
+    EMAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "EMAIL_5000", "이메일 전송에 실패했습니다."),
     ;
 
     private final HttpStatus httpStatus;

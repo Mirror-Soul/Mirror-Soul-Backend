@@ -1,7 +1,16 @@
 package com.mirrorsoul.mirrorsoul_api.service;
 
-import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewResDTO;
+import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
+import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
+import com.mirrorsoul.mirrorsoul_api.domain.Interview;
+import com.mirrorsoul.mirrorsoul_api.domain.InterviewRecord;
+import com.mirrorsoul.mirrorsoul_api.domain.User;
+import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewQuestionResDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewAnswerReqDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewAnswerResDTO;
+import com.mirrorsoul.mirrorsoul_api.repository.InterviewRecordRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.InterviewRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -13,15 +22,41 @@ import org.springframework.transaction.annotation.Transactional;
 public class InterviewService {
 
     private final InterviewRepository interviewRepository;
+    private final InterviewRecordRepository interviewRecordRepository;
+    private final UserRepository userRepository;
 
-    public InterviewResDTO.questionListResDTO getQuestions() {
-        return InterviewResDTO.questionListResDTO.builder()
+    public InterviewQuestionResDTO.questionListResDTO getQuestions() {
+        return InterviewQuestionResDTO.questionListResDTO.builder()
                 .questions(interviewRepository.findAllByOrderByIdAsc().stream()
-                        .map(interview -> InterviewResDTO.questionResDTO.builder()
+                        .map(interview -> InterviewQuestionResDTO.questionResDTO.builder()
                                 .questionId(interview.getId())
                                 .question(interview.getQuestion())
                                 .build())
                         .collect(Collectors.toList()))
                 .build();
+    }
+
+    @Transactional
+    public InterviewAnswerResDTO saveInterviewAnswer(Long userId, InterviewAnswerReqDTO request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND, "User not found."));
+
+        Interview interview = interviewRepository.findById(request.interviewId())
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_PARAMETER, "Interview not found."));
+
+        InterviewRecord interviewRecord = interviewRecordRepository.findByUser_IdAndInterview_Id(userId, request.interviewId())
+                .map(record -> {
+                    record.updateAnswer(request.answerAudioUrl(), request.answerText());
+                    return record;
+                })
+                .orElseGet(() -> interviewRecordRepository.save(
+                        InterviewRecord.create(user, interview, request.answerAudioUrl(), request.answerText())
+                ));
+
+        return new InterviewAnswerResDTO(
+                interviewRecord.getId(),
+                interview.getId(),
+                true
+        );
     }
 }

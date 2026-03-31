@@ -1,6 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.dto.login;
 
-public record LoginResponse(
+public record LoginResDTO(
         String accessToken,
         String refreshToken,
         Long userId

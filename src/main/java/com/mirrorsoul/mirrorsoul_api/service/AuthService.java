@@ -5,10 +5,10 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralExceptio
 import com.mirrorsoul.mirrorsoul_api.common.jwt.TokenProvider;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
-import com.mirrorsoul.mirrorsoul_api.dto.login.LoginRequest;
-import com.mirrorsoul.mirrorsoul_api.dto.login.LoginResponse;
-import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenRequest;
-import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenResponse;
+import com.mirrorsoul.mirrorsoul_api.dto.login.LoginReqDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.login.LoginResDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenReqDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -28,7 +28,7 @@ public class AuthService {
     private final TokenProvider tokenProvider;
 
     @Transactional
-    public LoginResponse login(LoginRequest request) {
+    public LoginResDTO login(LoginReqDTO request) {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_LOGIN, "Invalid email or password."));
 
@@ -44,10 +44,10 @@ public class AuthService {
         String refreshToken = tokenProvider.createRefreshToken(user);
         user.updateRefreshToken(refreshToken);
 
-        return new LoginResponse(accessToken, refreshToken, user.getId());
+        return new LoginResDTO(accessToken, refreshToken, user.getId());
     }
 
-    public RefreshTokenResponse refresh(RefreshTokenRequest request) {
+    public RefreshTokenResDTO refresh(RefreshTokenReqDTO request) {
         try {
             tokenProvider.validateRefreshToken(request.refreshToken());
         } catch (ExpiredJwtException e) {
@@ -68,7 +68,7 @@ public class AuthService {
             throw new GeneralException(GeneralErrorCode.INVALID_TOKEN, "Refresh token does not match stored value.");
         }
 
-        return new RefreshTokenResponse(tokenProvider.createAccessToken(user));
+        return new RefreshTokenResDTO(tokenProvider.createAccessToken(user));
     }
 
     @Transactional

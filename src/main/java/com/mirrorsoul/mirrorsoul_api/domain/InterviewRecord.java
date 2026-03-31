@@ -43,4 +43,20 @@ public class InterviewRecord {
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    private InterviewRecord(User user, Interview interview, String answerAudioUrl, String answerText) {
+        this.user = user;
+        this.interview = interview;
+        this.answerAudioUrl = answerAudioUrl;
+        this.answerText = answerText;
+    }
+
+    public static InterviewRecord create(User user, Interview interview, String answerAudioUrl, String answerText) {
+        return new InterviewRecord(user, interview, answerAudioUrl, answerText);
+    }
+
+    public void updateAnswer(String answerAudioUrl, String answerText) {
+        this.answerAudioUrl = answerAudioUrl;
+        this.answerText = answerText;
+    }
 }

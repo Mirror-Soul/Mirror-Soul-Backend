@@ -43,29 +43,4 @@ public class JoinController {
     ApiResponse<JoinResDTO.verifyCodeResDTO> verifyCode(@PathVariable Long userId, @RequestBody JoinReqDTO.verifyCodeReqDTO req, HttpSession session) {
         return ApiResponse.onSuccess("인증 코드 검증 완료",emailAuthService.verifyCode(userId, req, session));
     }
-
-    @Operation(summary = "2-3.페르소나",description = "거주지, 직업 입력")
-    @PostMapping("/persona")
-    ApiResponse<Void> persona(@RequestBody JoinReqDTO.personaReqDTO req) {
-        return null;
-    }
-
-    @Operation(summary = "3.비주얼",description = "MBTI 스크롤바 수치, 자기소개 한문장 입력")
-    @PostMapping("/-")
-    ApiResponse<Void> visual() {
-        return null;
-    }
-
-    @Operation(summary = "4.소셜 데이터",description = "인터뷰 음성파일 첨부")
-    @PostMapping("/---")
-    ApiResponse<Void> socialData() {
-        return null;
-    }
-
-    @Operation(summary = "5.영혼 포착",description = "얼굴 촬영 영상파일 첨부")
-    @PostMapping("/----")
-    ApiResponse<Void> soulCapture() {
-        return null;
-    }
-
 }

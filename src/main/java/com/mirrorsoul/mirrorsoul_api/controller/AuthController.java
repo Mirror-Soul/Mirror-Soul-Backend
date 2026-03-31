@@ -1,10 +1,10 @@
 package com.mirrorsoul.mirrorsoul_api.controller;
 
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.ApiResponse;
-import com.mirrorsoul.mirrorsoul_api.dto.login.LoginRequest;
-import com.mirrorsoul.mirrorsoul_api.dto.login.LoginResponse;
-import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenRequest;
-import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenResponse;
+import com.mirrorsoul.mirrorsoul_api.dto.login.LoginReqDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.login.LoginResDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenReqDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenResDTO;
 import com.mirrorsoul.mirrorsoul_api.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Auth", description = "인증 API")
+@Tag(name = "Auth", description = "로그인 관련 API")
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -26,13 +26,13 @@ public class AuthController {
 
     @Operation(summary = "로그인", description = "이메일과 비밀번호로 로그인합니다.")
     @PostMapping("/login")
-    public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ApiResponse<LoginResDTO> login(@Valid @RequestBody LoginReqDTO request) {
         return ApiResponse.onSuccess("로그인에 성공했습니다.", authService.login(request));
     }
 
     @Operation(summary = "Access token 재발급", description = "Refresh token을 검증한 뒤 새로운 access token을 발급합니다.")
     @PostMapping("/refresh")
-    public ApiResponse<RefreshTokenResponse> refresh(@Valid @RequestBody RefreshTokenRequest request) {
+    public ApiResponse<RefreshTokenResDTO> refresh(@Valid @RequestBody RefreshTokenReqDTO request) {
         return ApiResponse.onSuccess("Access token이 재발급되었습니다.", authService.refresh(request));
     }
 

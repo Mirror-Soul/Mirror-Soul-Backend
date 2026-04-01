@@ -31,6 +31,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation platform('software.amazon.awssdk:bom:2.31.67')
+	implementation 'software.amazon.awssdk:s3'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.13'
 	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-api:2.8.13'
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.7'

@@ -2,7 +2,7 @@ package com.mirrorsoul.mirrorsoul_api.dto.file;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-public record PresignedUrlResponse(
+public record PresignedUrlResDTO(
         @Schema(description = "S3 직접 PUT 업로드에 사용할 Presigned URL")
         String presignedUrl,
 

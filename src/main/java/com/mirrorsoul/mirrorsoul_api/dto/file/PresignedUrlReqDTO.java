@@ -3,7 +3,7 @@ package com.mirrorsoul.mirrorsoul_api.dto.file;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
-public record PresignedUrlRequest(
+public record PresignedUrlReqDTO(
         @Schema(description = "업로드할 원본 파일명", example = "interview-answer-1.m4a")
         @NotBlank(message = "fileName은 필수입니다.")
         String fileName,

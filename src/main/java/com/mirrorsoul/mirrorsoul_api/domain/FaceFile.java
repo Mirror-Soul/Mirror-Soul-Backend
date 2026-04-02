@@ -27,7 +27,25 @@ public class FaceFile {
     @Column(name = "file_url", nullable = false, length = 500)
     private String fileUrl;
 
+    @Column(name = "object_key", nullable = false, length = 500)
+    private String objectKey;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    private FaceFile(User user, String fileUrl, String objectKey) {
+        this.user = user;
+        this.fileUrl = fileUrl;
+        this.objectKey = objectKey;
+    }
+
+    public static FaceFile create(User user, String fileUrl, String objectKey) {
+        return new FaceFile(user, fileUrl, objectKey);
+    }
+
+    public void updateFile(String fileUrl, String objectKey) {
+        this.fileUrl = fileUrl;
+        this.objectKey = objectKey;
+    }
 }

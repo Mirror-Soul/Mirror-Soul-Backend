@@ -3,8 +3,8 @@ package com.mirrorsoul.mirrorsoul_api.service;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
 import com.mirrorsoul.mirrorsoul_api.config.AwsS3Properties;
-import com.mirrorsoul.mirrorsoul_api.dto.file.PresignedUrlRequest;
-import com.mirrorsoul.mirrorsoul_api.dto.file.PresignedUrlResponse;
+import com.mirrorsoul.mirrorsoul_api.dto.file.PresignedUrlReqDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.file.PresignedUrlResDTO;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.UUID;
@@ -24,7 +24,7 @@ public class FileService {
     private final S3Presigner s3Presigner;
     private final AwsS3Properties awsS3Properties;
 
-    public PresignedUrlResponse createPresignedUrl(PresignedUrlRequest request) {
+    public PresignedUrlResDTO createPresignedUrl(PresignedUrlReqDTO request) {
         String directory = UploadDirectory.from(request.directory()).value();
         String sanitizedFileName = sanitizeFileName(request.fileName());
         String objectKey = directory + "/" + UUID.randomUUID() + "-" + sanitizedFileName;
@@ -43,7 +43,7 @@ public class FileService {
         try {
             PresignedPutObjectRequest presignedRequest = s3Presigner.presignPutObject(presignRequest);
 
-            return new PresignedUrlResponse(
+            return new PresignedUrlResDTO(
                     presignedRequest.url().toString(),
                     buildFileUrl(objectKey),
                     objectKey

@@ -1,6 +1,7 @@
 package com.mirrorsoul.mirrorsoul_api.service;
 
 import com.mirrorsoul.mirrorsoul_api.domain.User;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.join.JoinReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.join.JoinResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
@@ -22,12 +23,11 @@ public class JoinService {
         String encodedPassword = passwordEncoder.encode(req.getPassword());
 
         User user = User.builder()
-                .name(req.getName())
                 .email(req.getEmail())
                 .passwordHash(encodedPassword)
                 .gender(req.getGender())
                 .birthDate(req.getBirthDate())
-                .status(com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.NOT_COMPLETED)
+                .status(UserStatus.ONBOARD_A)
                 .build();
 
         userRepository.save(user);

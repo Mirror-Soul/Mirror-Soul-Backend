@@ -32,7 +32,7 @@ public class AuthService {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_LOGIN, "Invalid email or password."));
 
-        if (!UserStatus.ACTIVE.equals(user.getStatus())) {
+        if (UserStatus.INACTIVE.equals(user.getStatus())) {
             throw new GeneralException(GeneralErrorCode.FORBIDDEN, "Inactive user.");
         }
 
@@ -60,7 +60,7 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_TOKEN, "User for token not found."));
 
-        if (!UserStatus.ACTIVE.equals(user.getStatus())) {
+        if (UserStatus.INACTIVE.equals(user.getStatus())) {
             throw new GeneralException(GeneralErrorCode.FORBIDDEN, "Inactive user.");
         }
 

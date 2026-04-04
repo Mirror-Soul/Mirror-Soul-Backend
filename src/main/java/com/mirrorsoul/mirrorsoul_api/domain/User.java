@@ -29,19 +29,27 @@ public class User extends BaseTimeEntity {
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
-    @Column(nullable = false, length = 50)
+    @Setter
+    @Column(length = 50)
     private String name;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private Gender gender;
 
+    @Enumerated(EnumType.STRING)
+    @Setter
     @Column(length = 30)
-    private String job;
+    private Job job;
+
+    @Setter
+    @Column(name = "job_description", length = 200)
+    private String jobDescription;
 
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
+    @Setter
     @Column(length = 100)
     private String region;
 

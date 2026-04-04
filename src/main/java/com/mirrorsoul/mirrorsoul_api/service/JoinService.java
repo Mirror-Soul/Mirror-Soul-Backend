@@ -22,7 +22,6 @@ public class JoinService {
         String encodedPassword = passwordEncoder.encode(req.getPassword());
 
         User user = User.builder()
-                .name(req.getName())
                 .email(req.getEmail())
                 .passwordHash(encodedPassword)
                 .gender(req.getGender())

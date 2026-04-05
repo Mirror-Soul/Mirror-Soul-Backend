@@ -46,6 +46,10 @@ public class User extends BaseTimeEntity {
     @Column(name = "job_description", length = 200)
     private String jobDescription;
 
+    @Setter
+    @Column(name = "self_introduction", length = 500)
+    private String selfIntroduction;
+
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
@@ -60,6 +64,7 @@ public class User extends BaseTimeEntity {
     private String refreshToken;
 
     @Enumerated(EnumType.STRING)
+    @Setter
     @Column(nullable = false, length = 20)
     private UserStatus status = UserStatus.ACTIVE;
 

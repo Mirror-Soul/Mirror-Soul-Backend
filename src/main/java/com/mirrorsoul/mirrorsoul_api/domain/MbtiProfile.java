@@ -3,6 +3,8 @@ package com.mirrorsoul.mirrorsoul_api.domain;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.MbtiType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -14,7 +16,9 @@ import lombok.NoArgsConstructor;
                 @UniqueConstraint(name = "uk_mbti_profile_user", columnNames = "user_id")
         }
 )
+@Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class MbtiProfile extends BaseTimeEntity {
 
     @Id
@@ -41,4 +45,36 @@ public class MbtiProfile extends BaseTimeEntity {
 
     @Column(name = "pj_score", nullable = false)
     private Integer pjScore;
+
+    public static MbtiProfile create(
+            User user,
+            MbtiType mbti,
+            Integer ieScore,
+            Integer nsScore,
+            Integer ftScore,
+            Integer pjScore
+    ) {
+        return MbtiProfile.builder()
+                .user(user)
+                .mbti(mbti)
+                .ieScore(ieScore)
+                .nsScore(nsScore)
+                .ftScore(ftScore)
+                .pjScore(pjScore)
+                .build();
+    }
+
+    public void update(
+            MbtiType mbti,
+            Integer ieScore,
+            Integer nsScore,
+            Integer ftScore,
+            Integer pjScore
+    ) {
+        this.mbti = mbti;
+        this.ieScore = ieScore;
+        this.nsScore = nsScore;
+        this.ftScore = ftScore;
+        this.pjScore = pjScore;
+    }
 }

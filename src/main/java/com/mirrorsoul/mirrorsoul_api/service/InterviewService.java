@@ -5,6 +5,7 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralExceptio
 import com.mirrorsoul.mirrorsoul_api.domain.Interview;
 import com.mirrorsoul.mirrorsoul_api.domain.InterviewRecord;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewQuestionResDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewAnswerReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewAnswerResDTO;
@@ -15,6 +16,8 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import static com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode.FORBIDDEN;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +44,10 @@ public class InterviewService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND, "User not found."));
 
+        if (!UserStatus.ONBOARD_C.equals(user.getStatus())) {
+            throw new GeneralException(FORBIDDEN, "ONBOARD_C 상태의 사용자만 음성 인터뷰 답변을 저장할 수 있습니다.");
+        }
+
         Interview interview = interviewRepository.findById(request.interviewId())
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_PARAMETER, "Interview not found."));
 
@@ -52,6 +59,8 @@ public class InterviewService {
                 .orElseGet(() -> interviewRecordRepository.save(
                         InterviewRecord.create(user, interview, request.answerAudioUrl(), request.answerText())
                 ));
+
+        user.setStatus(UserStatus.ONBOARD_D);
 
         return new InterviewAnswerResDTO(
                 interviewRecord.getId(),

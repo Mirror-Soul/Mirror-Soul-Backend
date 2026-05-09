@@ -12,7 +12,7 @@ public record PresignedUrlReqDTO(
         @NotBlank(message = "contentType은 필수입니다.")
         String contentType,
 
-        @Schema(description = "업로드 대상 디렉터리", example = "interviews", allowableValues = {"interviews", "face-videos"})
+        @Schema(description = "업로드 대상 디렉터리", example = "interviews", allowableValues = {"interviews", "face-videos", "job-certifications"})
         @NotBlank(message = "directory는 필수입니다.")
         String directory
 ) {

@@ -81,7 +81,8 @@ public class FileService {
 
     private enum UploadDirectory {
         INTERVIEWS("interviews"),
-        FACE_VIDEOS("face-videos");
+        FACE_VIDEOS("face-videos"),
+        JOB_CERTIFICATIONS("job-certifications");
 
         private final String value;
 
@@ -110,7 +111,7 @@ public class FileService {
         private static GeneralException invalidDirectory() {
             return new GeneralException(
                     GeneralErrorCode.INVALID_PARAMETER,
-                    "directory must be one of: interviews, face-videos"
+                    "directory must be one of: interviews, face-videos, job-certifications"
             );
         }
     }

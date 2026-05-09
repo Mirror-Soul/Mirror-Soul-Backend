@@ -26,7 +26,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "Onboarding", description = "온보딩 API")
+@Tag(name = "Onboarding", description = """
+            온보딩 API
+            
+            - UserStatus
+            - OnboardA - 회원가입 완료
+            - OnboardB - 기본 프로필 완료
+            - OnboardC - 성격 유형 완료
+            - OnboardD - AI 음성 인터뷰 완료
+            - ACTIVE - 얼굴 스캔 완료 및 온보딩 완료
+            - INACTIVE - 비활성화 및 삭제된 계정
+            """)
 @RestController
 @RequestMapping("/onboarding")
 @RequiredArgsConstructor
@@ -37,7 +47,7 @@ public class OnboardingController {
     private final RegionService regionService;
     private final VisualService visualService;
 
-    @Operation(summary = "온보딩 프로필 입력", description = "닉네임, 위치, 직업 정보를 저장합니다.")
+    @Operation(summary = "온보딩 프로필 입력", description = "닉네임, 위치, 직업 정보를 저장하고 ONBOARD_B 상태로 변경합니다.")
     @PostMapping("/profile/{userId}")
     public ApiResponse<Void> postProfile(@Valid @RequestBody OnboardingReqDTO.personaReqDTO req,
                                          @PathVariable Long userId,

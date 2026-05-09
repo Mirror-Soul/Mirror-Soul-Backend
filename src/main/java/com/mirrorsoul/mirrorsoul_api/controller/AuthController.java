@@ -24,7 +24,15 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @Operation(summary = "로그인", description = "이메일과 비밀번호로 로그인합니다.")
+    @Operation(summary = "로그인", description = """
+            이메일과 비밀번호로 로그인합니다.
+            - OnboardA - 회원가입 완료
+            - OnboardB - 기본 프로필 완료
+            - OnboardC - 성격 유형 완료
+            - OnboardD - AI 음성 인터뷰 완료
+            - ACTIVE - 얼굴 스캔 완료 및 온보딩 완료
+            - INACTIVE - 비활성화 및 삭제된 계정
+            """)
     @PostMapping("/login")
     public ApiResponse<LoginResDTO> login(@Valid @RequestBody LoginReqDTO request) {
         return ApiResponse.onSuccess("로그인에 성공했습니다.", authService.login(request));

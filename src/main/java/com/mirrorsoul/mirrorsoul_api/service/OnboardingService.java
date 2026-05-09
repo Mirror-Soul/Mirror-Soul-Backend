@@ -19,6 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 import static com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode.FORBIDDEN;
 import static com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode.REGION_NOT_FOUND;
 import static com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode.USER_NOT_FOUND;
+import static com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ONBOARD_A;
+import static com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ONBOARD_B;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +36,10 @@ public class OnboardingService {
 
         User user = userRepository.findById(userId).orElseThrow(
                 () -> new GeneralException(USER_NOT_FOUND));
+
+        if (!ONBOARD_A.equals(user.getStatus())) {
+            throw new GeneralException(FORBIDDEN, "ONBOARD_A 상태의 사용자만 페르소나를 저장할 수 있습니다.");
+        }
 
         user.setName(req.getNickname());
 
@@ -57,6 +63,7 @@ public class OnboardingService {
 
         user.setJob(job);
         user.setJobDescription(req.getJobDescription());
+        user.setStatus(ONBOARD_B);
         userRepository.save(user);
     }
 
@@ -76,7 +83,7 @@ public class OnboardingService {
         User user = userRepository.findById(userId).orElseThrow(
                 () -> new GeneralException(USER_NOT_FOUND));
 
-        if (!UserStatus.ONBOARD_B.equals(user.getStatus())) {
+        if (!ONBOARD_B.equals(user.getStatus())) {
             throw new GeneralException(FORBIDDEN, "ONBOARD_B 상태의 사용자만 성격 유형을 저장할 수 있습니다.");
         }
 

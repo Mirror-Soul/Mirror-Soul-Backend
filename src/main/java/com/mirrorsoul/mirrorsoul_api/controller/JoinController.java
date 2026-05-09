@@ -25,22 +25,22 @@ public class JoinController {
     private final JoinService joinService;
     private final EmailAuthService emailAuthService;
 
-    @Operation(summary = "1.기본 프로필",description = "이름,이메일,비밀번호,성별,생년월일 입력후 요청시, userId 반환 (여기서 발급된 userId를 통해 이후 회원가입 절차 진행)")
+    @Operation(summary = "1-3.기본 프로필",description = "이름,이메일,비밀번호,성별,생년월일 입력 및 이용 약관 동의 후 요청시, userId 반환 (여기서 발급된 userId를 통해 이후 온보딩 절차 진행)")
     @PostMapping("/basic-profile")
-    ApiResponse<JoinResDTO.basicProfileResDTO> basicProfile(@Valid @RequestBody JoinReqDTO.basicProfileReqDTO req) {
-        return ApiResponse.onSuccess("회원 프로필 생성 완료", joinService.basicProfile(req));
+    ApiResponse<JoinResDTO.basicProfileResDTO> basicProfile(@Valid @RequestBody JoinReqDTO.basicProfileReqDTO req, HttpSession session) {
+        return ApiResponse.onSuccess("회원 프로필 생성 완료", joinService.basicProfile(req, session));
     }
 
-    @Operation(summary = "2-1.인증번호 전송", description = "해당 이메일로 인증번호 전송")
-    @PostMapping("/send-code/{userId}")
-    ApiResponse<Void> sendCode(@PathVariable Long userId, HttpSession session) {
-        emailAuthService.sendCode(userId, session);
+    @Operation(summary = "1-1.인증번호 전송", description = "해당 이메일로 인증번호 전송")
+    @PostMapping("/send-code")
+    ApiResponse<Void> sendCode(@RequestBody JoinReqDTO.sendCodeReqDTO req, HttpSession session) {
+        emailAuthService.sendCode(req, session);
         return ApiResponse.onSuccess("인증코드 전송 완료");
     }
 
-    @Operation(summary = "2-2.이메일 인증", description = "인증번호 일치 여부 확인")
-    @PostMapping("/verify-code/{userId}")
-    ApiResponse<JoinResDTO.verifyCodeResDTO> verifyCode(@PathVariable Long userId, @RequestBody JoinReqDTO.verifyCodeReqDTO req, HttpSession session) {
-        return ApiResponse.onSuccess("인증 코드 검증 완료",emailAuthService.verifyCode(userId, req, session));
+    @Operation(summary = "1-2.이메일 인증", description = "인증번호 일치 여부 확인 (개발용 마스터 코드는 123456)")
+    @PostMapping("/verify-code")
+    ApiResponse<JoinResDTO.verifyCodeResDTO> verifyCode(@RequestBody JoinReqDTO.verifyCodeReqDTO req, HttpSession session) {
+        return ApiResponse.onSuccess("인증 코드 검증 완료",emailAuthService.verifyCode(req, session));
     }
 }

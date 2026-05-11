@@ -47,6 +47,10 @@ public class User extends BaseTimeEntity {
     private String jobDescription;
 
     @Setter
+    @Column(name = "job_certification_object_key", length = 500)
+    private String jobCertificationObjectKey;
+
+    @Setter
     @Column(name = "self_introduction", length = 500)
     private String selfIntroduction;
 

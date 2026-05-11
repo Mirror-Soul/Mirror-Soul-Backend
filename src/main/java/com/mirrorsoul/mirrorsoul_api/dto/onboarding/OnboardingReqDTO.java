@@ -27,6 +27,8 @@ public class OnboardingReqDTO {
         private String eupmyeondongName;
 
         private String jobDescription;
+
+        private String jobCertificationObjectKey;
     }
 
     @Getter

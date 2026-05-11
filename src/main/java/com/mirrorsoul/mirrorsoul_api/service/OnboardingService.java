@@ -63,6 +63,7 @@ public class OnboardingService {
 
         user.setJob(job);
         user.setJobDescription(req.getJobDescription());
+        user.setJobCertificationObjectKey(req.getJobCertificationObjectKey());
         user.setStatus(ONBOARD_B);
         userRepository.save(user);
     }

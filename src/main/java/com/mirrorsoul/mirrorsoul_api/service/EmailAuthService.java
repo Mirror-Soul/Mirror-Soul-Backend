@@ -3,10 +3,8 @@ package com.mirrorsoul.mirrorsoul_api.service;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
 import com.mirrorsoul.mirrorsoul_api.common.mail.EmailAuthConst;
-import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.dto.join.JoinReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.join.JoinResDTO;
-import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -19,6 +17,7 @@ public class EmailAuthService {
 
     private final MailService mailService;
     private static final String DEV_MASTER_CODE = "123456";
+    private static final int VERIFY_MAX_COUNT = 5;
 
     private static final long EXPIRE_SECONDS = 180L;
 
@@ -35,6 +34,8 @@ public class EmailAuthService {
         session.setAttribute(EmailAuthConst.EMAIL_AUTH_CODE, code);
         session.setAttribute(EmailAuthConst.EMAIL_AUTH_EXPIRE_TIME, expireTime);
         session.setAttribute(EmailAuthConst.EMAIL_AUTH_VERIFIED, false);
+        session.setAttribute(EmailAuthConst.EMAIL_AUTH_FAIL_COUNT, 0);
+        session.setAttribute(EmailAuthConst.EMAIL_AUTH_BLOCKED, false);
         session.setMaxInactiveInterval((int) EXPIRE_SECONDS);
     }
 
@@ -44,6 +45,12 @@ public class EmailAuthService {
         String savedCode = (String) session.getAttribute(EmailAuthConst.EMAIL_AUTH_CODE);
         LocalDateTime expireTime = (LocalDateTime) session.getAttribute(EmailAuthConst.EMAIL_AUTH_EXPIRE_TIME);
         Boolean verified = (Boolean) session.getAttribute(EmailAuthConst.EMAIL_AUTH_VERIFIED);
+        Integer failCount = (Integer) session.getAttribute(EmailAuthConst.EMAIL_AUTH_FAIL_COUNT);
+        Boolean blocked = (Boolean) session.getAttribute(EmailAuthConst.EMAIL_AUTH_BLOCKED);
+
+        if (Boolean.TRUE.equals(blocked)) {
+            throw new GeneralException(GeneralErrorCode.EMAIL_CODE_ATTEMPT_EXCEEDED);
+        }
 
         if (savedEmail == null || savedCode == null || expireTime == null) {
             throw new GeneralException(GeneralErrorCode.EMAIL_CODE_NOT_REQUESTED);
@@ -54,7 +61,6 @@ public class EmailAuthService {
         }
 
         if (LocalDateTime.now().isAfter(expireTime)) {
-            clearAuthSession(session);
             throw new GeneralException(GeneralErrorCode.EMAIL_CODE_EXPIRED);
         }
 
@@ -62,7 +68,23 @@ public class EmailAuthService {
             throw new GeneralException(GeneralErrorCode.MISSING_PARAMETER, "인증번호는 필수입니다.");
         }
 
-        if (!savedCode.equals(req.getCode())&& !DEV_MASTER_CODE.equals(req.getCode())) {
+        if (failCount == null) {
+            failCount = 0;
+        }
+
+        if (failCount >= VERIFY_MAX_COUNT) {
+            session.setAttribute(EmailAuthConst.EMAIL_AUTH_BLOCKED, true);
+            throw new GeneralException(GeneralErrorCode.EMAIL_CODE_ATTEMPT_EXCEEDED);
+        }
+
+        if (!savedCode.equals(req.getCode()) && !DEV_MASTER_CODE.equals(req.getCode())) {
+            int newFailCount = failCount + 1;
+            session.setAttribute(EmailAuthConst.EMAIL_AUTH_FAIL_COUNT, newFailCount);
+
+            if (newFailCount >= VERIFY_MAX_COUNT) {
+                throw new GeneralException(GeneralErrorCode.EMAIL_CODE_ATTEMPT_EXCEEDED);
+            }
+
             throw new GeneralException(GeneralErrorCode.EMAIL_CODE_MISMATCH);
         }
 
@@ -87,6 +109,8 @@ public class EmailAuthService {
         session.removeAttribute(EmailAuthConst.EMAIL_AUTH_CODE);
         session.removeAttribute(EmailAuthConst.EMAIL_AUTH_EXPIRE_TIME);
         session.removeAttribute(EmailAuthConst.EMAIL_AUTH_VERIFIED);
+        session.removeAttribute(EmailAuthConst.EMAIL_AUTH_FAIL_COUNT);
+        session.removeAttribute(EmailAuthConst.EMAIL_AUTH_BLOCKED);
     }
 
     private String createCode() {

@@ -11,6 +11,7 @@ public enum GeneralErrorCode implements BaseErrorCode {
     // 인증 에러
     DUPLICATE_LOGINID(HttpStatus.BAD_REQUEST,"AUTH_4000","중복되는 아이디가 존재합니다."),
     NOT_AGREED_TERM(HttpStatus.BAD_REQUEST,"AUTH_4001","서비스 이용약관 동의는 필수입니다."),
+    EMAIL_CODE_ATTEMPT_EXCEEDED(HttpStatus.BAD_REQUEST, "AUTH_4002", "인증번호 입력 가능 횟수를 초과했습니다."),
     MISSING_AUTH_INFO(HttpStatus.UNAUTHORIZED, "AUTH_4010", "인증 정보가 누락되었습니다."),
     INVALID_LOGIN(HttpStatus.UNAUTHORIZED, "AUTH_4011", "올바르지 않은 아이디, 혹은 비밀번호입니다."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_4012", "유효하지 않은 토큰입니다."),

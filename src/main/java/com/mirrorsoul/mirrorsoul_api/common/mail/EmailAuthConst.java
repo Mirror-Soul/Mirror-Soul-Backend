@@ -6,6 +6,8 @@ public class EmailAuthConst {
     public static final String EMAIL_AUTH_TARGET = "EMAIL_AUTH_TARGET";
     public static final String EMAIL_AUTH_EXPIRE_TIME = "EMAIL_AUTH_EXPIRE_TIME";
     public static final String EMAIL_AUTH_VERIFIED = "EMAIL_AUTH_VERIFIED";
+    public static final String EMAIL_AUTH_FAIL_COUNT = "EMAIL_AUTH_FAIL_COUNT";
+    public static final String EMAIL_AUTH_BLOCKED = "EMAIL_AUTH_BLOCKED";
 
     private EmailAuthConst() {
     }

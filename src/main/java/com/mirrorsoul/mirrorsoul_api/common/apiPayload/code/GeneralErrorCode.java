@@ -45,6 +45,7 @@ public enum GeneralErrorCode implements BaseErrorCode {
 
     // 유저 관련 에러
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_4040", "존재하지 않는 사용자입니다."),
+    DUPLICATE_EMAIL(HttpStatus.CONFLICT, "USER_4090", "이미 사용 중인 이메일입니다."),
 
     // 지역 관련 에러
     REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "REGION_4040", "존재하지 않는 지역입니다."),

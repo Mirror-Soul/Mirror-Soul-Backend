@@ -3,6 +3,8 @@ package com.mirrorsoul.mirrorsoul_api.controller;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.ApiResponse;
 import com.mirrorsoul.mirrorsoul_api.dto.file.PresignedUrlReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.file.PresignedUrlResDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.file.UploadCompleteReqDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.file.UploadCompleteResDTO;
 import com.mirrorsoul.mirrorsoul_api.service.FileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,6 +32,18 @@ public class FileController {
         return ApiResponse.onSuccess(
                 "Presigned URL 생성에 성공했습니다.",
                 fileService.createPresignedUrl(request)
+        );
+    }
+
+    @Operation(
+            summary = "S3 upload complete",
+            description = "Checks that the uploaded S3 object exists and returns the finalized file URL."
+    )
+    @PostMapping("/upload-complete")
+    public ApiResponse<UploadCompleteResDTO> completeUpload(@Valid @RequestBody UploadCompleteReqDTO request) {
+        return ApiResponse.onSuccess(
+                "Upload completion processed successfully.",
+                fileService.completeUpload(request)
         );
     }
 }

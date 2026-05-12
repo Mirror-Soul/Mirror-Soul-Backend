@@ -5,13 +5,18 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralExceptio
 import com.mirrorsoul.mirrorsoul_api.config.AwsS3Properties;
 import com.mirrorsoul.mirrorsoul_api.dto.file.PresignedUrlReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.file.PresignedUrlResDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.file.UploadCompleteReqDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.file.UploadCompleteResDTO;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.awscore.exception.AwsErrorDetails;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
@@ -22,6 +27,7 @@ import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignReques
 public class FileService {
 
     private final S3Presigner s3Presigner;
+    private final S3Client s3Client;
     private final AwsS3Properties awsS3Properties;
 
     public PresignedUrlResDTO createPresignedUrl(PresignedUrlReqDTO request) {
@@ -56,6 +62,51 @@ public class FileService {
         }
     }
 
+    public UploadCompleteResDTO completeUpload(UploadCompleteReqDTO request) {
+        UploadFileType fileType = UploadFileType.from(request.fileType());
+        String objectKey = normalizeObjectKey(request.objectKey());
+
+        if (!objectKey.startsWith(fileType.requiredPrefix())) {
+            throw new GeneralException(
+                    GeneralErrorCode.INVALID_PARAMETER,
+                    "objectKey must start with " + fileType.requiredPrefix() + " for " + fileType.name() + "."
+            );
+        }
+
+        HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
+                .bucket(awsS3Properties.getBucket())
+                .key(objectKey)
+                .build();
+
+        try {
+            s3Client.headObject(headObjectRequest);
+
+            return new UploadCompleteResDTO(
+                    fileType.name(),
+                    objectKey,
+                    buildFileUrl(objectKey),
+                    true
+            );
+        } catch (AwsServiceException e) {
+            if (isNotFound(e)) {
+                throw new GeneralException(
+                        GeneralErrorCode.INVALID_PARAMETER,
+                        "Uploaded S3 object was not found."
+                );
+            }
+
+            throw new GeneralException(
+                    GeneralErrorCode.S3_CONNECTION_FAILED,
+                    "Failed to verify uploaded S3 object."
+            );
+        } catch (SdkClientException e) {
+            throw new GeneralException(
+                    GeneralErrorCode.S3_CONNECTION_FAILED,
+                    "Failed to verify uploaded S3 object."
+            );
+        }
+    }
+
     private String sanitizeFileName(String fileName) {
         String baseName = fileName.replace("\\", "/");
         int lastSlashIndex = baseName.lastIndexOf('/');
@@ -77,6 +128,25 @@ public class FileService {
                 + awsS3Properties.getRegion()
                 + ".amazonaws.com/"
                 + objectKey;
+    }
+
+    private String normalizeObjectKey(String objectKey) {
+        String normalized = objectKey == null ? "" : objectKey.trim().replace("\\", "/");
+
+        if (normalized.isBlank() || normalized.startsWith("/") || normalized.contains("..")) {
+            throw new GeneralException(
+                    GeneralErrorCode.INVALID_PARAMETER,
+                    "Invalid objectKey."
+            );
+        }
+
+        return normalized;
+    }
+
+    private boolean isNotFound(AwsServiceException e) {
+        AwsErrorDetails errorDetails = e.awsErrorDetails();
+        return e.statusCode() == 404
+                || (errorDetails != null && "NoSuchKey".equals(errorDetails.errorCode()));
     }
 
     private enum UploadDirectory {
@@ -112,6 +182,39 @@ public class FileService {
             return new GeneralException(
                     GeneralErrorCode.INVALID_PARAMETER,
                     "directory must be one of: interviews, face-videos, job-certifications"
+            );
+        }
+    }
+
+    private enum UploadFileType {
+        INTERVIEW_AUDIO("interviews/");
+
+        private final String requiredPrefix;
+
+        UploadFileType(String requiredPrefix) {
+            this.requiredPrefix = requiredPrefix;
+        }
+
+        public String requiredPrefix() {
+            return requiredPrefix;
+        }
+
+        public static UploadFileType from(String value) {
+            if (value == null) {
+                throw invalidFileType();
+            }
+
+            try {
+                return UploadFileType.valueOf(value.trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException e) {
+                throw invalidFileType();
+            }
+        }
+
+        private static GeneralException invalidFileType() {
+            return new GeneralException(
+                    GeneralErrorCode.INVALID_PARAMETER,
+                    "fileType must be one of: INTERVIEW_AUDIO"
             );
         }
     }

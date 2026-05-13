@@ -12,6 +12,7 @@ import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewAnswerResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.InterviewRecordRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.InterviewRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -40,8 +41,8 @@ public class InterviewService {
     }
 
     @Transactional
-    public InterviewAnswerResDTO saveInterviewAnswer(Long userId, InterviewAnswerReqDTO request) {
-        User user = userRepository.findById(userId)
+    public InterviewAnswerResDTO saveInterviewAnswer(UUID userUuid, InterviewAnswerReqDTO request) {
+        User user = userRepository.findByUuid(userUuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND, "User not found."));
 
         if (!UserStatus.ONBOARD_C.equals(user.getStatus())) {
@@ -51,7 +52,7 @@ public class InterviewService {
         Interview interview = interviewRepository.findById(request.interviewId())
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_PARAMETER, "Interview not found."));
 
-        InterviewRecord interviewRecord = interviewRecordRepository.findByUser_IdAndInterview_Id(userId, request.interviewId())
+        InterviewRecord interviewRecord = interviewRecordRepository.findByUser_IdAndInterview_Id(user.getId(), request.interviewId())
                 .map(record -> {
                     record.updateAnswer(request.answerAudioUrl(), request.answerText());
                     return record;

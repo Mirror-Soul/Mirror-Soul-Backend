@@ -1,5 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.dto.join;
 
+import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,7 +13,7 @@ public class JoinResDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class basicProfileResDTO {
-        Long userId;
+        UUID userUuid;
     }
 
     @Builder

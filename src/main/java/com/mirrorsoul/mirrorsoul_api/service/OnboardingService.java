@@ -12,6 +12,7 @@ import com.mirrorsoul.mirrorsoul_api.repository.MbtiProfileRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.RegionRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserPreferredRegionRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,9 +33,9 @@ public class OnboardingService {
     private final RegionRepository regionRepository;
     private final UserPreferredRegionRepository userPreferredRegionRepository;
 
-    public void postProfile(OnboardingReqDTO.personaReqDTO req, Long userId, Job job) {
+    public void postProfile(OnboardingReqDTO.personaReqDTO req, UUID userUuid, Job job) {
 
-        User user = userRepository.findById(userId).orElseThrow(
+        User user = userRepository.findByUuid(userUuid).orElseThrow(
                 () -> new GeneralException(USER_NOT_FOUND));
 
         if (!ONBOARD_A.equals(user.getStatus())) {
@@ -79,16 +80,16 @@ public class OnboardingService {
         return !userRepository.existsByName(nickname);
     }
 
-    public void putPersonality(OnboardingReqDTO.personalityReqDTO req, Long userId) {
+    public void putPersonality(OnboardingReqDTO.personalityReqDTO req, UUID userUuid) {
 
-        User user = userRepository.findById(userId).orElseThrow(
+        User user = userRepository.findByUuid(userUuid).orElseThrow(
                 () -> new GeneralException(USER_NOT_FOUND));
 
         if (!ONBOARD_B.equals(user.getStatus())) {
             throw new GeneralException(FORBIDDEN, "ONBOARD_B 상태의 사용자만 성격 유형을 저장할 수 있습니다.");
         }
 
-        mbtiProfileRepository.findByUser_Id(userId)
+        mbtiProfileRepository.findByUser_Id(user.getId())
                 .ifPresentOrElse(
                         mbtiProfile -> mbtiProfile.update(
                                 req.getMbti(),

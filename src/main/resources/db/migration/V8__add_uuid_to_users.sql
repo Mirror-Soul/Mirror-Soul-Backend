@@ -1,0 +1,12 @@
+ALTER TABLE users
+    ADD COLUMN uuid CHAR(36) NULL;
+
+UPDATE users
+SET uuid = UUID()
+WHERE uuid IS NULL;
+
+ALTER TABLE users
+    MODIFY COLUMN uuid CHAR(36) NOT NULL;
+
+ALTER TABLE users
+    ADD CONSTRAINT uk_users_uuid UNIQUE (uuid);

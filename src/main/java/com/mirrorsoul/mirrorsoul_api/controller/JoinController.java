@@ -11,7 +11,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,7 +24,7 @@ public class JoinController {
     private final JoinService joinService;
     private final EmailAuthService emailAuthService;
 
-    @Operation(summary = "1-3.기본 프로필",description = "이름,이메일,비밀번호,성별,생년월일 입력 및 이용 약관 동의 후 요청시, userId 반환 (여기서 발급된 userId를 통해 이후 온보딩 절차 진행)")
+    @Operation(summary = "1-3.기본 프로필",description = "이름,이메일,비밀번호,성별,생년월일 입력 및 이용 약관 동의 후 요청시, userUuid 반환 (여기서 발급된 userUuid를 통해 이후 온보딩 절차 진행)")
     @PostMapping("/basic-profile")
     ApiResponse<JoinResDTO.basicProfileResDTO> basicProfile(@Valid @RequestBody JoinReqDTO.basicProfileReqDTO req, HttpSession session) {
         return ApiResponse.onSuccess("회원 프로필 생성 완료", joinService.basicProfile(req, session));

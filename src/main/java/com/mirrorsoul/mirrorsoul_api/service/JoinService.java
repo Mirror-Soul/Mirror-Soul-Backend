@@ -64,7 +64,7 @@ public class JoinService {
         userRepository.save(user);
 
         return JoinResDTO.basicProfileResDTO.builder()
-                .userId(user.getId())
+                .userUuid(user.getUuid())
                 .build();
     }
 }

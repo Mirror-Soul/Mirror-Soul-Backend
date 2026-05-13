@@ -9,6 +9,7 @@ import com.mirrorsoul.mirrorsoul_api.dto.visual.VisualReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.visual.VisualResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.FaceFileRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,15 +25,15 @@ public class VisualService {
     private final UserRepository userRepository;
 
     @Transactional
-    public VisualResDTO saveVisualFile(Long userId, VisualReqDTO request) {
-        User user = userRepository.findById(userId)
+    public VisualResDTO saveVisualFile(UUID userUuid, VisualReqDTO request) {
+        User user = userRepository.findByUuid(userUuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND, "User not found."));
 
         if (!UserStatus.ONBOARD_D.equals(user.getStatus())) {
             throw new GeneralException(FORBIDDEN, "ONBOARD_D 상태의 사용자만 얼굴 이미지 파일을 저장할 수 있습니다.");
         }
 
-        FaceFile faceFile = faceFileRepository.findByUser_Id(userId)
+        FaceFile faceFile = faceFileRepository.findByUser_Id(user.getId())
                 .map(existing -> {
                     existing.updateFile(request.fileUrl(), request.objectKey());
                     return existing;
@@ -45,7 +46,7 @@ public class VisualService {
 
         return new VisualResDTO(
                 faceFile.getId(),
-                user.getId(),
+                user.getUuid(),
                 faceFile.getFileUrl(),
                 faceFile.getObjectKey(),
                 true

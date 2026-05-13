@@ -3,16 +3,20 @@ package com.mirrorsoul.mirrorsoul_api.domain;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.*;
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.util.UUID;
 
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Getter
 @Entity
 @Table(
         name = "users",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_users_email", columnNames = "email")
+                @UniqueConstraint(name = "uk_users_email", columnNames = "email"),
+                @UniqueConstraint(name = "uk_users_uuid", columnNames = "uuid")
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -22,6 +26,10 @@ public class User extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(nullable = false, unique = true, updatable = false, length = 36)
+    private UUID uuid;
 
     @Column(nullable = false, length = 255)
     private String email;
@@ -78,5 +86,12 @@ public class User extends BaseTimeEntity {
 
     public void clearRefreshToken() {
         this.refreshToken = null;
+    }
+
+    @PrePersist
+    private void generateUuid() {
+        if (uuid == null) {
+            uuid = UUID.randomUUID();
+        }
     }
 }

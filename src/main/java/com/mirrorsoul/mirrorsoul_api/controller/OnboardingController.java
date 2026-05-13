@@ -13,9 +13,11 @@ import com.mirrorsoul.mirrorsoul_api.service.OnboardingService;
 import com.mirrorsoul.mirrorsoul_api.service.RegionService;
 import com.mirrorsoul.mirrorsoul_api.service.VisualService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -48,11 +50,11 @@ public class OnboardingController {
     private final VisualService visualService;
 
     @Operation(summary = "온보딩 프로필 입력", description = "닉네임, 위치, 직업 정보를 저장하고 ONBOARD_B 상태로 변경합니다.")
-    @PostMapping("/profile/{userId}")
+    @PostMapping("/profile/{userUuid}")
     public ApiResponse<Void> postProfile(@Valid @RequestBody OnboardingReqDTO.personaReqDTO req,
-                                         @PathVariable Long userId,
+                                         @Parameter(description = "사용자 UUID") @PathVariable UUID userUuid,
                                          @RequestParam Job job) {
-        onboardingService.postProfile(req, userId, job);
+        onboardingService.postProfile(req, userUuid, job);
         return ApiResponse.onSuccess("프로필 정보 저장 완료");
     }
 
@@ -66,10 +68,10 @@ public class OnboardingController {
     }
 
     @Operation(summary = "온보딩 성격 유형 저장", description = "MBTI, 각 지표 점수, 자기소개를 저장하고 ONBOARD_C 상태로 변경합니다.")
-    @PutMapping("/personality/{userId}")
+    @PutMapping("/personality/{userUuid}")
     public ApiResponse<Void> putPersonality(@Valid @RequestBody OnboardingReqDTO.personalityReqDTO req,
-                                            @PathVariable Long userId) {
-        onboardingService.putPersonality(req, userId);
+                                            @Parameter(description = "사용자 UUID") @PathVariable UUID userUuid) {
+        onboardingService.putPersonality(req, userUuid);
         return ApiResponse.onSuccess("성격 유형 저장 완료");
     }
 
@@ -101,23 +103,23 @@ public class OnboardingController {
         return ApiResponse.onSuccess("인터뷰 질문 조회에 성공했습니다.", interviewService.getQuestions());
     }
 
-    @Operation(summary = "온보딩 인터뷰 응답 저장", description = "온보딩 단계에서 userId 기준으로 인터뷰 응답을 저장하거나 수정합니다.")
-    @PostMapping("/interview/answers/{userId}")
-    public ApiResponse<InterviewAnswerResDTO> saveInterviewAnswer(@PathVariable Long userId,
+    @Operation(summary = "온보딩 인터뷰 응답 저장", description = "온보딩 단계에서 userUuid 기준으로 인터뷰 응답을 저장하거나 수정합니다.")
+    @PostMapping("/interview/answers/{userUuid}")
+    public ApiResponse<InterviewAnswerResDTO> saveInterviewAnswer(@Parameter(description = "사용자 UUID") @PathVariable UUID userUuid,
                                                                   @RequestBody InterviewAnswerReqDTO request) {
         return ApiResponse.onSuccess(
                 "인터뷰 응답 저장에 성공했습니다.",
-                interviewService.saveInterviewAnswer(userId, request)
+                interviewService.saveInterviewAnswer(userUuid, request)
         );
     }
 
-    @Operation(summary = "온보딩 얼굴 이미지 파일 저장", description = "S3 업로드가 완료된 얼굴 이미지 파일의 objectKey와 fileUrl을 userId 기준으로 저장합니다.")
-    @PostMapping("/visual/{userId}")
-    public ApiResponse<VisualResDTO> saveVisualFile(@PathVariable Long userId,
+    @Operation(summary = "온보딩 얼굴 이미지 파일 저장", description = "S3 업로드가 완료된 얼굴 이미지 파일의 objectKey와 fileUrl을 userUuid 기준으로 저장합니다.")
+    @PostMapping("/visual/{userUuid}")
+    public ApiResponse<VisualResDTO> saveVisualFile(@Parameter(description = "사용자 UUID") @PathVariable UUID userUuid,
                                                     @RequestBody VisualReqDTO request) {
         return ApiResponse.onSuccess(
                 "얼굴 이미지 파일 저장에 성공했습니다.",
-                visualService.saveVisualFile(userId, request)
+                visualService.saveVisualFile(userUuid, request)
         );
     }
 }

@@ -45,7 +45,7 @@ public class AuthService {
         user.updateRefreshToken(refreshToken);
         UserStatus userStatus = user.getStatus();
 
-        return new LoginResDTO(accessToken, refreshToken, user.getId(), userStatus);
+        return new LoginResDTO(accessToken, refreshToken, user.getUuid(), userStatus);
     }
 
     public RefreshTokenResDTO refresh(RefreshTokenReqDTO request) {

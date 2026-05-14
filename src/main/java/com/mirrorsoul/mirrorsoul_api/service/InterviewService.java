@@ -28,6 +28,7 @@ public class InterviewService {
     private final InterviewRepository interviewRepository;
     private final InterviewRecordRepository interviewRecordRepository;
     private final UserRepository userRepository;
+    private final FileService fileService;
 
     public InterviewQuestionResDTO.questionListResDTO getQuestions() {
         return InterviewQuestionResDTO.questionListResDTO.builder()
@@ -52,13 +53,15 @@ public class InterviewService {
         Interview interview = interviewRepository.findById(request.interviewId())
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_PARAMETER, "Interview not found."));
 
+        String answerAudioUrl = fileService.verifyInterviewAudioAndBuildFileUrl(userUuid, request.answerAudioObjectKey());
+
         InterviewRecord interviewRecord = interviewRecordRepository.findByUser_IdAndInterview_Id(user.getId(), request.interviewId())
                 .map(record -> {
-                    record.updateAnswer(request.answerAudioUrl(), request.answerText());
+                    record.updateAnswer(answerAudioUrl, request.answerText());
                     return record;
                 })
                 .orElseGet(() -> interviewRecordRepository.save(
-                        InterviewRecord.create(user, interview, request.answerAudioUrl(), request.answerText())
+                        InterviewRecord.create(user, interview, answerAudioUrl, request.answerText())
                 ));
 
         user.setStatus(UserStatus.ONBOARD_D);

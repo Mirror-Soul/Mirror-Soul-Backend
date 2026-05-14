@@ -5,8 +5,6 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralExceptio
 import com.mirrorsoul.mirrorsoul_api.config.AwsS3Properties;
 import com.mirrorsoul.mirrorsoul_api.dto.file.PresignedUrlReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.file.PresignedUrlResDTO;
-import com.mirrorsoul.mirrorsoul_api.dto.file.UploadCompleteReqDTO;
-import com.mirrorsoul.mirrorsoul_api.dto.file.UploadCompleteResDTO;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.UUID;
@@ -33,7 +31,7 @@ public class FileService {
     public PresignedUrlResDTO createPresignedUrl(PresignedUrlReqDTO request) {
         String directory = UploadDirectory.from(request.directory()).value();
         String sanitizedFileName = sanitizeFileName(request.fileName());
-        String objectKey = directory + "/" + UUID.randomUUID() + "-" + sanitizedFileName;
+        String objectKey = directory + "/" + request.userUuid() + "/" + UUID.randomUUID() + "-" + sanitizedFileName;
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(awsS3Properties.getBucket())
@@ -62,31 +60,27 @@ public class FileService {
         }
     }
 
-    public UploadCompleteResDTO completeUpload(UploadCompleteReqDTO request) {
-        UploadFileType fileType = UploadFileType.from(request.fileType());
-        String objectKey = normalizeObjectKey(request.objectKey());
+    public String verifyInterviewAudioAndBuildFileUrl(UUID userUuid, String objectKey) {
+        String normalizedObjectKey = normalizeObjectKey(objectKey);
+        String requiredPrefix = UploadFileType.INTERVIEW_AUDIO.requiredPrefix(userUuid);
 
-        if (!objectKey.startsWith(fileType.requiredPrefix())) {
+        if (!normalizedObjectKey.startsWith(requiredPrefix)) {
             throw new GeneralException(
                     GeneralErrorCode.INVALID_PARAMETER,
-                    "objectKey must start with " + fileType.requiredPrefix() + " for " + fileType.name() + "."
+                    "objectKey must start with " + requiredPrefix
+                            + " for " + UploadFileType.INTERVIEW_AUDIO.name() + "."
             );
         }
 
         HeadObjectRequest headObjectRequest = HeadObjectRequest.builder()
                 .bucket(awsS3Properties.getBucket())
-                .key(objectKey)
+                .key(normalizedObjectKey)
                 .build();
 
         try {
             s3Client.headObject(headObjectRequest);
 
-            return new UploadCompleteResDTO(
-                    fileType.name(),
-                    objectKey,
-                    buildFileUrl(objectKey),
-                    true
-            );
+            return buildFileUrl(normalizedObjectKey);
         } catch (AwsServiceException e) {
             if (isNotFound(e)) {
                 throw new GeneralException(
@@ -187,7 +181,7 @@ public class FileService {
     }
 
     private enum UploadFileType {
-        INTERVIEW_AUDIO("interviews/");
+        INTERVIEW_AUDIO("interviews");
 
         private final String requiredPrefix;
 
@@ -195,27 +189,8 @@ public class FileService {
             this.requiredPrefix = requiredPrefix;
         }
 
-        public String requiredPrefix() {
-            return requiredPrefix;
-        }
-
-        public static UploadFileType from(String value) {
-            if (value == null) {
-                throw invalidFileType();
-            }
-
-            try {
-                return UploadFileType.valueOf(value.trim().toUpperCase(Locale.ROOT));
-            } catch (IllegalArgumentException e) {
-                throw invalidFileType();
-            }
-        }
-
-        private static GeneralException invalidFileType() {
-            return new GeneralException(
-                    GeneralErrorCode.INVALID_PARAMETER,
-                    "fileType must be one of: INTERVIEW_AUDIO"
-            );
+        public String requiredPrefix(UUID userUuid) {
+            return requiredPrefix + "/" + userUuid + "/";
         }
     }
 }

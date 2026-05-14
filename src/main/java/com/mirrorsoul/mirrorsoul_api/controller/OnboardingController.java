@@ -106,7 +106,7 @@ public class OnboardingController {
     @Operation(summary = "온보딩 인터뷰 응답 저장", description = "온보딩 단계에서 userUuid 기준으로 인터뷰 응답을 저장하거나 수정합니다.")
     @PostMapping("/interview/answers/{userUuid}")
     public ApiResponse<InterviewAnswerResDTO> saveInterviewAnswer(@Parameter(description = "사용자 UUID") @PathVariable UUID userUuid,
-                                                                  @RequestBody InterviewAnswerReqDTO request) {
+                                                                  @Valid @RequestBody InterviewAnswerReqDTO request) {
         return ApiResponse.onSuccess(
                 "인터뷰 응답 저장에 성공했습니다.",
                 interviewService.saveInterviewAnswer(userUuid, request)

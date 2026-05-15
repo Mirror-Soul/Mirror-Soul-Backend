@@ -64,7 +64,12 @@ public class InterviewService {
                         InterviewRecord.create(user, interview, answerAudioUrl, request.answerText())
                 ));
 
-        user.setStatus(UserStatus.ONBOARD_D);
+        long totalInterviewCount = interviewRepository.count();
+        long answeredInterviewCount = interviewRecordRepository.countByUser_Id(user.getId());
+
+        if (answeredInterviewCount >= totalInterviewCount) {
+            user.setStatus(UserStatus.ONBOARD_D);
+        }
 
         return new InterviewAnswerResDTO(
                 interviewRecord.getId(),

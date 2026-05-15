@@ -50,9 +50,9 @@ public class OnboardingController {
     private final VisualService visualService;
 
     @Operation(summary = "온보딩 프로필 입력", description = "닉네임, 위치, 직업 정보를 저장하고 ONBOARD_B 상태로 변경합니다.")
-    @PostMapping("/profile/{userUuid}")
+    @PostMapping("/profile/{user-uuid}")
     public ApiResponse<Void> postProfile(@Valid @RequestBody OnboardingReqDTO.personaReqDTO req,
-                                         @Parameter(description = "사용자 UUID") @PathVariable UUID userUuid,
+                                         @Parameter(description = "사용자 UUID") @PathVariable("user-uuid") UUID userUuid,
                                          @RequestParam Job job) {
         onboardingService.postProfile(req, userUuid, job);
         return ApiResponse.onSuccess("프로필 정보 저장 완료");
@@ -68,9 +68,9 @@ public class OnboardingController {
     }
 
     @Operation(summary = "온보딩 성격 유형 저장", description = "MBTI, 각 지표 점수, 자기소개를 저장하고 ONBOARD_C 상태로 변경합니다.")
-    @PutMapping("/personality/{userUuid}")
+    @PutMapping("/personality/{user-uuid}")
     public ApiResponse<Void> putPersonality(@Valid @RequestBody OnboardingReqDTO.personalityReqDTO req,
-                                            @Parameter(description = "사용자 UUID") @PathVariable UUID userUuid) {
+                                            @Parameter(description = "사용자 UUID") @PathVariable("user-uuid") UUID userUuid) {
         onboardingService.putPersonality(req, userUuid);
         return ApiResponse.onSuccess("성격 유형 저장 완료");
     }
@@ -104,8 +104,8 @@ public class OnboardingController {
     }
 
     @Operation(summary = "온보딩 인터뷰 응답 저장", description = "온보딩 단계에서 userUuid 기준으로 인터뷰 응답을 저장하거나 수정합니다.")
-    @PostMapping("/interview/answers/{userUuid}")
-    public ApiResponse<InterviewAnswerResDTO> saveInterviewAnswer(@Parameter(description = "사용자 UUID") @PathVariable UUID userUuid,
+    @PostMapping("/interview/answers/{user-uuid}")
+    public ApiResponse<InterviewAnswerResDTO> saveInterviewAnswer(@Parameter(description = "사용자 UUID") @PathVariable("user-uuid") UUID userUuid,
                                                                   @Valid @RequestBody InterviewAnswerReqDTO request) {
         return ApiResponse.onSuccess(
                 "인터뷰 응답 저장에 성공했습니다.",
@@ -114,8 +114,8 @@ public class OnboardingController {
     }
 
     @Operation(summary = "온보딩 얼굴 이미지 파일 저장", description = "S3 업로드가 완료된 얼굴 이미지 파일의 objectKey와 fileUrl을 userUuid 기준으로 저장합니다.")
-    @PostMapping("/visual/{userUuid}")
-    public ApiResponse<VisualResDTO> saveVisualFile(@Parameter(description = "사용자 UUID") @PathVariable UUID userUuid,
+    @PostMapping("/visual/{user-uuid}")
+    public ApiResponse<VisualResDTO> saveVisualFile(@Parameter(description = "사용자 UUID") @PathVariable("user-uuid") UUID userUuid,
                                                     @RequestBody VisualReqDTO request) {
         return ApiResponse.onSuccess(
                 "얼굴 이미지 파일 저장에 성공했습니다.",

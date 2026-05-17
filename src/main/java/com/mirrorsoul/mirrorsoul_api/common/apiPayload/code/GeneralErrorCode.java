@@ -57,6 +57,9 @@ public enum GeneralErrorCode implements BaseErrorCode {
     EMAIL_CODE_MISMATCH(HttpStatus.BAD_REQUEST, "EMAIL_4003", "인증번호가 일치하지 않습니다."),
     EMAIL_ALREADY_VERIFIED(HttpStatus.BAD_REQUEST, "EMAIL_4004", "이미 이메일 인증이 완료되었습니다."),
     EMAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "EMAIL_5000", "이메일 전송에 실패했습니다."),
+
+    // 클론 관련 에러
+    CLONE_NOT_FOUND(HttpStatus.BAD_REQUEST, "CLONE_4000", "클론 정보가 존재하지 않습니다."),
     ;
 
     private final HttpStatus httpStatus;

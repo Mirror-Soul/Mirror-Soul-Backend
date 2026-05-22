@@ -12,5 +12,7 @@ public interface CloneRepository extends JpaRepository<Clone, Long> {
 
     @Query("select c.syncRate from Clone c where c.user.uuid = :userUuid")
     Optional<Integer> findSyncRateByUserUuid(@Param("userUuid") UUID userUuid);
+
+    Optional<Clone> findByUserUuid(UUID userUuid);
 }
 

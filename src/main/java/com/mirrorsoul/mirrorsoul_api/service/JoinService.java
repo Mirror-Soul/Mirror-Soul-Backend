@@ -3,10 +3,12 @@ package com.mirrorsoul.mirrorsoul_api.service;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
 import com.mirrorsoul.mirrorsoul_api.common.mail.EmailAuthConst;
+import com.mirrorsoul.mirrorsoul_api.domain.Clone;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.join.JoinReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.join.JoinResDTO;
+import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class JoinService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final CloneRepository cloneRepository;
 
     public JoinResDTO.basicProfileResDTO basicProfile(JoinReqDTO.basicProfileReqDTO req, HttpSession session){
 
@@ -62,6 +65,13 @@ public class JoinService {
                 .build();
 
         userRepository.save(user);
+
+        Clone clone = Clone.builder()
+                .user(user)
+                .syncRate(0)
+                .build();
+
+        cloneRepository.save(clone);
 
         return JoinResDTO.basicProfileResDTO.builder()
                 .userUuid(user.getUuid())

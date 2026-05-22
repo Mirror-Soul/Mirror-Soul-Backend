@@ -1,5 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.common.webRTC;
 
+import java.io.IOException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
@@ -7,8 +8,6 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import tools.jackson.databind.ObjectMapper;
-
-import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
@@ -29,16 +28,27 @@ public class SignalingHandler extends TextWebSocketHandler {
 
         switch (signalingMessage.getType()) {
             case "JOIN" -> handleJoin(session, signalingMessage);
-            case "OFFER", "ANSWER", "ICE" -> relayMessage(signalingMessage);
+            case "CALL_INVITE", "CALL_ACCEPT", "CALL_REJECT", "CALL_END",
+                 "OFFER", "ANSWER", "ICE" -> relayMessage(signalingMessage);
             case "LEAVE" -> handleLeave(signalingMessage);
             default -> throw new IllegalArgumentException("Unknown signaling type: " + signalingMessage.getType());
         }
     }
 
-    private void handleJoin(WebSocketSession session, SignalingMessage message) {
+    private void handleJoin(WebSocketSession session, SignalingMessage message) throws IOException {
         sessionRegistry.register(message.getFrom(), session);
 
-        System.out.println("User joined signaling: " + message.getFrom());
+        SignalingMessage joinedMessage = new SignalingMessage(
+                "JOINED",
+                message.getRoomId(),
+                "server",
+                message.getFrom(),
+                "joined"
+        );
+
+        session.sendMessage(new TextMessage(objectMapper.writeValueAsString(joinedMessage)));
+
+        System.out.println("Joined signaling: " + message.getFrom());
     }
 
     private void relayMessage(SignalingMessage message) throws IOException {
@@ -56,11 +66,12 @@ public class SignalingHandler extends TextWebSocketHandler {
     private void handleLeave(SignalingMessage message) {
         sessionRegistry.remove(message.getFrom());
 
-        System.out.println("User left signaling: " + message.getFrom());
+        System.out.println("Left signaling: " + message.getFrom());
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+        sessionRegistry.remove(session);
         System.out.println("WebSocket closed: " + session.getId());
     }
 }

@@ -1,29 +1,28 @@
 package com.mirrorsoul.mirrorsoul_api.common.webRTC;
 
-import org.springframework.stereotype.Component;
-import org.springframework.web.socket.WebSocketSession;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.stereotype.Component;
+import org.springframework.web.socket.WebSocketSession;
 
 @Component
 public class WebSocketSessionRegistry {
 
     private final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
 
-    public void register(String userId, WebSocketSession session) {
-        sessions.put(userId, session);
+    public void register(String id, WebSocketSession session) {
+        sessions.put(id, session);
     }
 
-    public WebSocketSession getSession(String userId) {
-        return sessions.get(userId);
+    public WebSocketSession getSession(String id) {
+        return sessions.get(id);
     }
 
-    public void remove(String userId) {
-        sessions.remove(userId);
+    public void remove(String id) {
+        sessions.remove(id);
     }
 
-    public boolean contains(String userId) {
-        return sessions.containsKey(userId);
+    public void remove(WebSocketSession session) {
+        sessions.entrySet().removeIf(entry -> entry.getValue().getId().equals(session.getId()));
     }
 }

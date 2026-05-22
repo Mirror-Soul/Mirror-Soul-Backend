@@ -4,11 +4,13 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Entity
 @Table(name = "clones")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
 public class Clone extends BaseTimeEntity {
 
     @Id

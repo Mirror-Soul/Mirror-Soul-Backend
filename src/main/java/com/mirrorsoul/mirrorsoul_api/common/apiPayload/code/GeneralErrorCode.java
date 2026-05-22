@@ -60,6 +60,10 @@ public enum GeneralErrorCode implements BaseErrorCode {
 
     // 클론 관련 에러
     CLONE_NOT_FOUND(HttpStatus.BAD_REQUEST, "CLONE_4000", "클론 정보가 존재하지 않습니다."),
+
+    // 통화 관련 에러
+    CALL_NOT_FOUND(HttpStatus.NOT_FOUND, "CALL_4040", "통화 정보를 찾을 수 없습니다."),
+    CALL_ALREADY_ENDED(HttpStatus.BAD_REQUEST, "CALL_4000", "이미 종료된 통화입니다."),
     ;
 
     private final HttpStatus httpStatus;

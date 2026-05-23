@@ -37,6 +37,9 @@ public class InterviewRecord {
     @Column(name = "answer_audio_url", length = 500)
     private String answerAudioUrl;
 
+    @Column(name = "answer_audio_object_key", length = 500)
+    private String answerAudioObjectKey;
+
     @Column(name = "answer_text", columnDefinition = "TEXT")
     private String answerText;
 
@@ -44,19 +47,33 @@ public class InterviewRecord {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    private InterviewRecord(User user, Interview interview, String answerAudioUrl, String answerText) {
+    private InterviewRecord(
+            User user,
+            Interview interview,
+            String answerAudioUrl,
+            String answerAudioObjectKey,
+            String answerText
+    ) {
         this.user = user;
         this.interview = interview;
         this.answerAudioUrl = answerAudioUrl;
+        this.answerAudioObjectKey = answerAudioObjectKey;
         this.answerText = answerText;
     }
 
-    public static InterviewRecord create(User user, Interview interview, String answerAudioUrl, String answerText) {
-        return new InterviewRecord(user, interview, answerAudioUrl, answerText);
+    public static InterviewRecord create(
+            User user,
+            Interview interview,
+            String answerAudioUrl,
+            String answerAudioObjectKey,
+            String answerText
+    ) {
+        return new InterviewRecord(user, interview, answerAudioUrl, answerAudioObjectKey, answerText);
     }
 
-    public void updateAnswer(String answerAudioUrl, String answerText) {
+    public void updateAnswer(String answerAudioUrl, String answerAudioObjectKey, String answerText) {
         this.answerAudioUrl = answerAudioUrl;
+        this.answerAudioObjectKey = answerAudioObjectKey;
         this.answerText = answerText;
     }
 }

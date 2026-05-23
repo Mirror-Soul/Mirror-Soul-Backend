@@ -42,3 +42,5 @@ aws:
     bucket: ${AWS_S3_BUCKET}
     region: ${AWS_REGION:ap-northeast-2}
     presigned-url-expiration-minutes: ${AWS_S3_PRESIGNED_URL_EXPIRATION_MINUTES:5}
+  sqs:
+    voice-training-queue-url: ${AWS_SQS_VOICE_TRAINING_QUEUE_URL}

@@ -60,7 +60,7 @@ public class FileService {
         }
     }
 
-    public String verifyInterviewAudioAndBuildFileUrl(UUID userUuid, String objectKey) {
+    public VerifiedS3Object verifyInterviewAudioAndBuildFileUrl(UUID userUuid, String objectKey) {
         String normalizedObjectKey = normalizeObjectKey(objectKey);
         String requiredPrefix = UploadFileType.INTERVIEW_AUDIO.requiredPrefix(userUuid);
 
@@ -80,7 +80,7 @@ public class FileService {
         try {
             s3Client.headObject(headObjectRequest);
 
-            return buildFileUrl(normalizedObjectKey);
+            return new VerifiedS3Object(buildFileUrl(normalizedObjectKey), normalizedObjectKey);
         } catch (AwsServiceException e) {
             if (isNotFound(e)) {
                 throw new GeneralException(
@@ -192,5 +192,8 @@ public class FileService {
         public String requiredPrefix(UUID userUuid) {
             return requiredPrefix + "/" + userUuid + "/";
         }
+    }
+
+    public record VerifiedS3Object(String fileUrl, String objectKey) {
     }
 }

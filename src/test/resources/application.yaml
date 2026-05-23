@@ -28,3 +28,5 @@ aws:
     bucket: test-bucket
     region: ap-northeast-2
     presigned-url-expiration-minutes: 5
+  sqs:
+    voice-training-queue-url: https://sqs.ap-northeast-2.amazonaws.com/123456789012/test-voice-training

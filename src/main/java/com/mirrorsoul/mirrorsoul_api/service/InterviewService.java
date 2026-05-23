@@ -5,16 +5,19 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralExceptio
 import com.mirrorsoul.mirrorsoul_api.domain.Interview;
 import com.mirrorsoul.mirrorsoul_api.domain.InterviewRecord;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
+import com.mirrorsoul.mirrorsoul_api.domain.VoiceTrainingJob;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewQuestionResDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewAnswerReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewAnswerResDTO;
+import com.mirrorsoul.mirrorsoul_api.event.VoiceTrainingJobRequestedEvent;
 import com.mirrorsoul.mirrorsoul_api.repository.InterviewRecordRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.InterviewRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +32,8 @@ public class InterviewService {
     private final InterviewRecordRepository interviewRecordRepository;
     private final UserRepository userRepository;
     private final FileService fileService;
+    private final VoiceTrainingJobService voiceTrainingJobService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public InterviewQuestionResDTO.questionListResDTO getQuestions() {
         return InterviewQuestionResDTO.questionListResDTO.builder()
@@ -53,15 +58,18 @@ public class InterviewService {
         Interview interview = interviewRepository.findById(request.interviewId())
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_PARAMETER, "Interview not found."));
 
-        String answerAudioUrl = fileService.verifyInterviewAudioAndBuildFileUrl(userUuid, request.answerAudioObjectKey());
+        FileService.VerifiedS3Object answerAudio = fileService.verifyInterviewAudioAndBuildFileUrl(
+                userUuid,
+                request.answerAudioObjectKey()
+        );
 
         InterviewRecord interviewRecord = interviewRecordRepository.findByUser_IdAndInterview_Id(user.getId(), request.interviewId())
                 .map(record -> {
-                    record.updateAnswer(answerAudioUrl, request.answerText());
+                    record.updateAnswer(answerAudio.fileUrl(), answerAudio.objectKey(), request.answerText());
                     return record;
                 })
                 .orElseGet(() -> interviewRecordRepository.save(
-                        InterviewRecord.create(user, interview, answerAudioUrl, request.answerText())
+                        InterviewRecord.create(user, interview, answerAudio.fileUrl(), answerAudio.objectKey(), request.answerText())
                 ));
 
         long totalInterviewCount = interviewRepository.count();
@@ -69,6 +77,8 @@ public class InterviewService {
 
         if (answeredInterviewCount >= totalInterviewCount) {
             user.setStatus(UserStatus.ONBOARD_D);
+            VoiceTrainingJob voiceTrainingJob = voiceTrainingJobService.createPendingJob(user);
+            eventPublisher.publishEvent(new VoiceTrainingJobRequestedEvent(voiceTrainingJob.getId()));
         }
 
         return new InterviewAnswerResDTO(

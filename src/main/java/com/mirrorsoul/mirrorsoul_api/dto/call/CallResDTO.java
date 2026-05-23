@@ -2,7 +2,6 @@ package com.mirrorsoul.mirrorsoul_api.dto.call;
 
 import com.mirrorsoul.mirrorsoul_api.domain.enums.CallMediaType;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.VideoCallStatus;
-import java.util.UUID;
 import lombok.Builder;
 
 public class CallResDTO {
@@ -13,10 +12,8 @@ public class CallResDTO {
             String roomId,
             CallMediaType mediaType,
             VideoCallStatus status,
-            UUID callerUserUuid,
-            UUID cloneUserUuid,
-            String userSignalId,
-            String cloneSignalId,
+            String callerSignalId,
+            String aiSignalId,
             String signalingUrl
     ) {
     }

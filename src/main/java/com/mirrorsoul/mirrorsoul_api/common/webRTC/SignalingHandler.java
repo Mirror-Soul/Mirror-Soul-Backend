@@ -13,6 +13,8 @@ import tools.jackson.databind.ObjectMapper;
 @RequiredArgsConstructor
 public class SignalingHandler extends TextWebSocketHandler {
 
+    private static final String AI_SERVER_SIGNAL_ID = "ai-server";
+
     private final ObjectMapper objectMapper;
     private final WebSocketSessionRegistry sessionRegistry;
 
@@ -52,7 +54,7 @@ public class SignalingHandler extends TextWebSocketHandler {
     }
 
     private void relayMessage(SignalingMessage message) throws IOException {
-        WebSocketSession receiverSession = sessionRegistry.getSession(message.getTo());
+        WebSocketSession receiverSession = getReceiverSession(message.getTo());
 
         if (receiverSession == null || !receiverSession.isOpen()) {
             System.out.println("Receiver not connected: " + message.getTo());
@@ -61,6 +63,20 @@ public class SignalingHandler extends TextWebSocketHandler {
 
         String payload = objectMapper.writeValueAsString(message);
         receiverSession.sendMessage(new TextMessage(payload));
+    }
+
+    private WebSocketSession getReceiverSession(String signalId) {
+        WebSocketSession receiverSession = sessionRegistry.getSession(signalId);
+
+        if ((receiverSession == null || !receiverSession.isOpen()) && isAiSignalId(signalId)) {
+            return sessionRegistry.getSession(AI_SERVER_SIGNAL_ID);
+        }
+
+        return receiverSession;
+    }
+
+    private boolean isAiSignalId(String signalId) {
+        return signalId != null && signalId.startsWith("signal:") && signalId.endsWith(":ai");
     }
 
     private void handleLeave(SignalingMessage message) {

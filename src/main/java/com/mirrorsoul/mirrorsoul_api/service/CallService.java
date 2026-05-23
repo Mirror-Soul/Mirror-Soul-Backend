@@ -50,19 +50,15 @@ public class CallService {
                 .build();
 
         VideoCall savedCall = videoCallRepository.save(call);
-
-        UUID callerUserUuid = caller.getUuid();
-        UUID targetCloneUserUuid = clone.getUser().getUuid();
+        String savedRoomId = savedCall.getRoomId();
 
         return CallResDTO.StartCallDTO.builder()
                 .callId(savedCall.getId())
-                .roomId(savedCall.getRoomId())
+                .roomId(savedRoomId)
                 .mediaType(savedCall.getMediaType())
                 .status(savedCall.getStatus())
-                .callerUserUuid(callerUserUuid)
-                .cloneUserUuid(targetCloneUserUuid)
-                .userSignalId(userSignalId(callerUserUuid))
-                .cloneSignalId(cloneSignalId(targetCloneUserUuid))
+                .callerSignalId(callerSignalId(savedRoomId))
+                .aiSignalId(aiSignalId(savedRoomId))
                 .signalingUrl(SIGNALING_URL)
                 .build();
     }
@@ -108,11 +104,12 @@ public class CallService {
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.CALL_NOT_FOUND));
     }
 
-    private String userSignalId(UUID userUuid) {
-        return "user:" + userUuid;
+    private String callerSignalId(String roomId) {
+        return "signal:" + roomId + ":caller";
     }
 
-    private String cloneSignalId(UUID cloneUserUuid) {
-        return "clone:" + cloneUserUuid;
+    private String aiSignalId(String roomId) {
+        return "signal:" + roomId + ":ai";
     }
+
 }

@@ -52,6 +52,7 @@ jobs:
 
             export AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}
             export AWS_REGION=${{ secrets.AWS_REGION }}
+            export AWS_SQS_VOICE_TRAINING_QUEUE_URL='${{ secrets.AWS_SQS_VOICE_TRAINING_QUEUE_URL }}'
             
             export SMTP_USERNAME='${{ secrets.SMTP_USERNAME }}'
             export SMTP_PASSWORD='${{ secrets.SMTP_PASSWORD }}'

@@ -5,6 +5,7 @@ import com.mirrorsoul.mirrorsoul_api.dto.file.PresignedUrlReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.file.PresignedUrlResDTO;
 import com.mirrorsoul.mirrorsoul_api.service.FileService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "File", description = "파일 업로드 지원 API")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/files")
 @RequiredArgsConstructor

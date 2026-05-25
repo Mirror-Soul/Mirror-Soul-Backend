@@ -14,6 +14,7 @@ import com.mirrorsoul.mirrorsoul_api.service.OnboardingService;
 import com.mirrorsoul.mirrorsoul_api.service.RegionService;
 import com.mirrorsoul.mirrorsoul_api.service.VisualService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -48,6 +49,7 @@ public class OnboardingController {
     private final RegionService regionService;
     private final VisualService visualService;
 
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "온보딩 프로필 입력", description = "닉네임, 위치, 직업 정보를 저장하고 ONBOARD_B 상태로 변경합니다.")
     @PostMapping("/profile")
     public ApiResponse<Void> postProfile(@Valid @RequestBody OnboardingReqDTO.personaReqDTO req,
@@ -66,6 +68,7 @@ public class OnboardingController {
         return ApiResponse.onSuccess("사용 불가능한 중복 닉네임입니다.");
     }
 
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "온보딩 성격 유형 저장", description = "MBTI, 각 지표 점수, 자기소개를 저장하고 ONBOARD_C 상태로 변경합니다.")
     @PutMapping("/personality")
     public ApiResponse<Void> putPersonality(@Valid @RequestBody OnboardingReqDTO.personalityReqDTO req,
@@ -96,12 +99,14 @@ public class OnboardingController {
         );
     }
 
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "온보딩 인터뷰 질문 전체 조회", description = "온보딩 단계에서 사용하는 인터뷰 질문 전체를 조회합니다.")
     @GetMapping("/interview/questions")
     public ApiResponse<InterviewQuestionResDTO.questionListResDTO> getInterviewQuestions() {
         return ApiResponse.onSuccess("인터뷰 질문 조회에 성공했습니다.", interviewService.getQuestions());
     }
 
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "온보딩 인터뷰 응답 저장", description = "온보딩 단계에서 로그인 사용자 기준으로 인터뷰 응답을 저장하거나 수정합니다.")
     @PostMapping("/interview/answers")
     public ApiResponse<InterviewAnswerResDTO> saveInterviewAnswer(@AuthenticationPrincipal CustomUserDetails currentUser,
@@ -112,6 +117,7 @@ public class OnboardingController {
         );
     }
 
+    @SecurityRequirement(name = "bearerAuth")
     @Operation(summary = "온보딩 얼굴 이미지 파일 저장", description = "S3 업로드가 완료된 얼굴 이미지 파일의 objectKey와 fileUrl을 로그인 사용자 기준으로 저장합니다.")
     @PostMapping("/visual")
     public ApiResponse<VisualResDTO> saveVisualFile(@AuthenticationPrincipal CustomUserDetails currentUser,

@@ -6,6 +6,7 @@ import com.mirrorsoul.mirrorsoul_api.dto.call.CallReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.call.CallResDTO;
 import com.mirrorsoul.mirrorsoul_api.service.CallService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
@@ -14,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Call", description = "유저-클론 통화 API")
+@SecurityRequirement(name = "bearerAuth")
 @RestController
 @RequestMapping("/calls")
 @RequiredArgsConstructor

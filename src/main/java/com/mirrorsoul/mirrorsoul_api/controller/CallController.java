@@ -1,6 +1,7 @@
 package com.mirrorsoul.mirrorsoul_api.controller;
 
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.ApiResponse;
+import com.mirrorsoul.mirrorsoul_api.common.security.CustomUserDetails;
 import com.mirrorsoul.mirrorsoul_api.dto.call.CallReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.call.CallResDTO;
 import com.mirrorsoul.mirrorsoul_api.service.CallService;
@@ -9,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Call", description = "유저-클론 통화 API")
@@ -23,11 +25,12 @@ public class CallController {
     @PostMapping("/clones/{clone-user-uuid}")
     public ApiResponse<CallResDTO.StartCallDTO> startCloneCall(
             @PathVariable("clone-user-uuid") UUID cloneUserUuid,
-            @Valid @RequestBody CallReqDTO.StartCallDTO request
+            @Valid @RequestBody CallReqDTO.StartCallDTO request,
+            @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         return ApiResponse.onSuccess(
                 "클론 통화 세션 생성에 성공했습니다.",
-                callService.startCloneCall(cloneUserUuid, request)
+                callService.startCloneCall(cloneUserUuid, request, currentUser.getUuid())
         );
     }
 

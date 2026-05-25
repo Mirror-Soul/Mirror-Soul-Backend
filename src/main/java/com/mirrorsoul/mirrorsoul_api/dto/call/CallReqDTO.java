@@ -7,7 +7,6 @@ import java.util.UUID;
 public class CallReqDTO {
 
     public record StartCallDTO(
-            @NotNull UUID callerUserUuid,
             CallMediaType mediaType
     ) {
     }

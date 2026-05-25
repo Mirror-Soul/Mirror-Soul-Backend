@@ -29,8 +29,8 @@ public class CallService {
     private final CloneRepository cloneRepository;
 
     @Transactional
-    public CallResDTO.StartCallDTO startCloneCall(UUID cloneUserUuid, CallReqDTO.StartCallDTO request) {
-        User caller = userRepository.findByUuid(request.callerUserUuid())
+    public CallResDTO.StartCallDTO startCloneCall(UUID cloneUserUuid, CallReqDTO.StartCallDTO request, UUID userUUID) {
+        User caller = userRepository.findByUuid(userUUID)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
 
         Clone clone = cloneRepository.findByUserUuid(cloneUserUuid)

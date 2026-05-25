@@ -2,6 +2,7 @@ package com.mirrorsoul.mirrorsoul_api.service;
 
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
+import com.mirrorsoul.mirrorsoul_api.common.jwt.TokenProvider;
 import com.mirrorsoul.mirrorsoul_api.common.mail.EmailAuthConst;
 import com.mirrorsoul.mirrorsoul_api.domain.Clone;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
@@ -24,6 +25,7 @@ public class JoinService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CloneRepository cloneRepository;
+    private final TokenProvider tokenProvider;
 
     public JoinResDTO.basicProfileResDTO basicProfile(JoinReqDTO.basicProfileReqDTO req, HttpSession session){
 
@@ -73,8 +75,15 @@ public class JoinService {
 
         cloneRepository.save(clone);
 
+        String accessToken = tokenProvider.createAccessToken(user);
+        String refreshToken = tokenProvider.createRefreshToken(user);
+        user.updateRefreshToken(refreshToken);
+
         return JoinResDTO.basicProfileResDTO.builder()
                 .userUuid(user.getUuid())
+                .accessToken(accessToken)
+                .refreshToken(refreshToken)
+                .userStatus(user.getStatus())
                 .build();
     }
 }

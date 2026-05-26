@@ -28,10 +28,10 @@ public class FileService {
     private final S3Client s3Client;
     private final AwsS3Properties awsS3Properties;
 
-    public PresignedUrlResDTO createPresignedUrl(PresignedUrlReqDTO request) {
+    public PresignedUrlResDTO createPresignedUrl(UUID userUuid, PresignedUrlReqDTO request) {
         String directory = UploadDirectory.from(request.directory()).value();
         String sanitizedFileName = sanitizeFileName(request.fileName());
-        String objectKey = directory + "/" + request.userUuid() + "/" + UUID.randomUUID() + "-" + sanitizedFileName;
+        String objectKey = directory + "/" + userUuid + "/" + UUID.randomUUID() + "-" + sanitizedFileName;
 
         PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                 .bucket(awsS3Properties.getBucket())

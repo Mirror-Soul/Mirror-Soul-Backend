@@ -76,15 +76,13 @@ public class AuthService {
     public void logout(String authorizationHeader) {
         String accessToken = extractBearerToken(authorizationHeader);
 
+        Long userId;
         try {
-            tokenProvider.validateAccessToken(accessToken);
-        } catch (ExpiredJwtException e) {
-            throw new GeneralException(GeneralErrorCode.TOKEN_EXPIRED, "Access token has expired.");
+            userId = tokenProvider.getUserIdFromAccessTokenAllowExpired(accessToken);
         } catch (JwtException | IllegalArgumentException e) {
             throw new GeneralException(GeneralErrorCode.INVALID_TOKEN, "Invalid access token.");
         }
 
-        Long userId = tokenProvider.getUserIdFromToken(accessToken);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_TOKEN, "User for token not found."));
 

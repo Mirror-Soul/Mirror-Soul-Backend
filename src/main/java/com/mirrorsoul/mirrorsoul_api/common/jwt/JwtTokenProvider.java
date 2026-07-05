@@ -40,6 +40,13 @@ public class JwtTokenProvider implements TokenProvider {
     }
 
     @Override
+    public Long getUserIdFromAccessTokenAllowExpired(String token) {
+        Claims claims = parseClaimsAllowExpired(token);
+        assertTokenType(claims, "access");
+        return Long.valueOf(claims.getSubject());
+    }
+
+    @Override
     public void validateAccessToken(String token) {
         validateTokenType(token, "access");
     }
@@ -52,14 +59,18 @@ public class JwtTokenProvider implements TokenProvider {
     private void validateTokenType(String token, String expectedTokenType) {
         try {
             Claims claims = parseClaims(token);
-            String tokenType = claims.get("tokenType", String.class);
-            if (!expectedTokenType.equals(tokenType)) {
-                throw new JwtException("Invalid token type");
-            }
+            assertTokenType(claims, expectedTokenType);
         } catch (ExpiredJwtException e) {
             throw e;
         } catch (JwtException | IllegalArgumentException e) {
             throw new JwtException("Invalid token", e);
+        }
+    }
+
+    private void assertTokenType(Claims claims, String expectedTokenType) {
+        String tokenType = claims.get("tokenType", String.class);
+        if (!expectedTokenType.equals(tokenType)) {
+            throw new JwtException("Invalid token type");
         }
     }
 
@@ -82,5 +93,13 @@ public class JwtTokenProvider implements TokenProvider {
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
+    }
+
+    private Claims parseClaimsAllowExpired(String token) {
+        try {
+            return parseClaims(token);
+        } catch (ExpiredJwtException e) {
+            return e.getClaims();
+        }
     }
 }

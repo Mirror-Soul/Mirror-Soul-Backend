@@ -29,8 +29,8 @@ public class VoiceTrainingJobFile {
             foreignKey = @ForeignKey(name = "fk_voice_training_job_files_job"))
     private VoiceTrainingJob voiceTrainingJob;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "interview_record_id", nullable = false,
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "interview_record_id",
             foreignKey = @ForeignKey(name = "fk_voice_training_job_files_interview_record"))
     private InterviewRecord interviewRecord;
 

@@ -41,6 +41,7 @@ public class VoiceTrainingJobPublisher {
                 .toList();
 
         VoiceTrainingMessageDTO message = VoiceTrainingMessageDTO.of(
+                job.getSource().name(),
                 job.getId(),
                 job.getUser().getUuid(),
                 awsS3Properties.getBucket(),

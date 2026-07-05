@@ -22,4 +22,13 @@ public class EvolveResDTO {
     public static class speechLineDTO {
         String speechLine;
     }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class voiceUpdateJobDTO {
+        Long jobId;
+        String status;
+    }
 }

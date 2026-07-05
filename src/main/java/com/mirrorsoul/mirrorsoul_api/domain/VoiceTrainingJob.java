@@ -1,6 +1,7 @@
 package com.mirrorsoul.mirrorsoul_api.domain;
 
 import com.mirrorsoul.mirrorsoul_api.domain.enums.VoiceTrainingJobStatus;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.VoiceTrainingJobSource;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -46,6 +47,10 @@ public class VoiceTrainingJob {
     @Column(nullable = false, length = 20)
     private VoiceTrainingJobStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private VoiceTrainingJobSource source;
+
     @Column(name = "sqs_message_id", length = 100)
     private String sqsMessageId;
 
@@ -69,13 +74,18 @@ public class VoiceTrainingJob {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    private VoiceTrainingJob(User user) {
+    private VoiceTrainingJob(User user, VoiceTrainingJobSource source) {
         this.user = user;
+        this.source = source;
         this.status = VoiceTrainingJobStatus.PENDING;
     }
 
     public static VoiceTrainingJob create(User user) {
-        return new VoiceTrainingJob(user);
+        return new VoiceTrainingJob(user, VoiceTrainingJobSource.ONBOARDING_INTERVIEW);
+    }
+
+    public static VoiceTrainingJob create(User user, VoiceTrainingJobSource source) {
+        return new VoiceTrainingJob(user, source);
     }
 
     public void addFile(InterviewRecord interviewRecord, String bucket, String objectKey) {

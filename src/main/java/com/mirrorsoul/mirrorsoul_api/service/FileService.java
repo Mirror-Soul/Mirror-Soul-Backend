@@ -61,14 +61,26 @@ public class FileService {
     }
 
     public VerifiedS3Object verifyInterviewAudioAndBuildFileUrl(UUID userUuid, String objectKey) {
+        return verifyUploadedObjectAndBuildFileUrl(userUuid, objectKey, UploadFileType.INTERVIEW_AUDIO);
+    }
+
+    public VerifiedS3Object verifyVoiceUpdateAudioAndBuildFileUrl(UUID userUuid, String objectKey) {
+        return verifyUploadedObjectAndBuildFileUrl(userUuid, objectKey, UploadFileType.VOICE_UPDATE_AUDIO);
+    }
+
+    private VerifiedS3Object verifyUploadedObjectAndBuildFileUrl(
+            UUID userUuid,
+            String objectKey,
+            UploadFileType uploadFileType
+    ) {
         String normalizedObjectKey = normalizeObjectKey(objectKey);
-        String requiredPrefix = UploadFileType.INTERVIEW_AUDIO.requiredPrefix(userUuid);
+        String requiredPrefix = uploadFileType.requiredPrefix(userUuid);
 
         if (!normalizedObjectKey.startsWith(requiredPrefix)) {
             throw new GeneralException(
                     GeneralErrorCode.INVALID_PARAMETER,
                     "objectKey must start with " + requiredPrefix
-                            + " for " + UploadFileType.INTERVIEW_AUDIO.name() + "."
+                            + " for " + uploadFileType.name() + "."
             );
         }
 
@@ -145,6 +157,7 @@ public class FileService {
 
     private enum UploadDirectory {
         INTERVIEWS("interviews"),
+        VOICE_UPDATES("voice-updates"),
         FACE_VIDEOS("face-videos"),
         JOB_CERTIFICATIONS("job-certifications");
 
@@ -175,13 +188,14 @@ public class FileService {
         private static GeneralException invalidDirectory() {
             return new GeneralException(
                     GeneralErrorCode.INVALID_PARAMETER,
-                    "directory must be one of: interviews, face-videos, job-certifications"
+                    "directory must be one of: interviews, voice-updates, face-videos, job-certifications"
             );
         }
     }
 
     private enum UploadFileType {
-        INTERVIEW_AUDIO("interviews");
+        INTERVIEW_AUDIO("interviews"),
+        VOICE_UPDATE_AUDIO("voice-updates");
 
         private final String requiredPrefix;
 

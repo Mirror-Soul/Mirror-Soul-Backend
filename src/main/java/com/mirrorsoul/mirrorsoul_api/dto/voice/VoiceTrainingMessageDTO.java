@@ -6,6 +6,7 @@ import java.util.UUID;
 
 public record VoiceTrainingMessageDTO(
         String jobType,
+        String source,
         Long jobId,
         UUID userUuid,
         String bucket,
@@ -13,6 +14,7 @@ public record VoiceTrainingMessageDTO(
         OffsetDateTime requestedAt
 ) {
     public static VoiceTrainingMessageDTO of(
+            String source,
             Long jobId,
             UUID userUuid,
             String bucket,
@@ -20,6 +22,7 @@ public record VoiceTrainingMessageDTO(
     ) {
         return new VoiceTrainingMessageDTO(
                 "VOICE_TRAINING",
+                source,
                 jobId,
                 userUuid,
                 bucket,

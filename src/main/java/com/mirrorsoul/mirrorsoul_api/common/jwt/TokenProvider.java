@@ -10,6 +10,8 @@ public interface TokenProvider {
 
     Long getUserIdFromToken(String token);
 
+    Long getUserIdFromAccessTokenAllowExpired(String token);
+
     void validateAccessToken(String token);
 
     void validateRefreshToken(String token);

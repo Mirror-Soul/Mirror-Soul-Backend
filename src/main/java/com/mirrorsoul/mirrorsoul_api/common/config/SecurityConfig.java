@@ -38,6 +38,7 @@ public class SecurityConfig {
                                 "/join/**",
                                 "/auth/login",
                                 "/auth/refresh",
+                                "/auth/logout",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/ws/signaling"

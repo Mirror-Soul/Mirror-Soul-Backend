@@ -46,6 +46,7 @@ public enum GeneralErrorCode implements BaseErrorCode {
     // 유저 관련 에러
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_4040", "존재하지 않는 사용자입니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "USER_4090", "이미 사용 중인 이메일입니다."),
+    DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "USER_4091", "이미 사용 중인 닉네임입니다."),
 
     // 지역 관련 에러
     REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "REGION_4040", "존재하지 않는 지역입니다."),
@@ -64,6 +65,7 @@ public enum GeneralErrorCode implements BaseErrorCode {
     // 통화 관련 에러
     CALL_NOT_FOUND(HttpStatus.NOT_FOUND, "CALL_4040", "통화 정보를 찾을 수 없습니다."),
     CALL_ALREADY_ENDED(HttpStatus.BAD_REQUEST, "CALL_4000", "이미 종료된 통화입니다."),
+    INSUFFICIENT_TALK_TIME(HttpStatus.BAD_REQUEST, "CALL_4001", "남은 대화 시간이 부족합니다."),
     ;
 
     private final HttpStatus httpStatus;

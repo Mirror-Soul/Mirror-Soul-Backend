@@ -47,11 +47,12 @@ public class CallController {
     @PostMapping("/{call-id}/end")
     public ApiResponse<CallResDTO.EndCallDTO> endCall(
             @PathVariable("call-id") Long callId,
-            @RequestBody(required = false) CallReqDTO.EndCallDTO request
+            @RequestBody(required = false) CallReqDTO.EndCallDTO request,
+            @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         return ApiResponse.onSuccess(
                 "통화 종료에 성공했습니다.",
-                callService.endCall(callId, request)
+                callService.endCall(callId, request, currentUser.getUuid())
         );
     }
 }

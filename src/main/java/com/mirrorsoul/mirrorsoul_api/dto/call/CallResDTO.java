@@ -22,7 +22,8 @@ public class CallResDTO {
     public record EndCallDTO(
             Long callId,
             VideoCallStatus status,
-            Integer durationSec
+            Integer durationSec,
+            Integer remainingTalkTime
     ) {
     }
 }

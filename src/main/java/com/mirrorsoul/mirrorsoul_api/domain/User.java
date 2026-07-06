@@ -62,6 +62,27 @@ public class User extends BaseTimeEntity {
     @Column(name = "self_introduction", length = 500)
     private String selfIntroduction;
 
+    @Builder.Default
+    @Column(name = "remaining_talk_time", nullable = false)
+    private Integer remainingTalkTime = 1800;
+
+    @Builder.Default
+    @Column(name = "opponent_voice_volume", nullable = false)
+    private Integer opponentVoiceVolume = 50;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "opponent_speech_speed", nullable = false, length = 20)
+    private SpeechSpeed opponentSpeechSpeed = SpeechSpeed.NORMAL;
+
+    @Builder.Default
+    @Column(name = "missed_call_notification_enabled", nullable = false)
+    private Boolean missedCallNotificationEnabled = true;
+
+    @Builder.Default
+    @Column(name = "low_time_notification_enabled", nullable = false)
+    private Boolean lowTimeNotificationEnabled = true;
+
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
@@ -86,6 +107,32 @@ public class User extends BaseTimeEntity {
 
     public void clearRefreshToken() {
         this.refreshToken = null;
+    }
+
+    public void addTalkTime(int seconds) {
+        this.remainingTalkTime = getSafeRemainingTalkTime() + seconds;
+    }
+
+    public void useTalkTime(int seconds) {
+        this.remainingTalkTime = Math.max(0, getSafeRemainingTalkTime() - seconds);
+    }
+
+    public void updateAudioSettings(int opponentVoiceVolume, SpeechSpeed opponentSpeechSpeed) {
+        this.opponentVoiceVolume = opponentVoiceVolume;
+        this.opponentSpeechSpeed = opponentSpeechSpeed;
+    }
+
+    public void updateAlarmSettings(boolean missedCallNotificationEnabled, boolean lowTimeNotificationEnabled) {
+        this.missedCallNotificationEnabled = missedCallNotificationEnabled;
+        this.lowTimeNotificationEnabled = lowTimeNotificationEnabled;
+    }
+
+    public boolean hasTalkTime() {
+        return getSafeRemainingTalkTime() > 0;
+    }
+
+    private int getSafeRemainingTalkTime() {
+        return remainingTalkTime == null ? 0 : remainingTalkTime;
     }
 
     @PrePersist

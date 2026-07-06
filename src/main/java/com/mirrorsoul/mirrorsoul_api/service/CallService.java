@@ -33,6 +33,10 @@ public class CallService {
         User caller = userRepository.findByUuid(userUUID)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
 
+        if (!caller.hasTalkTime()) {
+            throw new GeneralException(GeneralErrorCode.INSUFFICIENT_TALK_TIME);
+        }
+
         Clone clone = cloneRepository.findByUserUuid(cloneUserUuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.CLONE_NOT_FOUND));
 
@@ -77,8 +81,12 @@ public class CallService {
     }
 
     @Transactional
-    public CallResDTO.EndCallDTO endCall(Long callId, CallReqDTO.EndCallDTO request) {
+    public CallResDTO.EndCallDTO endCall(Long callId, CallReqDTO.EndCallDTO request, UUID userUuid) {
         VideoCall call = getCall(callId);
+
+        if (!call.getUser().getUuid().equals(userUuid)) {
+            throw new GeneralException(GeneralErrorCode.FORBIDDEN);
+        }
 
         if (call.getStatus() == VideoCallStatus.COMPLETED ||
                 call.getStatus() == VideoCallStatus.CANCELLED ||
@@ -91,11 +99,13 @@ public class CallService {
         }
 
         call.complete();
+        call.getUser().useTalkTime(call.getDurationSec());
 
         return CallResDTO.EndCallDTO.builder()
                 .callId(call.getId())
                 .status(call.getStatus())
                 .durationSec(call.getDurationSec())
+                .remainingTalkTime(call.getUser().getRemainingTalkTime())
                 .build();
     }
 

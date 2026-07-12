@@ -51,6 +51,11 @@ public class VoiceTrainingJob {
     @Column(nullable = false, length = 30)
     private VoiceTrainingJobSource source;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "voice_training_sentence_id",
+            foreignKey = @ForeignKey(name = "fk_voice_training_jobs_sentence"))
+    private VoiceTrainingSentence voiceTrainingSentence;
+
     @Column(name = "sqs_message_id", length = 100)
     private String sqsMessageId;
 
@@ -86,6 +91,12 @@ public class VoiceTrainingJob {
 
     public static VoiceTrainingJob create(User user, VoiceTrainingJobSource source) {
         return new VoiceTrainingJob(user, source);
+    }
+
+    public static VoiceTrainingJob createVoiceUpdate(User user, VoiceTrainingSentence sentence) {
+        VoiceTrainingJob job = new VoiceTrainingJob(user, VoiceTrainingJobSource.VOICE_UPDATE);
+        job.voiceTrainingSentence = sentence;
+        return job;
     }
 
     public void addFile(InterviewRecord interviewRecord, String bucket, String objectKey) {

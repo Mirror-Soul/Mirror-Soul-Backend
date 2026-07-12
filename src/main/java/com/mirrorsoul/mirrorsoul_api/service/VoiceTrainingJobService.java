@@ -6,7 +6,7 @@ import com.mirrorsoul.mirrorsoul_api.config.AwsS3Properties;
 import com.mirrorsoul.mirrorsoul_api.domain.InterviewRecord;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.VoiceTrainingJob;
-import com.mirrorsoul.mirrorsoul_api.domain.enums.VoiceTrainingJobSource;
+import com.mirrorsoul.mirrorsoul_api.domain.VoiceTrainingSentence;
 import com.mirrorsoul.mirrorsoul_api.repository.InterviewRecordRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.VoiceTrainingJobRepository;
 import java.util.List;
@@ -39,8 +39,12 @@ public class VoiceTrainingJobService {
         return voiceTrainingJobRepository.save(job);
     }
 
-    public VoiceTrainingJob createPendingVoiceUpdateJob(User user, String audioObjectKey) {
-        VoiceTrainingJob job = VoiceTrainingJob.create(user, VoiceTrainingJobSource.VOICE_UPDATE);
+    public VoiceTrainingJob createPendingVoiceUpdateJob(
+            User user,
+            VoiceTrainingSentence sentence,
+            String audioObjectKey
+    ) {
+        VoiceTrainingJob job = VoiceTrainingJob.createVoiceUpdate(user, sentence);
         job.addFile(null, awsS3Properties.getBucket(), audioObjectKey);
         return voiceTrainingJobRepository.save(job);
     }

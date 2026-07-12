@@ -20,6 +20,7 @@ public class EvolveResDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class speechLineDTO {
+        Long sentenceId;
         String speechLine;
     }
 

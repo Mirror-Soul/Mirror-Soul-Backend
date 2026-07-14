@@ -2,6 +2,7 @@ package com.mirrorsoul.mirrorsoul_api.common.jwt;
 
 import com.mirrorsoul.mirrorsoul_api.common.security.CustomUserDetails;
 import com.mirrorsoul.mirrorsoul_api.common.security.CustomUserDetailsService;
+import com.mirrorsoul.mirrorsoul_api.service.UserActivityService;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -20,6 +21,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
+    private final UserActivityService userActivityService;
 
     @Override
     protected void doFilterInternal(
@@ -44,6 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         );
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                userActivityService.touch(userId);
             } catch (JwtException | IllegalArgumentException e) {
                 SecurityContextHolder.clearContext();
             }

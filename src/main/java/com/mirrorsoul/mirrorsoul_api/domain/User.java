@@ -3,6 +3,7 @@ package com.mirrorsoul.mirrorsoul_api.domain;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.*;
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import lombok.*;
@@ -92,6 +93,9 @@ public class User extends BaseTimeEntity {
 
     @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
+
+    @Column(name = "last_active_at")
+    private LocalDateTime lastActiveAt;
 
     @Column(name = "refresh_token", length = 500)
     private String refreshToken;

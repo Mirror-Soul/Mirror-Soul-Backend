@@ -37,6 +37,10 @@ jwt:
   access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:3600}
   refresh-token-expiration-seconds: ${JWT_REFRESH_TOKEN_EXPIRATION_SECONDS:1209600}
 
+chat:
+  websocket:
+    allowed-origin-patterns: ${CHAT_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS:http://localhost:*}
+
 aws:
   s3:
     bucket: ${AWS_S3_BUCKET}

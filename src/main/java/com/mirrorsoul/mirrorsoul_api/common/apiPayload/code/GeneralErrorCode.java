@@ -74,6 +74,10 @@ public enum GeneralErrorCode implements BaseErrorCode {
     MEETING_INVALID_CALL(HttpStatus.BAD_REQUEST, "MEETING_4000", "만남 신청에 사용할 수 없는 통화입니다."),
     MEETING_SELF_REQUEST(HttpStatus.BAD_REQUEST, "MEETING_4001", "자기 자신에게 만남 신청을 보낼 수 없습니다."),
     MEETING_RECEIVER_INACTIVE(HttpStatus.BAD_REQUEST, "MEETING_4002", "현재 만남 신청을 받을 수 없는 사용자입니다."),
+    // 채팅 관련 오류
+    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_4040", "채팅방을 찾을 수 없습니다."),
+    CHAT_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_4041", "채팅 메시지를 찾을 수 없습니다."),
+    CHAT_ROOM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "CHAT_4030", "참여 중인 채팅방이 아닙니다."),
     ;
 
     private final HttpStatus httpStatus;

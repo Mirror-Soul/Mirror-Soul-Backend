@@ -2,6 +2,7 @@ package com.mirrorsoul.mirrorsoul_api.domain;
 
 import com.mirrorsoul.mirrorsoul_api.domain.enums.ChatRoomType;
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,4 +28,15 @@ public class ChatRoom extends BaseTimeEntity {
     @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_from_meeting_request_id", nullable = false, unique = true)
     private MeetingRequest createdFromMeetingRequest;
+
+    @Column(name = "last_message_id")
+    private Long lastMessageId;
+
+    @Column(name = "last_message_at")
+    private LocalDateTime lastMessageAt;
+
+    public void updateLastMessage(ChatMessage message) {
+        this.lastMessageId = message.getId();
+        this.lastMessageAt = message.getCreatedAt();
+    }
 }

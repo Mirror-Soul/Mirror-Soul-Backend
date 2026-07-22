@@ -1,5 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.recommendation;
 
+import com.mirrorsoul.mirrorsoul_api.config.OpenAiEmbeddingProperties;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -14,8 +15,10 @@ class PgVectorUserEmbeddingRepositoryTest {
 
     private final NamedParameterJdbcTemplate jdbcTemplate =
             mock(NamedParameterJdbcTemplate.class);
+    private final OpenAiEmbeddingProperties embeddingProperties =
+            new OpenAiEmbeddingProperties();
     private final PgVectorUserEmbeddingRepository repository =
-            new PgVectorUserEmbeddingRepository(jdbcTemplate);
+            new PgVectorUserEmbeddingRepository(jdbcTemplate, embeddingProperties);
 
     @Test
     void rejectsEmbeddingWithUnexpectedDimension() {

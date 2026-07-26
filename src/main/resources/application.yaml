@@ -48,3 +48,23 @@ aws:
     presigned-url-expiration-minutes: ${AWS_S3_PRESIGNED_URL_EXPIRATION_MINUTES:5}
   sqs:
     voice-training-queue-url: ${AWS_SQS_VOICE_TRAINING_QUEUE_URL}
+
+vector:
+  datasource:
+    enabled: ${VECTOR_DB_ENABLED:false}
+    url: jdbc:postgresql://${VECTOR_DB_HOST:localhost}:${VECTOR_DB_PORT:5432}/${VECTOR_DB_NAME:mirrorsoul_vector}
+    username: ${VECTOR_DB_USERNAME:}
+    password: ${VECTOR_DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: ${VECTOR_DB_MAX_POOL_SIZE:5}
+      minimum-idle: ${VECTOR_DB_MIN_IDLE:1}
+      connection-timeout: ${VECTOR_DB_CONNECTION_TIMEOUT_MS:3000}
+
+openai:
+  embedding:
+    enabled: ${OPENAI_EMBEDDING_ENABLED:false}
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com}
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_EMBEDDING_MODEL:text-embedding-3-small}
+    dimensions: ${OPENAI_EMBEDDING_DIMENSIONS:1536}

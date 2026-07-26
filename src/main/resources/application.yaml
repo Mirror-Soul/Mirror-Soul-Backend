@@ -51,8 +51,8 @@ aws:
 
 vector:
   datasource:
-    enabled: ${VECTOR_DB_ENABLED:false}
-    url: jdbc:postgresql://${VECTOR_DB_HOST:localhost}:${VECTOR_DB_PORT:5432}/${VECTOR_DB_NAME:mirrorsoul_vector}
+    enabled: ${VECTOR_DB_ENABLED:true}
+    url: jdbc:postgresql://${VECTOR_DB_HOST}:${VECTOR_DB_PORT:5432}/${VECTOR_DB_NAME:mirrorsoul_vector}
     username: ${VECTOR_DB_USERNAME:}
     password: ${VECTOR_DB_PASSWORD:}
     driver-class-name: org.postgresql.Driver

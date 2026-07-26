@@ -1,6 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.recommendation;
 
-import com.mirrorsoul.mirrorsoul_api.config.OpenAiEmbeddingProperties;
+import com.mirrorsoul.mirrorsoul_api.config.GeminiEmbeddingProperties;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -14,14 +14,14 @@ import org.springframework.stereotype.Repository;
 public class PgVectorUserEmbeddingRepository implements UserEmbeddingRepository {
 
     private static final int EMBEDDING_DIMENSION = 1536;
-    private static final String PROVIDER = "OPENAI";
+    private static final String PROVIDER = "GEMINI";
 
     private final NamedParameterJdbcTemplate jdbcTemplate;
-    private final OpenAiEmbeddingProperties embeddingProperties;
+    private final GeminiEmbeddingProperties embeddingProperties;
 
     public PgVectorUserEmbeddingRepository(
             @Qualifier("vectorJdbcTemplate") NamedParameterJdbcTemplate jdbcTemplate,
-            OpenAiEmbeddingProperties embeddingProperties
+            GeminiEmbeddingProperties embeddingProperties
     ) {
         this.jdbcTemplate = jdbcTemplate;
         this.embeddingProperties = embeddingProperties;

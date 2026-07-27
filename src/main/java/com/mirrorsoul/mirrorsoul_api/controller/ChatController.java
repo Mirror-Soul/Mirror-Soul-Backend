@@ -44,6 +44,29 @@ public class ChatController {
         );
     }
 
+    @Operation(summary = "채팅방 알림 설정 조회")
+    @GetMapping("/rooms/{room-id}/notification")
+    public ApiResponse<ChatResDTO.NotificationSettingDTO> getNotificationSetting(
+            @PathVariable("room-id") Long roomId,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        return ApiResponse.onSuccess(
+                "채팅방 알림 설정을 조회했습니다.",
+                chatService.getNotificationSetting(currentUser.getUuid(), roomId)
+        );
+    }
+
+    @Operation(summary = "채팅방 알림 설정 변경")
+    @PatchMapping("/rooms/{room-id}/notification")
+    public ApiResponse<ChatResDTO.NotificationSettingDTO> updateNotificationSetting(
+            @PathVariable("room-id") Long roomId,
+            @Valid @RequestBody ChatReqDTO.UpdateNotificationDTO request,
+            @AuthenticationPrincipal CustomUserDetails currentUser) {
+        return ApiResponse.onSuccess(
+                "채팅방 알림 설정을 변경했습니다.",
+                chatService.updateNotificationSetting(currentUser.getUuid(), roomId, request)
+        );
+    }
+
     @Operation(summary = "텍스트 메시지 전송")
     @PostMapping("/rooms/{room-id}/messages")
     public ApiResponse<ChatResDTO.MessageDTO> sendMessage(

@@ -17,6 +17,7 @@ public class ChatResDTO {
             PartnerDTO partner,
             MessageDTO lastMessage,
             long unreadCount,
+            boolean notificationEnabled,
             LocalDateTime createdAt
     ) {
     }
@@ -58,6 +59,12 @@ public class ChatResDTO {
             Long lastReadMessageId,
             LocalDateTime lastReadAt,
             boolean updated
+    ) {
+    }
+    @Builder
+    public record NotificationSettingDTO(
+            Long chatRoomId,
+            boolean enabled
     ) {
     }
 }

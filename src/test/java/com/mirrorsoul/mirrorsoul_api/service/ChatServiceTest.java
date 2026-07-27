@@ -93,6 +93,40 @@ class ChatServiceTest {
         assertThat(result.rooms().get(0).partner().userUuid()).isEqualTo(partner.getUuid());
         assertThat(result.rooms().get(0).lastMessage().content()).isEqualTo("마지막 메시지");
         assertThat(result.rooms().get(0).unreadCount()).isEqualTo(2L);
+        assertThat(result.rooms().get(0).notificationEnabled()).isTrue();
+    }
+
+    @Test
+    void getNotificationSettingReturnsCurrentUsersRoomSetting() {
+        UUID userUuid = UUID.randomUUID();
+        User user = user(1L, userUuid);
+        ChatRoom room = room(10L);
+        ChatRoomMember member = member(100L, room, user);
+        member.updateNotificationEnabled(false);
+        when(chatRoomMemberRepository.findActiveByRoomIdAndUserUuid(10L, userUuid))
+                .thenReturn(Optional.of(member));
+
+        ChatResDTO.NotificationSettingDTO result =
+                chatService.getNotificationSetting(userUuid, 10L);
+
+        assertThat(result.chatRoomId()).isEqualTo(10L);
+        assertThat(result.enabled()).isFalse();
+    }
+
+    @Test
+    void updateNotificationSettingChangesCurrentMembership() {
+        UUID userUuid = UUID.randomUUID();
+        User user = user(1L, userUuid);
+        ChatRoom room = room(10L);
+        ChatRoomMember member = member(100L, room, user);
+        when(chatRoomMemberRepository.findActiveByRoomIdAndUserUuidForUpdate(10L, userUuid))
+                .thenReturn(Optional.of(member));
+
+        ChatResDTO.NotificationSettingDTO result = chatService.updateNotificationSetting(
+                userUuid, 10L, new ChatReqDTO.UpdateNotificationDTO(false));
+
+        assertThat(result.enabled()).isFalse();
+        assertThat(member.getNotificationEnabled()).isFalse();
     }
 
     @Test

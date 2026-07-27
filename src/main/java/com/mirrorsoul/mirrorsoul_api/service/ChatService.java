@@ -102,6 +102,19 @@ public class ChatService {
                 .build();
     }
 
+    public ChatResDTO.NotificationSettingDTO getNotificationSetting(
+            UUID currentUserUuid, Long roomId) {
+        return toNotificationSettingDTO(requireActiveMember(roomId, currentUserUuid));
+    }
+
+    @Transactional
+    public ChatResDTO.NotificationSettingDTO updateNotificationSetting(
+            UUID currentUserUuid, Long roomId, ChatReqDTO.UpdateNotificationDTO request) {
+        ChatRoomMember member = requireActiveMemberForUpdate(roomId, currentUserUuid);
+        member.updateNotificationEnabled(request.enabled());
+        return toNotificationSettingDTO(member);
+    }
+
     @Transactional
     public ChatResDTO.MessageDTO sendMessage(
             UUID currentUserUuid, Long roomId, ChatReqDTO.SendMessageDTO request) {
@@ -214,7 +227,15 @@ public class ChatService {
                         .build())
                 .lastMessage(lastMessage == null ? null : toMessageDTO(lastMessage))
                 .unreadCount(unreadCount)
+                .notificationEnabled(Boolean.TRUE.equals(membership.getNotificationEnabled()))
                 .createdAt(room.getCreatedAt())
+                .build();
+    }
+
+    private ChatResDTO.NotificationSettingDTO toNotificationSettingDTO(ChatRoomMember member) {
+        return ChatResDTO.NotificationSettingDTO.builder()
+                .chatRoomId(member.getChatRoom().getId())
+                .enabled(Boolean.TRUE.equals(member.getNotificationEnabled()))
                 .build();
     }
 

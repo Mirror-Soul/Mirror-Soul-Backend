@@ -42,6 +42,7 @@ dependencies {
 	implementation 'com.opencsv:opencsv:5.9'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
+	implementation 'com.google.firebase:firebase-admin:9.10.0'
 	compileOnly 'org.projectlombok:lombok'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.7'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.7'

@@ -39,3 +39,8 @@ out/
 .DS_store
 .idea
 .env
+
+### Firebase service account credentials ###
+firebase-service-account.json
+**/firebase-service-account.json
+secrets/

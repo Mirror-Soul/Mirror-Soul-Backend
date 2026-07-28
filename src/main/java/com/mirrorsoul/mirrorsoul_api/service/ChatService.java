@@ -13,6 +13,7 @@ import com.mirrorsoul.mirrorsoul_api.dto.chat.ChatReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.chat.ChatResDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.chat.ChatWebSocketEventDTO;
 import com.mirrorsoul.mirrorsoul_api.event.ChatRealtimeEvent;
+import com.mirrorsoul.mirrorsoul_api.event.ChatPushRequestedEvent;
 import com.mirrorsoul.mirrorsoul_api.repository.CallMatchAnalysisRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.ChatMessageRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.ChatRoomMemberRepository;
@@ -139,6 +140,12 @@ public class ChatService {
         ChatResDTO.MessageDTO result = toMessageDTO(message);
         publishToRoom(roomId, new ChatWebSocketEventDTO(
                 "MESSAGE_CREATED", roomId, message.getCreatedAt(), result));
+        eventPublisher.publishEvent(new ChatPushRequestedEvent(
+                roomId,
+                message.getId(),
+                senderMember.getUser().getUuid(),
+                senderMember.getUser().getName()
+        ));
         return result;
     }
 

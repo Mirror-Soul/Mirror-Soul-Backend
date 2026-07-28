@@ -61,4 +61,14 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
               and member.leftAt is null
             """)
     List<ChatRoomMember> findAllActiveByRoomId(@Param("roomId") Long roomId);
+
+    @Query("""
+            select member.user.uuid from ChatRoomMember member
+            where member.chatRoom.id = :roomId
+              and member.user.uuid <> :senderUuid
+              and member.leftAt is null
+              and member.notificationEnabled = true
+            """)
+    List<UUID> findPushRecipientUuids(
+            @Param("roomId") Long roomId, @Param("senderUuid") UUID senderUuid);
 }

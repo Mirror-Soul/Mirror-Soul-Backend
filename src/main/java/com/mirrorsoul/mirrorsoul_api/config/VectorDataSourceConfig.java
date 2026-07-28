@@ -34,6 +34,15 @@ public class VectorDataSourceConfig {
                 .build();
     }
 
+    @Bean(name = "mainFlyway", initMethod = "migrate")
+    public Flyway mainFlyway(@Qualifier("dataSource") DataSource dataSource) {
+        return Flyway.configure()
+                .dataSource(dataSource)
+                .locations("classpath:db/migration")
+                .validateMigrationNaming(true)
+                .load();
+    }
+
     @Bean
     @ConfigurationProperties("vector.datasource")
     public DataSourceProperties vectorDataSourceProperties() {

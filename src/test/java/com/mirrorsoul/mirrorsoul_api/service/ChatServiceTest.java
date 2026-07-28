@@ -18,6 +18,7 @@ import com.mirrorsoul.mirrorsoul_api.domain.enums.ChatRoomType;
 import com.mirrorsoul.mirrorsoul_api.dto.chat.ChatReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.chat.ChatResDTO;
 import com.mirrorsoul.mirrorsoul_api.event.ChatRealtimeEvent;
+import com.mirrorsoul.mirrorsoul_api.event.ChatPushRequestedEvent;
 import com.mirrorsoul.mirrorsoul_api.repository.CallMatchAnalysisRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.ChatMessageRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.ChatRoomMemberRepository;
@@ -159,9 +160,15 @@ class ChatServiceTest {
         assertThat(result.content()).isEqualTo("안녕하세요");
         assertThat(room.getLastMessageId()).isEqualTo(500L);
         assertThat(room.getLastMessageAt()).isEqualTo(createdAt);
-        verify(eventPublisher).publishEvent(org.mockito.ArgumentMatchers.<ChatRealtimeEvent>argThat(event ->
-                event.recipients().containsAll(List.of(senderUuid, receiverUuid))
-                        && event.payload().type().equals("MESSAGE_CREATED")));
+        verify(eventPublisher).publishEvent(org.mockito.ArgumentMatchers.<Object>argThat(event ->
+                event instanceof ChatRealtimeEvent realtimeEvent
+                        && realtimeEvent.recipients().containsAll(List.of(senderUuid, receiverUuid))
+                        && realtimeEvent.payload().type().equals("MESSAGE_CREATED")));
+        verify(eventPublisher).publishEvent(org.mockito.ArgumentMatchers.<Object>argThat(event ->
+                event instanceof ChatPushRequestedEvent pushEvent
+                        && pushEvent.chatRoomId().equals(10L)
+                        && pushEvent.messageId().equals(500L)
+                        && pushEvent.senderUserUuid().equals(senderUuid)));
     }
 
     @Test

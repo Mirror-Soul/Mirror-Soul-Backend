@@ -79,4 +79,8 @@ public class PushDevice extends BaseTimeEntity {
         this.enabled = true;
         this.lastSeenAt = lastSeenAt;
     }
+
+    public void disable() {
+        this.enabled = false;
+    }
 }

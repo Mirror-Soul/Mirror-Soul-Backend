@@ -41,6 +41,12 @@ chat:
   websocket:
     allowed-origin-patterns: ${CHAT_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS:http://localhost:*}
 
+push:
+  firebase:
+    enabled: ${FIREBASE_PUSH_ENABLED:false}
+    project-id: ${FIREBASE_PROJECT_ID:}
+    android-channel-id: ${FIREBASE_ANDROID_CHANNEL_ID:chat_messages}
+
 aws:
   s3:
     bucket: ${AWS_S3_BUCKET}

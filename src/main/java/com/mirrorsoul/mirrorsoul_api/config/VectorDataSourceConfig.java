@@ -16,6 +16,33 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 @ConditionalOnProperty(prefix = "vector.datasource", name = "enabled", havingValue = "true")
 public class VectorDataSourceConfig {
 
+    @Bean(name = "mainDataSourceProperties")
+    @Primary
+    @ConfigurationProperties("spring.datasource")
+    public DataSourceProperties mainDataSourceProperties() {
+        return new DataSourceProperties();
+    }
+
+    @Bean(name = "dataSource")
+    @Primary
+    @ConfigurationProperties("spring.datasource.hikari")
+    public HikariDataSource dataSource(
+            @Qualifier("mainDataSourceProperties") DataSourceProperties properties
+    ) {
+        return properties.initializeDataSourceBuilder()
+                .type(HikariDataSource.class)
+                .build();
+    }
+
+    @Bean(name = "mainFlyway", initMethod = "migrate")
+    public Flyway mainFlyway(@Qualifier("dataSource") DataSource dataSource) {
+        return Flyway.configure()
+                .dataSource(dataSource)
+                .locations("classpath:db/migration")
+                .validateMigrationNaming(true)
+                .load();
+    }
+
     @Bean
     @Primary
     @ConfigurationProperties("spring.datasource")

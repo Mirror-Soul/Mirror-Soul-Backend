@@ -3,6 +3,7 @@ package com.mirrorsoul.mirrorsoul_api.domain;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -37,6 +38,10 @@ public class ChatRoomMember extends BaseTimeEntity {
     @Column(name = "last_read_at")
     private LocalDateTime lastReadAt;
 
+    @Builder.Default
+    @Column(name = "notification_enabled", nullable = false)
+    private Boolean notificationEnabled = true;
+
     public boolean readThrough(Long messageId, LocalDateTime readAt) {
         if (lastReadMessageId != null && lastReadMessageId >= messageId) {
             return false;
@@ -44,5 +49,9 @@ public class ChatRoomMember extends BaseTimeEntity {
         this.lastReadMessageId = messageId;
         this.lastReadAt = readAt;
         return true;
+    }
+
+    public void updateNotificationEnabled(boolean notificationEnabled) {
+        this.notificationEnabled = notificationEnabled;
     }
 }

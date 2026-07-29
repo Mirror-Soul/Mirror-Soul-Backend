@@ -13,6 +13,7 @@ import com.mirrorsoul.mirrorsoul_api.dto.chat.ChatReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.chat.ChatResDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.chat.ChatWebSocketEventDTO;
 import com.mirrorsoul.mirrorsoul_api.event.ChatRealtimeEvent;
+import com.mirrorsoul.mirrorsoul_api.event.ChatPushRequestedEvent;
 import com.mirrorsoul.mirrorsoul_api.repository.CallMatchAnalysisRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.ChatMessageRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.ChatRoomMemberRepository;
@@ -102,6 +103,19 @@ public class ChatService {
                 .build();
     }
 
+    public ChatResDTO.NotificationSettingDTO getNotificationSetting(
+            UUID currentUserUuid, Long roomId) {
+        return toNotificationSettingDTO(requireActiveMember(roomId, currentUserUuid));
+    }
+
+    @Transactional
+    public ChatResDTO.NotificationSettingDTO updateNotificationSetting(
+            UUID currentUserUuid, Long roomId, ChatReqDTO.UpdateNotificationDTO request) {
+        ChatRoomMember member = requireActiveMemberForUpdate(roomId, currentUserUuid);
+        member.updateNotificationEnabled(request.enabled());
+        return toNotificationSettingDTO(member);
+    }
+
     @Transactional
     public ChatResDTO.MessageDTO sendMessage(
             UUID currentUserUuid, Long roomId, ChatReqDTO.SendMessageDTO request) {
@@ -126,6 +140,12 @@ public class ChatService {
         ChatResDTO.MessageDTO result = toMessageDTO(message);
         publishToRoom(roomId, new ChatWebSocketEventDTO(
                 "MESSAGE_CREATED", roomId, message.getCreatedAt(), result));
+        eventPublisher.publishEvent(new ChatPushRequestedEvent(
+                roomId,
+                message.getId(),
+                senderMember.getUser().getUuid(),
+                senderMember.getUser().getName()
+        ));
         return result;
     }
 
@@ -214,7 +234,15 @@ public class ChatService {
                         .build())
                 .lastMessage(lastMessage == null ? null : toMessageDTO(lastMessage))
                 .unreadCount(unreadCount)
+                .notificationEnabled(Boolean.TRUE.equals(membership.getNotificationEnabled()))
                 .createdAt(room.getCreatedAt())
+                .build();
+    }
+
+    private ChatResDTO.NotificationSettingDTO toNotificationSettingDTO(ChatRoomMember member) {
+        return ChatResDTO.NotificationSettingDTO.builder()
+                .chatRoomId(member.getChatRoom().getId())
+                .enabled(Boolean.TRUE.equals(member.getNotificationEnabled()))
                 .build();
     }
 

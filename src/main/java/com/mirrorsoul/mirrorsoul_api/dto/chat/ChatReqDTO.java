@@ -19,5 +19,9 @@ public class ChatReqDTO {
             @Positive(message = "lastReadMessageId는 양수여야 합니다.") Long lastReadMessageId
     ) {
     }
+    public record UpdateNotificationDTO(
+            @NotNull(message = "enabled는 필수입니다.") Boolean enabled
+    ) {
+    }
 }
 

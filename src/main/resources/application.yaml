@@ -41,6 +41,12 @@ chat:
   websocket:
     allowed-origin-patterns: ${CHAT_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS:http://localhost:*}
 
+push:
+  firebase:
+    enabled: ${FIREBASE_PUSH_ENABLED:false}
+    project-id: ${FIREBASE_PROJECT_ID:}
+    android-channel-id: ${FIREBASE_ANDROID_CHANNEL_ID:chat_messages}
+
 aws:
   s3:
     bucket: ${AWS_S3_BUCKET}
@@ -51,8 +57,8 @@ aws:
 
 vector:
   datasource:
-    enabled: ${VECTOR_DB_ENABLED:false}
-    url: jdbc:postgresql://${VECTOR_DB_HOST:localhost}:${VECTOR_DB_PORT:5432}/${VECTOR_DB_NAME:mirrorsoul_vector}
+    enabled: ${VECTOR_DB_ENABLED:true}
+    url: jdbc:postgresql://${VECTOR_DB_HOST}:${VECTOR_DB_PORT:5432}/${VECTOR_DB_NAME:mirrorsoul_vector}
     username: ${VECTOR_DB_USERNAME:}
     password: ${VECTOR_DB_PASSWORD:}
     driver-class-name: org.postgresql.Driver

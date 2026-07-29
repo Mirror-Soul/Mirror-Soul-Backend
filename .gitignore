@@ -38,7 +38,13 @@ out/
 
 .DS_store
 .idea
+
 ### Local environment variables ###
 .env
 .env.*
 !.env.example
+
+### Firebase service account credentials ###
+firebase-service-account.json
+**/firebase-service-account.json
+secrets/

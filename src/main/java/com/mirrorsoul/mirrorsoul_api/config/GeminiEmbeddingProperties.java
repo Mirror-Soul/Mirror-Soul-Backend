@@ -6,12 +6,13 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Getter
 @Setter
-@ConfigurationProperties(prefix = "openai.embedding")
-public class OpenAiEmbeddingProperties {
+@ConfigurationProperties(prefix = "gemini.embedding")
+public class GeminiEmbeddingProperties {
 
     private boolean enabled;
-    private String baseUrl = "https://api.openai.com";
+    private String baseUrl = "https://generativelanguage.googleapis.com";
     private String apiKey;
-    private String model = "text-embedding-3-small";
+    private String model = "gemini-embedding-001";
     private int dimensions = 1536;
+    private String taskType = "SEMANTIC_SIMILARITY";
 }

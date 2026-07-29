@@ -1,6 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.recommendation;
 
-import com.mirrorsoul.mirrorsoul_api.config.OpenAiEmbeddingProperties;
+import com.mirrorsoul.mirrorsoul_api.config.GeminiEmbeddingProperties;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -15,8 +15,8 @@ class PgVectorUserEmbeddingRepositoryTest {
 
     private final NamedParameterJdbcTemplate jdbcTemplate =
             mock(NamedParameterJdbcTemplate.class);
-    private final OpenAiEmbeddingProperties embeddingProperties =
-            new OpenAiEmbeddingProperties();
+    private final GeminiEmbeddingProperties embeddingProperties =
+            new GeminiEmbeddingProperties();
     private final PgVectorUserEmbeddingRepository repository =
             new PgVectorUserEmbeddingRepository(jdbcTemplate, embeddingProperties);
 

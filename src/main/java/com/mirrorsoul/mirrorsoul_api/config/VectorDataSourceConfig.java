@@ -44,6 +44,24 @@ public class VectorDataSourceConfig {
     }
 
     @Bean
+    @Primary
+    @ConfigurationProperties("spring.datasource")
+    public DataSourceProperties primaryDataSourceProperties() {
+        return new DataSourceProperties();
+    }
+
+    @Bean(name = "dataSource")
+    @Primary
+    @ConfigurationProperties("spring.datasource.hikari")
+    public HikariDataSource primaryDataSource(
+            @Qualifier("primaryDataSourceProperties") DataSourceProperties properties
+    ) {
+        return properties.initializeDataSourceBuilder()
+                .type(HikariDataSource.class)
+                .build();
+    }
+
+    @Bean
     @ConfigurationProperties("vector.datasource")
     public DataSourceProperties vectorDataSourceProperties() {
         return new DataSourceProperties();

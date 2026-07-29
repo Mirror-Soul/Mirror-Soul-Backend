@@ -4,13 +4,11 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralExceptio
 import com.mirrorsoul.mirrorsoul_api.domain.MbtiProfile;
 import com.mirrorsoul.mirrorsoul_api.domain.Region;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
-import com.mirrorsoul.mirrorsoul_api.domain.UserPreferredRegion;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.Job;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.onboarding.OnboardingReqDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.MbtiProfileRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.RegionRepository;
-import com.mirrorsoul.mirrorsoul_api.repository.UserPreferredRegionRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +29,6 @@ public class OnboardingService {
     private final UserRepository userRepository;
     private final MbtiProfileRepository mbtiProfileRepository;
     private final RegionRepository regionRepository;
-    private final UserPreferredRegionRepository userPreferredRegionRepository;
 
     public void postProfile(OnboardingReqDTO.personaReqDTO req, UUID userUuid, Job job) {
 
@@ -53,14 +50,7 @@ public class OnboardingService {
             throw new GeneralException(REGION_NOT_FOUND);
         }
 
-        userPreferredRegionRepository.save(UserPreferredRegion.builder()
-                .user(user)
-                .region(region)
-                .build());
-
-        user.setRegion(
-                req.getSidoName() + " " + req.getSigunguName() + " " + req.getEupmyeondongName()
-        );
+        user.updateResidenceRegion(region);
 
         user.setJob(job);
         user.setJobDescription(req.getJobDescription());

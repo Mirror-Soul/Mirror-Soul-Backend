@@ -91,9 +91,12 @@ public class User extends BaseTimeEntity {
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
-    @Setter
-    @Column(length = 100)
-    private String region;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "residence_region_id",
+            foreignKey = @ForeignKey(name = "fk_users_residence_region")
+    )
+    private Region residenceRegion;
 
     @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
@@ -137,6 +140,10 @@ public class User extends BaseTimeEntity {
 
     public void updateMatchingEnabled(boolean matchingEnabled) {
         this.matchingEnabled = matchingEnabled;
+    }
+
+    public void updateResidenceRegion(Region residenceRegion) {
+        this.residenceRegion = residenceRegion;
     }
 
     public boolean hasTalkTime() {

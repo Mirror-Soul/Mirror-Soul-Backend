@@ -13,7 +13,6 @@ import com.mirrorsoul.mirrorsoul_api.repository.UserPreferredRegionRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -70,28 +69,21 @@ public class RecommendService {
                 now.minusDays(SWIPE_REEXPOSURE_DAYS)
         );
 
-        Map<Long, List<Region>> regionsByUserId = loadRegions(requester, candidates);
         Map<UUID, VectorSimilarityScores> vectorsByUserUuid = loadVectorScores(
                 requester.getUuid(),
                 candidates
         );
 
-        Region requesterResidence = findResidence(
-                requester,
-                regionsByUserId.getOrDefault(requester.getId(), List.of())
-        );
-        List<Region> requesterPreferredRegions =
-                regionsByUserId.getOrDefault(requester.getId(), List.of());
+        Region requesterResidence = requester.getResidenceRegion();
+        List<Region> requesterPreferredRegions = loadPreferredRegions(requester);
 
         List<RecommendResDTO.RecommendationDTO> rankedCandidates = candidates.stream()
                 .map(candidate -> {
-                    List<Region> candidateRegions =
-                            regionsByUserId.getOrDefault(candidate.getId(), List.of());
                     int score = scoreCalculator.calculate(
                             requester.getBirthDate(),
                             candidate.getBirthDate(),
                             requesterResidence,
-                            findResidence(candidate, candidateRegions),
+                            candidate.getResidenceRegion(),
                             requesterPreferredRegions,
                             vectorsByUserUuid.get(candidate.getUuid())
                     );
@@ -121,16 +113,10 @@ public class RecommendService {
         );
     }
 
-    private Map<Long, List<Region>> loadRegions(User requester, List<User> candidates) {
-        List<Long> userIds = new ArrayList<>(candidates.size() + 1);
-        userIds.add(requester.getId());
-        candidates.stream().map(User::getId).forEach(userIds::add);
-
-        return preferredRegionRepository.findAllByUserIdIn(userIds).stream()
-                .collect(Collectors.groupingBy(
-                        preferred -> preferred.getUser().getId(),
-                        Collectors.mapping(UserPreferredRegion::getRegion, Collectors.toList())
-                ));
+    private List<Region> loadPreferredRegions(User requester) {
+        return preferredRegionRepository.findAllByUserIdIn(List.of(requester.getId())).stream()
+                .map(UserPreferredRegion::getRegion)
+                .toList();
     }
 
     private Map<UUID, VectorSimilarityScores> loadVectorScores(
@@ -152,22 +138,4 @@ public class RecommendService {
                 ));
     }
 
-    private Region findResidence(User user, List<Region> regions) {
-        if (user.getRegion() == null) {
-            return null;
-        }
-        return regions.stream()
-                .filter(region -> user.getRegion().equals(fullName(region)))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private String fullName(Region region) {
-        return String.join(
-                " ",
-                region.getSidoName(),
-                region.getSigunguName(),
-                region.getEupmyeondongName()
-        );
-    }
 }

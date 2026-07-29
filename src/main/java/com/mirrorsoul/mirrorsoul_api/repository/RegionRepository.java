@@ -10,6 +10,8 @@ import java.util.List;
 public interface RegionRepository extends JpaRepository<Region, Long> {
     Region findBySidoNameAndSigunguNameAndEupmyeondongName(String sidoName, String sigunguName, String eupmyeondongName);
 
+    List<Region> findAllByLatitudeIsNullOrLongitudeIsNullOrderByIdAsc();
+
     @Query("select distinct r.sidoName from Region r order by r.sidoName asc")
     List<String> findDistinctSidoNames();
 

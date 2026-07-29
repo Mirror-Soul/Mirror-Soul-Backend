@@ -5,6 +5,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 @Getter
 @Entity
 @Table(
@@ -31,4 +34,29 @@ public class Region {
 
     @Column(name = "eupmyeondong_name", nullable = false, length = 50)
     private String eupmyeondongName;
+
+    @Column(name = "latitude", precision = 10, scale = 7)
+    private BigDecimal latitude;
+
+    @Column(name = "longitude", precision = 10, scale = 7)
+    private BigDecimal longitude;
+
+    @Column(name = "coordinate_source", length = 30)
+    private String coordinateSource;
+
+    @Column(name = "coordinate_updated_at")
+    private LocalDateTime coordinateUpdatedAt;
+
+    public void updateGeocodingData(
+            String lawdCd,
+            BigDecimal latitude,
+            BigDecimal longitude,
+            String coordinateSource
+    ) {
+        this.lawdCd = lawdCd;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.coordinateSource = coordinateSource;
+        this.coordinateUpdatedAt = LocalDateTime.now();
+    }
 }

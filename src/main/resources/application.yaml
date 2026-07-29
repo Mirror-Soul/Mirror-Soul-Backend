@@ -63,9 +63,15 @@ vector:
 
 gemini:
   embedding:
-    enabled: ${GEMINI_EMBEDDING_ENABLED:false}
+    enabled: ${GEMINI_EMBEDDING_ENABLED:true}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
     api-key: ${GEMINI_API_KEY:}
     model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
     dimensions: ${GEMINI_EMBEDDING_DIMENSIONS:1536}
     task-type: ${GEMINI_EMBEDDING_TASK_TYPE:SEMANTIC_SIMILARITY}
+
+region:
+  geocoding:
+    enabled: ${REGION_GEOCODING_ENABLED:false}
+    kakao-rest-api-key: ${KAKAO_REST_API_KEY:}
+    delay-ms: ${REGION_GEOCODING_DELAY_MS:100}

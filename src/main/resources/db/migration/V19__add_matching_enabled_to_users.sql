@@ -1,0 +1,2 @@
+ALTER TABLE users
+    ADD COLUMN matching_enabled BOOLEAN NOT NULL DEFAULT TRUE;

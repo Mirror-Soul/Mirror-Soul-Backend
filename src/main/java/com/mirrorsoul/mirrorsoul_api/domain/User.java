@@ -84,6 +84,10 @@ public class User extends BaseTimeEntity {
     @Column(name = "low_time_notification_enabled", nullable = false)
     private Boolean lowTimeNotificationEnabled = true;
 
+    @Builder.Default
+    @Column(name = "matching_enabled", nullable = false)
+    private Boolean matchingEnabled = true;
+
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
@@ -129,6 +133,10 @@ public class User extends BaseTimeEntity {
     public void updateAlarmSettings(boolean missedCallNotificationEnabled, boolean lowTimeNotificationEnabled) {
         this.missedCallNotificationEnabled = missedCallNotificationEnabled;
         this.lowTimeNotificationEnabled = lowTimeNotificationEnabled;
+    }
+
+    public void updateMatchingEnabled(boolean matchingEnabled) {
+        this.matchingEnabled = matchingEnabled;
     }
 
     public boolean hasTalkTime() {

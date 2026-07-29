@@ -38,4 +38,7 @@ out/
 
 .DS_store
 .idea
+### Local environment variables ###
 .env
+.env.*
+!.env.example

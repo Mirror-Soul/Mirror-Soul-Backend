@@ -5,6 +5,7 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralExceptio
 import com.mirrorsoul.mirrorsoul_api.common.mail.EmailAuthConst;
 import com.mirrorsoul.mirrorsoul_api.dto.join.JoinReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.join.JoinResDTO;
+import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 public class EmailAuthService {
 
     private final MailService mailService;
+    private final UserRepository userRepository;
     private static final String DEV_MASTER_CODE = "123456";
     private static final int VERIFY_MAX_COUNT = 5;
 
@@ -24,6 +26,10 @@ public class EmailAuthService {
     public void sendCode(JoinReqDTO.sendCodeReqDTO dto, HttpSession session) {
 
         String email = dto.getEmail();
+
+        if (userRepository.existsByEmail(email)) {
+            throw new GeneralException(GeneralErrorCode.DUPLICATE_EMAIL);
+        }
 
         String code = createCode();
         LocalDateTime expireTime = LocalDateTime.now().plusSeconds(EXPIRE_SECONDS);

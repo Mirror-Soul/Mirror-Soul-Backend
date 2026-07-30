@@ -51,11 +51,6 @@ public class JoinService {
             throw new GeneralException(GeneralErrorCode.NOT_AGREED_TERM);
         }
 
-        if (userRepository.existsByEmail(req.getEmail())) {
-
-            throw new GeneralException(GeneralErrorCode.DUPLICATE_EMAIL);
-
-        }
         String encodedPassword = passwordEncoder.encode(req.getPassword());
 
         User user = User.builder()

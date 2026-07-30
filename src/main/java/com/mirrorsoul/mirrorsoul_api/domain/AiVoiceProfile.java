@@ -43,6 +43,21 @@ public class AiVoiceProfile extends BaseTimeEntity {
     @Column(name = "is_active", nullable = false)
     private boolean active;
 
+    @Column(name = "intro_audio_bucket", length = 100)
+    private String introAudioBucket;
+
+    @Column(name = "intro_audio_object_key", length = 500)
+    private String introAudioObjectKey;
+
+    @Column(name = "intro_audio_content_type", length = 100)
+    private String introAudioContentType;
+
+    @Column(name = "intro_audio_size_bytes")
+    private Long introAudioSizeBytes;
+
+    @Column(name = "intro_audio_duration_ms")
+    private Integer introAudioDurationMs;
+
     private AiVoiceProfile(
             Clone clone,
             VoiceTrainingJob voiceTrainingJob,

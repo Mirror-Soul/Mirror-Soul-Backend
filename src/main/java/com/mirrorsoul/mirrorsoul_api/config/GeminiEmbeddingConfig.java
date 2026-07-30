@@ -18,7 +18,6 @@ public class GeminiEmbeddingConfig {
             havingValue = "true"
     )
     public RestClient geminiRestClient(
-            RestClient.Builder builder,
             GeminiEmbeddingProperties properties
     ) {
         if (!StringUtils.hasText(properties.getApiKey())) {
@@ -32,7 +31,7 @@ public class GeminiEmbeddingConfig {
             );
         }
 
-        return builder
+        return RestClient.builder()
                 .baseUrl(properties.getBaseUrl())
                 .defaultHeader("x-goog-api-key", properties.getApiKey())
                 .build();

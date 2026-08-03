@@ -13,6 +13,7 @@ import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +52,10 @@ public class JoinService {
             throw new GeneralException(GeneralErrorCode.NOT_AGREED_TERM);
         }
 
+        if (userRepository.existsByEmail(req.getEmail())) {
+            throw new GeneralException(GeneralErrorCode.DUPLICATE_EMAIL);
+        }
+
         String encodedPassword = passwordEncoder.encode(req.getPassword());
 
         User user = User.builder()
@@ -61,7 +66,13 @@ public class JoinService {
                 .status(UserStatus.ONBOARD_A)
                 .build();
 
-        userRepository.save(user);
+        try {
+            // Flush here so a concurrent signup violating uk_users_email is
+            // translated before this method returns.
+            userRepository.saveAndFlush(user);
+        } catch (DataIntegrityViolationException exception) {
+            throw new GeneralException(GeneralErrorCode.DUPLICATE_EMAIL);
+        }
 
         Clone clone = Clone.builder()
                 .user(user)

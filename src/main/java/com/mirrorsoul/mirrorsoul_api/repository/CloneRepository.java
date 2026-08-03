@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 public interface CloneRepository extends JpaRepository<Clone, Long> {
@@ -14,5 +16,12 @@ public interface CloneRepository extends JpaRepository<Clone, Long> {
     Optional<Integer> findSyncRateByUserUuid(@Param("userUuid") UUID userUuid);
 
     Optional<Clone> findByUserUuid(UUID userUuid);
-}
 
+    @Query("""
+            select clone
+            from Clone clone
+            join fetch clone.user user
+            where user.uuid in :userUuids
+            """)
+    List<Clone> findAllByUserUuidIn(@Param("userUuids") Collection<UUID> userUuids);
+}

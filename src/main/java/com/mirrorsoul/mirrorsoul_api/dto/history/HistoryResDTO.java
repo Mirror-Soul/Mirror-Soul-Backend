@@ -1,6 +1,7 @@
 package com.mirrorsoul.mirrorsoul_api.dto.history;
 
 import com.mirrorsoul.mirrorsoul_api.domain.enums.CallMediaType;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -13,11 +14,24 @@ public class HistoryResDTO {
         PARTNER_TWIN
     }
 
+    public enum TalkLogSpeaker {
+        PARTNER,
+        MY_TWIN,
+        ME,
+        PARTNER_TWIN
+    }
+
+    public enum WeeklyTrend {
+        UP,
+        DOWN,
+        SAME,
+        NO_DATA
+    }
+
     @Builder
     public record CallHistoryListDTO(
             CallHistorySummaryDTO summary,
-            List<CallHistoryDTO> histories,
-            PageDTO page
+            List<CallHistoryGroupDTO> groups
     ) {
     }
 
@@ -26,6 +40,13 @@ public class HistoryResDTO {
             long totalCount,
             long receivedCount,
             long sentCount
+    ) {
+    }
+
+    @Builder
+    public record CallHistoryGroupDTO(
+            LocalDate date,
+            List<CallHistoryDTO> histories
     ) {
     }
 
@@ -56,12 +77,46 @@ public class HistoryResDTO {
     }
 
     @Builder
-    public record PageDTO(
-            int number,
-            int size,
-            long totalElements,
-            int totalPages,
-            boolean hasNext
+    public record TalkLogListDTO(
+            Long callId,
+            Integer callNumber,
+            PartnerDTO partner,
+            String description,
+            LocalDateTime startedAt,
+            List<TalkLogDTO> talkLogs
+    ) {
+    }
+
+    @Builder
+    public record TalkLogDTO(
+            Long talkLogId,
+            TalkLogSpeaker speaker,
+            String message,
+            LocalDateTime startedAt,
+            LocalDateTime endedAt,
+            boolean editable,
+            boolean edited,
+            LocalDateTime editedAt
+    ) {
+    }
+
+    @Builder
+    public record WeeklySummaryDTO(
+            WeeklyPeriodDTO period,
+            long totalTalkTimeSec,
+            long receivedCallCount,
+            long sentCallCount,
+            Integer changeRate,
+            WeeklyTrend trend,
+            boolean comparable
+    ) {
+    }
+
+    @Builder
+    public record WeeklyPeriodDTO(
+            LocalDateTime startedAt,
+            LocalDateTime endedAt,
+            LocalDateTime nextResetAt
     ) {
     }
 }

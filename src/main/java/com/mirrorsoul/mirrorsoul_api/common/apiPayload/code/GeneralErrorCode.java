@@ -66,6 +66,9 @@ public enum GeneralErrorCode implements BaseErrorCode {
     CALL_NOT_FOUND(HttpStatus.NOT_FOUND, "CALL_4040", "통화 정보를 찾을 수 없습니다."),
     CALL_ALREADY_ENDED(HttpStatus.BAD_REQUEST, "CALL_4000", "이미 종료된 통화입니다."),
     INSUFFICIENT_TALK_TIME(HttpStatus.BAD_REQUEST, "CALL_4001", "남은 대화 시간이 부족합니다."),
+    CALL_ACCESS_DENIED(HttpStatus.FORBIDDEN, "CALL_4030", "통화 내역에 접근할 권한이 없습니다."),
+    TALK_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "TALK_LOG_4040", "대화 내역을 찾을 수 없습니다."),
+    TALK_LOG_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "TALK_LOG_4030", "수정할 수 없는 대화입니다."),
     // 만남 신청 관련 오류
     MEETING_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "MEETING_4040", "만남 신청을 찾을 수 없습니다."),
     MEETING_REQUEST_ALREADY_PENDING(HttpStatus.CONFLICT, "MEETING_4090", "두 사용자 사이에 대기 중인 만남 신청이 있습니다."),

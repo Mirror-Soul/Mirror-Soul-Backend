@@ -1,5 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.dto.evolve;
 
+import com.mirrorsoul.mirrorsoul_api.domain.enums.ValueBalanceAxis;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -31,5 +32,20 @@ public class EvolveResDTO {
     public static class voiceUpdateJobDTO {
         Long jobId;
         String status;
+    }
+
+    public record valueBalanceQuestionDTO(
+            Long questionId,
+            ValueBalanceAxis axis,
+            String leftLabel,
+            String rightLabel
+    ) {
+    }
+
+    public record valueBalanceAnswerDTO(
+            Long questionId,
+            int answeredCount,
+            int dailyLimit
+    ) {
     }
 }

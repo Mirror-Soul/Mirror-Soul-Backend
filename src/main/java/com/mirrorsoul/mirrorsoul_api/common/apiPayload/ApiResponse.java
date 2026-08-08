@@ -3,6 +3,7 @@ package com.mirrorsoul.mirrorsoul_api.common.apiPayload;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.BaseErrorCode;
+import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.BaseSuccessCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralSuccessCode;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,6 +31,10 @@ public class ApiResponse<T> {
     // result가 있는 성공 응답
     public static <T> ApiResponse<T> onSuccess(String message,T result) {
         return new ApiResponse<>(true, GeneralSuccessCode.OK.getCode(), message, result, null);
+    }
+
+    public static <T> ApiResponse<T> onSuccess(BaseSuccessCode successCode, T result) {
+        return new ApiResponse<>(true, successCode.getCode(), successCode.getMessage(), result, null);
     }
 
     // result가 없는 성공 응답

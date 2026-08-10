@@ -3,12 +3,15 @@ package com.mirrorsoul.mirrorsoul_api.controller;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.ApiResponse;
 import com.mirrorsoul.mirrorsoul_api.dto.login.LoginReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.login.LoginResDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.login.PasswordResetReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenResDTO;
 import com.mirrorsoul.mirrorsoul_api.service.AuthService;
+import com.mirrorsoul.mirrorsoul_api.service.PasswordResetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,6 +26,31 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final PasswordResetService passwordResetService;
+
+    @Operation(summary = "비밀번호 재설정 인증 코드 발송", description = "가입된 이메일로 3분간 유효한 인증 코드를 발송합니다.")
+    @PostMapping("/password-reset/send-code")
+    public ApiResponse<Void> sendPasswordResetCode(@Valid @RequestBody PasswordResetReqDTO.SendCode request,
+                                                   HttpSession session) {
+        passwordResetService.sendCode(request, session);
+        return ApiResponse.onSuccess("인증 코드 전송이 완료되었습니다.");
+    }
+
+    @Operation(summary = "비밀번호 재설정 인증 코드 확인", description = "이메일로 발송된 인증 코드를 확인합니다.")
+    @PostMapping("/password-reset/verify-code")
+    public ApiResponse<Void> verifyPasswordResetCode(@Valid @RequestBody PasswordResetReqDTO.VerifyCode request,
+                                                     HttpSession session) {
+        passwordResetService.verifyCode(request, session);
+        return ApiResponse.onSuccess("인증 코드 확인이 완료되었습니다.");
+    }
+
+    @Operation(summary = "비밀번호 재설정", description = "이메일 인증이 완료된 세션에서 새 비밀번호를 설정합니다.")
+    @PostMapping("/password-reset")
+    public ApiResponse<Void> resetPassword(@Valid @RequestBody PasswordResetReqDTO.ResetPassword request,
+                                           HttpSession session) {
+        passwordResetService.resetPassword(request, session);
+        return ApiResponse.onSuccess("비밀번호가 재설정되었습니다.");
+    }
 
     @Operation(summary = "로그인", description = """
             이메일과 비밀번호로 로그인합니다.

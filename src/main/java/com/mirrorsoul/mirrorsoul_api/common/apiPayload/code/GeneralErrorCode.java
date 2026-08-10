@@ -85,6 +85,7 @@ public enum GeneralErrorCode implements BaseErrorCode {
     VALUE_BALANCE_ALREADY_ANSWERED(HttpStatus.CONFLICT, "VALUE_BALANCE_4090", "This question was already answered today."),
     VALUE_BALANCE_DAILY_LIMIT_REACHED(HttpStatus.TOO_MANY_REQUESTS, "VALUE_BALANCE_4290", "Daily value balance limit reached."),
     VALUE_BALANCE_NO_AVAILABLE_QUESTION(HttpStatus.SERVICE_UNAVAILABLE, "VALUE_BALANCE_5030", "No value balance question is available."),
+    PASSWORD_CONFIRM_MISMATCH(HttpStatus.BAD_REQUEST, "AUTH_4003", "새 비밀번호와 비밀번호 확인이 일치하지 않습니다."),
     ;
 
     private final HttpStatus httpStatus;

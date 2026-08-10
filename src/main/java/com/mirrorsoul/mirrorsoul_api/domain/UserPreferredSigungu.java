@@ -12,15 +12,16 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 @Getter
 @Entity
 @Table(
-        name = "user_preferred_region",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "uk_user_region", columnNames = {"user_id", "region_id"})
-        }
+        name = "user_preferred_sigungu",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_user_sigungu",
+                columnNames = {"user_id", "sigungu_id"}
+        )
 )
 @EntityListeners(AuditingEntityListener.class)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
-public class UserPreferredRegion {
+public class UserPreferredSigungu {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,13 +29,13 @@ public class UserPreferredRegion {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_upr_user"))
+            foreignKey = @ForeignKey(name = "fk_ups_user"))
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "region_id", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_upr_region"))
-    private Region region;
+    @JoinColumn(name = "sigungu_id", nullable = false,
+            foreignKey = @ForeignKey(name = "fk_ups_sigungu"))
+    private Sigungu sigungu;
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)

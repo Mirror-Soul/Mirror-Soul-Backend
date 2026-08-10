@@ -3,13 +3,14 @@ package com.mirrorsoul.mirrorsoul_api.service;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
 import com.mirrorsoul.mirrorsoul_api.domain.Region;
+import com.mirrorsoul.mirrorsoul_api.domain.Sigungu;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
-import com.mirrorsoul.mirrorsoul_api.domain.UserPreferredRegion;
+import com.mirrorsoul.mirrorsoul_api.domain.UserPreferredSigungu;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.RecommendResDTO;
 import com.mirrorsoul.mirrorsoul_api.recommendation.UserEmbeddingRepository;
 import com.mirrorsoul.mirrorsoul_api.recommendation.VectorSimilarityScores;
-import com.mirrorsoul.mirrorsoul_api.repository.UserPreferredRegionRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.UserPreferredSigunguRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,6 +25,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static com.mirrorsoul.mirrorsoul_api.recommendation.RecommendationPolicy.SWIPE_REEXPOSURE_DAYS;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -31,10 +34,8 @@ public class RecommendService {
 
     private static final int ADULT_AGE = 19;
     private static final int LONG_INACTIVE_DAYS = 30;
-    private static final int SWIPE_REEXPOSURE_DAYS = 14;
-
     private final UserRepository userRepository;
-    private final UserPreferredRegionRepository preferredRegionRepository;
+    private final UserPreferredSigunguRepository preferredSigunguRepository;
     private final RecommendationScoreCalculator scoreCalculator;
     private final ObjectProvider<UserEmbeddingRepository> embeddingRepositoryProvider;
 
@@ -75,7 +76,7 @@ public class RecommendService {
         );
 
         Region requesterResidence = requester.getResidenceRegion();
-        List<Region> requesterPreferredRegions = loadPreferredRegions(requester);
+        List<Sigungu> requesterPreferredSigungu = loadPreferredSigungu(requester);
 
         List<RecommendResDTO.RecommendationDTO> rankedCandidates = candidates.stream()
                 .map(candidate -> {
@@ -84,7 +85,7 @@ public class RecommendService {
                             candidate.getBirthDate(),
                             requesterResidence,
                             candidate.getResidenceRegion(),
-                            requesterPreferredRegions,
+                            requesterPreferredSigungu,
                             vectorsByUserUuid.get(candidate.getUuid())
                     );
                     return new RecommendResDTO.RecommendationDTO(
@@ -113,9 +114,10 @@ public class RecommendService {
         );
     }
 
-    private List<Region> loadPreferredRegions(User requester) {
-        return preferredRegionRepository.findAllByUserIdIn(List.of(requester.getId())).stream()
-                .map(UserPreferredRegion::getRegion)
+    private List<Sigungu> loadPreferredSigungu(User requester) {
+        return preferredSigunguRepository
+                .findAllByUserIdOrderByCreatedAtAscIdAsc(requester.getId()).stream()
+                .map(UserPreferredSigungu::getSigungu)
                 .toList();
     }
 

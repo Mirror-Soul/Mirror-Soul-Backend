@@ -27,4 +27,17 @@ public class MailService {
         }
     }
 
+    public void sendPasswordResetCode(String toEmail, String code) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(toEmail);
+            message.setSubject("[MirrorSoul] 비밀번호 재설정 인증번호");
+            message.setText("비밀번호 재설정 인증번호는 [" + code + "] 입니다. 3분 안에 입력해주세요.");
+
+            mailSender.send(message);
+        } catch (Exception e) {
+            throw new GeneralException(GeneralErrorCode.EMAIL_SEND_FAILED);
+        }
+    }
+
 }

@@ -3,6 +3,7 @@ package com.mirrorsoul.mirrorsoul_api.repository;
 import com.mirrorsoul.mirrorsoul_api.domain.VideoCall;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.VideoCallStatus;
 import java.util.List;
+import java.util.Collection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -13,6 +14,8 @@ import java.time.LocalDateTime;
 
 public interface VideoCallRepository extends JpaRepository<VideoCall, Long> {
     Optional<VideoCall> findByRoomId(String roomId);
+
+    boolean existsByCloneIdAndStatusIn(Long cloneId, Collection<VideoCallStatus> statuses);
 
     @Query("""
             select videoCall

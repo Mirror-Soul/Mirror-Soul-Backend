@@ -51,6 +51,13 @@ public enum GeneralErrorCode implements BaseErrorCode {
     // 지역 관련 에러
     REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "REGION_4040", "존재하지 않는 지역입니다."),
 
+    // 스와이프 관련 에러
+    SWIPE_SELF_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "SWIPE_4000", "자기 자신을 스와이프할 수 없습니다."),
+    SWIPE_TARGET_UNAVAILABLE(HttpStatus.NOT_FOUND, "SWIPE_4040", "스와이프할 수 없는 추천 사용자입니다."),
+
+    // 추천 관련 에러
+    RECOMMENDATION_TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "RECOMMENDATION_4040", "조회할 수 없는 추천 사용자입니다."),
+
     // 이메일 인증 에러
     EMAIL_NOT_FOUND(HttpStatus.BAD_REQUEST, "EMAIL_4000", "이메일 정보가 존재하지 않습니다."),
     EMAIL_CODE_NOT_REQUESTED(HttpStatus.BAD_REQUEST, "EMAIL_4001", "인증번호 전송 이력이 없습니다."),
@@ -58,6 +65,10 @@ public enum GeneralErrorCode implements BaseErrorCode {
     EMAIL_CODE_MISMATCH(HttpStatus.BAD_REQUEST, "EMAIL_4003", "인증번호가 일치하지 않습니다."),
     EMAIL_ALREADY_VERIFIED(HttpStatus.BAD_REQUEST, "EMAIL_4004", "이미 이메일 인증이 완료되었습니다."),
     EMAIL_SEND_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "EMAIL_5000", "이메일 전송에 실패했습니다."),
+
+    // 비밀번호 재설정 에러
+    PASSWORD_RESET_NOT_VERIFIED(HttpStatus.FORBIDDEN, "PASSWORD_4030", "비밀번호 재설정 이메일 인증이 필요합니다."),
+    PASSWORD_CONFIRM_MISMATCH(HttpStatus.BAD_REQUEST, "PASSWORD_4000", "새 비밀번호와 비밀번호 확인이 일치하지 않습니다."),
 
     // 클론 관련 에러
     CLONE_NOT_FOUND(HttpStatus.BAD_REQUEST, "CLONE_4000", "클론 정보가 존재하지 않습니다."),

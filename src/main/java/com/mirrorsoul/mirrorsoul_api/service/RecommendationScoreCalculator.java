@@ -1,6 +1,7 @@
 package com.mirrorsoul.mirrorsoul_api.service;
 
 import com.mirrorsoul.mirrorsoul_api.domain.Region;
+import com.mirrorsoul.mirrorsoul_api.domain.Sigungu;
 import com.mirrorsoul.mirrorsoul_api.recommendation.VectorSimilarityScores;
 import java.time.LocalDate;
 import java.time.Period;
@@ -20,7 +21,6 @@ public class RecommendationScoreCalculator {
     // ConversationScore(0.15)는 대화 요약 파이프라인 개발 전까지 계산에서 제외한다.
     private static final double AGE_SIGMA_YEARS = 5.0;
     private static final double DISTANCE_LAMBDA_KM = 50.0;
-    private static final double PREFERRED_REGION_SIGMA_KM = 50.0;
     private static final double REGION_DISTANCE_ALPHA = 0.5;
     private static final double EARTH_RADIUS_KM = 6371.0088;
 
@@ -29,7 +29,7 @@ public class RecommendationScoreCalculator {
             LocalDate candidateBirthDate,
             Region requesterResidence,
             Region candidateResidence,
-            List<Region> requesterPreferredRegions,
+            List<Sigungu> requesterPreferredSigungu,
             VectorSimilarityScores vectorScores
     ) {
         WeightedScore score = new WeightedScore();
@@ -45,7 +45,7 @@ public class RecommendationScoreCalculator {
         score.add(regionScore(
                 requesterResidence,
                 candidateResidence,
-                requesterPreferredRegions
+                requesterPreferredSigungu
         ), REGION_WEIGHT);
 
         return score.toPercentage();
@@ -67,28 +67,30 @@ public class RecommendationScoreCalculator {
     Double regionScore(
             Region requesterResidence,
             Region candidateResidence,
-            List<Region> requesterPreferredRegions
+            List<Sigungu> requesterPreferredSigungu
     ) {
-        if (!hasCoordinates(requesterResidence) || !hasCoordinates(candidateResidence)) {
+        if (candidateResidence == null) {
             return null;
         }
 
-        double residenceDistance = distanceKm(requesterResidence, candidateResidence);
-        double distanceScore = Math.exp(-residenceDistance / DISTANCE_LAMBDA_KM);
+        Double distanceScore = null;
+        if (hasCoordinates(requesterResidence) && hasCoordinates(candidateResidence)) {
+            double residenceDistance = distanceKm(requesterResidence, candidateResidence);
+            distanceScore = Math.exp(-residenceDistance / DISTANCE_LAMBDA_KM);
+        }
 
-        Double preferredScore = requesterPreferredRegions.stream()
-                .filter(this::hasCoordinates)
-                .mapToDouble(region -> distanceKm(region, candidateResidence))
-                .min()
-                .stream()
-                .map(distance -> Math.exp(-(distance * distance)
-                        / (2.0 * PREFERRED_REGION_SIGMA_KM * PREFERRED_REGION_SIGMA_KM)))
-                .boxed()
-                .findFirst()
-                .orElse(null);
+        Double preferredScore = requesterPreferredSigungu.isEmpty()
+                ? null
+                : requesterPreferredSigungu.stream().anyMatch(sigungu ->
+                        sigungu.getSidoName().equals(candidateResidence.getSidoName())
+                                && sigungu.getSigunguName().equals(candidateResidence.getSigunguName())
+                ) ? 1.0 : 0.0;
 
         if (preferredScore == null) {
             return distanceScore;
+        }
+        if (distanceScore == null) {
+            return preferredScore;
         }
         return REGION_DISTANCE_ALPHA * distanceScore
                 + (1.0 - REGION_DISTANCE_ALPHA) * preferredScore;

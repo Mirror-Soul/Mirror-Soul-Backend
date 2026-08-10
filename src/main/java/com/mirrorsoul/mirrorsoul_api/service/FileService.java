@@ -15,10 +15,12 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PutObjectPresignRequest;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 
 @Service
 @RequiredArgsConstructor
@@ -56,6 +58,26 @@ public class FileService {
             throw new GeneralException(
                     GeneralErrorCode.S3_CONNECTION_FAILED,
                     "Failed to generate presigned URL."
+            );
+        }
+    }
+
+    public String createPresignedDownloadUrl(String bucket, String objectKey) {
+        GetObjectRequest getObjectRequest = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(objectKey)
+                .build();
+        GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
+                .signatureDuration(Duration.ofMinutes(awsS3Properties.getPresignedUrlExpirationMinutes()))
+                .getObjectRequest(getObjectRequest)
+                .build();
+
+        try {
+            return s3Presigner.presignGetObject(presignRequest).url().toString();
+        } catch (AwsServiceException | SdkClientException e) {
+            throw new GeneralException(
+                    GeneralErrorCode.S3_CONNECTION_FAILED,
+                    "Failed to generate download URL."
             );
         }
     }

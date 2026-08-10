@@ -22,6 +22,7 @@ public class RegionDataInitializer implements CommandLineRunner {
     public void run(String... args) throws Exception {
         Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM region", Integer.class);
         if (count != null && count > 0) {
+            initializeSigunguIfEmpty();
             return;
         }
 
@@ -78,6 +79,21 @@ public class RegionDataInitializer implements CommandLineRunner {
                 VALUES (?, ?, ?, ?)
             """, batchArgs);
         }
+
+        initializeSigunguIfEmpty();
+    }
+
+    private void initializeSigunguIfEmpty() {
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM sigungu", Integer.class);
+        if (count != null && count > 0) {
+            return;
+        }
+
+        jdbcTemplate.update("""
+            INSERT INTO sigungu (sido_name, sigungu_name)
+            SELECT DISTINCT sido_name, sigungu_name
+            FROM region
+        """);
     }
 
     private String safeValue(String[] row, int index) {

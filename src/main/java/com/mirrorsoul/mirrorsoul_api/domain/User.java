@@ -120,6 +120,11 @@ public class User extends BaseTimeEntity {
         this.refreshToken = null;
     }
 
+    public void updatePassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+        clearRefreshToken();
+    }
+
     public void addTalkTime(int seconds) {
         this.remainingTalkTime = getSafeRemainingTalkTime() + seconds;
     }

@@ -15,6 +15,7 @@ import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
@@ -90,6 +91,10 @@ public class FileService {
         return verifyUploadedObjectAndBuildFileUrl(userUuid, objectKey, UploadFileType.VOICE_UPDATE_AUDIO);
     }
 
+    public VerifiedS3Object verifyFaceVideoAndBuildFileUrl(UUID userUuid, String objectKey) {
+        return verifyUploadedObjectAndBuildFileUrl(userUuid, objectKey, UploadFileType.FACE_VIDEO);
+    }
+
     private VerifiedS3Object verifyUploadedObjectAndBuildFileUrl(
             UUID userUuid,
             String objectKey,
@@ -112,7 +117,8 @@ public class FileService {
                 .build();
 
         try {
-            s3Client.headObject(headObjectRequest);
+            HeadObjectResponse objectMetadata = s3Client.headObject(headObjectRequest);
+            uploadFileType.validateMetadata(objectMetadata);
 
             return new VerifiedS3Object(buildFileUrl(normalizedObjectKey), normalizedObjectKey);
         } catch (AwsServiceException e) {
@@ -217,7 +223,10 @@ public class FileService {
 
     private enum UploadFileType {
         INTERVIEW_AUDIO("interviews"),
-        VOICE_UPDATE_AUDIO("voice-updates");
+        VOICE_UPDATE_AUDIO("voice-updates"),
+        FACE_VIDEO("face-videos");
+
+        private static final long MAX_FACE_VIDEO_SIZE_BYTES = 100L * 1024 * 1024;
 
         private final String requiredPrefix;
 
@@ -227,6 +236,32 @@ public class FileService {
 
         public String requiredPrefix(UUID userUuid) {
             return requiredPrefix + "/" + userUuid + "/";
+        }
+
+        public void validateMetadata(HeadObjectResponse metadata) {
+            if (this != FACE_VIDEO) {
+                return;
+            }
+
+            String contentType = metadata.contentType();
+            boolean supportedType = "video/mp4".equalsIgnoreCase(contentType)
+                    || "video/quicktime".equalsIgnoreCase(contentType)
+                    || "video/webm".equalsIgnoreCase(contentType);
+            if (!supportedType) {
+                throw new GeneralException(
+                        GeneralErrorCode.INVALID_PARAMETER,
+                        "Face video contentType must be one of: video/mp4, video/quicktime, video/webm."
+                );
+            }
+
+            if (metadata.contentLength() == null
+                    || metadata.contentLength() <= 0
+                    || metadata.contentLength() > MAX_FACE_VIDEO_SIZE_BYTES) {
+                throw new GeneralException(
+                        GeneralErrorCode.INVALID_PARAMETER,
+                        "Face video size must be greater than 0 and at most 100 MB."
+                );
+            }
         }
     }
 

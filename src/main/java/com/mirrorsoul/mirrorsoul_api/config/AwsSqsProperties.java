@@ -14,4 +14,7 @@ public class AwsSqsProperties {
 
     @NotBlank
     private String voiceTrainingQueueUrl;
+
+    @NotBlank
+    private String faceTrainingQueueUrl;
 }

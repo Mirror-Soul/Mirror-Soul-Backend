@@ -121,7 +121,7 @@ public class OnboardingController {
     @Operation(summary = "온보딩 얼굴 이미지 파일 저장", description = "S3 업로드가 완료된 얼굴 이미지 파일의 objectKey와 fileUrl을 로그인 사용자 기준으로 저장합니다.")
     @PostMapping("/visual")
     public ApiResponse<VisualResDTO> saveVisualFile(@AuthenticationPrincipal CustomUserDetails currentUser,
-                                                    @RequestBody VisualReqDTO request) {
+                                                    @Valid @RequestBody VisualReqDTO request) {
         return ApiResponse.onSuccess(
                 "얼굴 이미지 파일 저장에 성공했습니다.",
                 visualService.saveVisualFile(currentUser.getUuid(), request)

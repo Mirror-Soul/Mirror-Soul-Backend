@@ -10,11 +10,14 @@ import com.mirrorsoul.mirrorsoul_api.service.RecommendService;
 import com.mirrorsoul.mirrorsoul_api.service.RecommendationDetailService;
 import com.mirrorsoul.mirrorsoul_api.service.SwipeService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -79,8 +82,15 @@ public class HomeController {
     @GetMapping("/recommend")
     public ApiResponse<RecommendResDTO.RecommendationSliceDTO> recommend(
             @AuthenticationPrincipal CustomUserDetails currentUser,
-            @PageableDefault(size = 20) Pageable pageable
+
+            @Parameter(description = "페이지 번호 (디폴트 값은 0)")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "한 페이지에서 조회할 추천 사용자 수 (디폴트 값은 20)")
+            @RequestParam(defaultValue = "20") int size
     ) {
+        Pageable pageable = PageRequest.of(page, size);
+
         return ApiResponse.onSuccess(
                 "추천 유저 리스트 조회에 성공했습니다.",
                 recommendService.getRecommendations(currentUser.getUuid(), pageable)

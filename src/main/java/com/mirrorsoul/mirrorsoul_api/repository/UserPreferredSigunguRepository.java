@@ -6,6 +6,8 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface UserPreferredSigunguRepository
         extends JpaRepository<UserPreferredSigungu, Long> {
@@ -17,5 +19,9 @@ public interface UserPreferredSigunguRepository
     Optional<UserPreferredSigungu> findFirstByUserIdOrderByCreatedAtDescIdDesc(Long userId);
 
     @Modifying(flushAutomatically = true)
-    void deleteAllByUserId(Long userId);
+    @Query("""
+            delete from UserPreferredSigungu preference
+            where preference.user.id = :userId
+            """)
+    int deleteAllByUserId(@Param("userId") Long userId);
 }

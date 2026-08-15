@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 public class EvolveResDTO {
 
     @Builder
@@ -14,6 +16,8 @@ public class EvolveResDTO {
     @AllArgsConstructor
     public static class twinSyncDTO {
         Integer syncRate;
+        Long voiceTrainingCount;
+        LocalDateTime lastVoiceTrainingAt;
     }
 
     @Builder

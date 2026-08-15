@@ -30,7 +30,10 @@ public class EvolveController {
     private final EvolveService evolveService;
     private final ValueBalanceService valueBalanceService;
 
-    @Operation(summary = "Twin sync rate", description = "Returns the current twin sync rate.")
+    @Operation(
+            summary = "Twin sync rate and voice training summary",
+            description = "Returns the current twin sync rate, total voice update count, and latest voice update time."
+    )
     @GetMapping
     public ApiResponse<EvolveResDTO.twinSyncDTO> getTwinSync(
             @AuthenticationPrincipal CustomUserDetails currentUser
@@ -41,7 +44,10 @@ public class EvolveController {
         );
     }
 
-    @Operation(summary = "Voice update recording line", description = "Returns a line to read for voice update recording.")
+    @Operation(
+            summary = "Voice update recording line",
+            description = "Returns a random active line, excluding up to five recently submitted lines when possible."
+    )
     @GetMapping("/voice")
     public ApiResponse<EvolveResDTO.speechLineDTO> startRecording(
             @AuthenticationPrincipal CustomUserDetails currentUser

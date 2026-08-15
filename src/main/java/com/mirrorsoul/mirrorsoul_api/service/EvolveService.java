@@ -5,17 +5,22 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralExceptio
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.VoiceTrainingJob;
 import com.mirrorsoul.mirrorsoul_api.domain.VoiceTrainingSentence;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.VoiceTrainingJobSource;
 import com.mirrorsoul.mirrorsoul_api.dto.evolve.EvolveReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.evolve.EvolveResDTO;
 import com.mirrorsoul.mirrorsoul_api.event.VoiceTrainingJobRequestedEvent;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.VoiceTrainingJobRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.VoiceTrainingSentenceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -26,6 +31,7 @@ public class EvolveService {
     private final CloneRepository cloneRepository;
     private final UserRepository userRepository;
     private final VoiceTrainingSentenceRepository voiceTrainingSentenceRepository;
+    private final VoiceTrainingJobRepository voiceTrainingJobRepository;
     private final FileService fileService;
     private final VoiceTrainingJobService voiceTrainingJobService;
     private final ApplicationEventPublisher eventPublisher;
@@ -35,13 +41,33 @@ public class EvolveService {
         Integer syncRate = cloneRepository.findSyncRateByUserUuid(uuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.CLONE_NOT_FOUND));
 
+        VoiceTrainingJobSource voiceUpdate = VoiceTrainingJobSource.VOICE_UPDATE;
+        long voiceTrainingCount = voiceTrainingJobRepository.countByUser_UuidAndSource(uuid, voiceUpdate);
+        LocalDateTime lastVoiceTrainingAt = voiceTrainingJobRepository
+                .findFirstByUser_UuidAndSourceOrderByCreatedAtDescIdDesc(uuid, voiceUpdate)
+                .map(VoiceTrainingJob::getCreatedAt)
+                .orElse(null);
+
         return EvolveResDTO.twinSyncDTO.builder()
                 .syncRate(syncRate)
+                .voiceTrainingCount(voiceTrainingCount)
+                .lastVoiceTrainingAt(lastVoiceTrainingAt)
                 .build();
     }
 
     public EvolveResDTO.speechLineDTO speechLine(UUID uuid) {
-        VoiceTrainingSentence sentence = voiceTrainingSentenceRepository.findRandomActive()
+        List<Long> recentlyUsedSentenceIds = voiceTrainingJobRepository
+                .findTop5ByUser_UuidAndSourceAndVoiceTrainingSentenceIsNotNullOrderByCreatedAtDescIdDesc(
+                        uuid,
+                        VoiceTrainingJobSource.VOICE_UPDATE
+                )
+                .stream()
+                .map(VoiceTrainingJob::getVoiceTrainingSentence)
+                .map(VoiceTrainingSentence::getId)
+                .distinct()
+                .toList();
+
+        VoiceTrainingSentence sentence = findNextVoiceTrainingSentence(recentlyUsedSentenceIds)
                 .orElseThrow(() -> new GeneralException(
                         GeneralErrorCode.SERVICE_UNAVAILABLE,
                         "No active voice training sentence is available."
@@ -51,6 +77,17 @@ public class EvolveService {
                 .sentenceId(sentence.getId())
                 .speechLine(sentence.getContent())
                 .build();
+    }
+
+    private Optional<VoiceTrainingSentence> findNextVoiceTrainingSentence(
+            List<Long> recentlyUsedSentenceIds
+    ) {
+        if (recentlyUsedSentenceIds.isEmpty()) {
+            return voiceTrainingSentenceRepository.findRandomActive();
+        }
+
+        return voiceTrainingSentenceRepository.findRandomActiveExcluding(recentlyUsedSentenceIds)
+                .or(voiceTrainingSentenceRepository::findRandomActive);
     }
 
     @Transactional

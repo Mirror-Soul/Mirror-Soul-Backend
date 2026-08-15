@@ -76,11 +76,14 @@ public class EvolveController {
     public ApiResponse<EvolveResDTO.valueBalanceQuestionDTO> getValueBalanceQuestion(
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        return valueBalanceService.getQuestion(currentUser.getUuid())
-                .map(question -> ApiResponse.onSuccess(
-                        "Value balance question fetched successfully.", question))
-                .orElseGet(() -> ApiResponse.onSuccess(
-                        GeneralSuccessCode.VALUE_BALANCE_DAILY_LIMIT_REACHED, null));
+        EvolveResDTO.valueBalanceQuestionDTO response =
+                valueBalanceService.getQuestion(currentUser.getUuid());
+        if (response.dailyLimitReached()) {
+            return ApiResponse.onSuccess(
+                    GeneralSuccessCode.VALUE_BALANCE_DAILY_LIMIT_REACHED, response);
+        }
+        return ApiResponse.onSuccess(
+                "Value balance question fetched successfully.", response);
     }
 
     @Operation(summary = "Submit a value balance answer")

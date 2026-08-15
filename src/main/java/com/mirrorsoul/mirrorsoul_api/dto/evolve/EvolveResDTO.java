@@ -42,8 +42,13 @@ public class EvolveResDTO {
             Long questionId,
             ValueBalanceAxis axis,
             String leftLabel,
-            String rightLabel
+            String rightLabel,
+            int answeredCount,
+            int dailyLimit
     ) {
+        public boolean dailyLimitReached() {
+            return answeredCount >= dailyLimit;
+        }
     }
 
     public record valueBalanceAnswerDTO(

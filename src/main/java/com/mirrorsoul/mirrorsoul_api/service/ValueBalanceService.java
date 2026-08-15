@@ -17,7 +17,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -39,7 +38,7 @@ public class ValueBalanceService {
     private final ValueBalanceAnswerRepository answerRepository;
     private final UserValueAxisScoreRepository scoreRepository;
 
-    public Optional<EvolveResDTO.valueBalanceQuestionDTO> getQuestion(UUID userUuid) {
+    public EvolveResDTO.valueBalanceQuestionDTO getQuestion(UUID userUuid) {
         User user = userRepository.findByUuid(userUuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
         TimeWindow time = currentTimeWindow();
@@ -48,7 +47,8 @@ public class ValueBalanceService {
                 .countByUserIdAndAnsweredAtGreaterThanEqualAndAnsweredAtLessThan(
                         user.getId(), time.todayStart(), time.tomorrowStart());
         if (answeredCount >= DAILY_LIMIT) {
-            return Optional.empty();
+            return new EvolveResDTO.valueBalanceQuestionDTO(
+                    null, null, null, null, Math.toIntExact(answeredCount), DAILY_LIMIT);
         }
 
         List<ValueBalanceQuestion> candidates = questionRepository.findActiveNotAnsweredSince(
@@ -70,12 +70,14 @@ public class ValueBalanceService {
         ValueBalanceQuestion selected = selectionPool.get(
                 ThreadLocalRandom.current().nextInt(selectionPool.size()));
 
-        return Optional.of(new EvolveResDTO.valueBalanceQuestionDTO(
+        return new EvolveResDTO.valueBalanceQuestionDTO(
                 selected.getId(),
                 selected.getAxis(),
                 selected.getLeftLabel(),
-                selected.getRightLabel()
-        ));
+                selected.getRightLabel(),
+                Math.toIntExact(answeredCount),
+                DAILY_LIMIT
+        );
     }
 
     @Transactional

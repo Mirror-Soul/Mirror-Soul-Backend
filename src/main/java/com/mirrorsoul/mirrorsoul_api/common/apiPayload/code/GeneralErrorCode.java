@@ -96,6 +96,7 @@ public enum GeneralErrorCode implements BaseErrorCode {
     VALUE_BALANCE_ALREADY_ANSWERED(HttpStatus.CONFLICT, "VALUE_BALANCE_4090", "This question was already answered today."),
     VALUE_BALANCE_DAILY_LIMIT_REACHED(HttpStatus.TOO_MANY_REQUESTS, "VALUE_BALANCE_4290", "Daily value balance limit reached."),
     VALUE_BALANCE_NO_AVAILABLE_QUESTION(HttpStatus.SERVICE_UNAVAILABLE, "VALUE_BALANCE_5030", "No value balance question is available."),
+    VOICE_TRAINING_TOO_FREQUENT(HttpStatus.TOO_MANY_REQUESTS, "VOICE_TRAINING_4290", "Voice training can be submitted once every 2 minutes."),
     ;
 
     private final HttpStatus httpStatus;

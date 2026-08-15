@@ -59,13 +59,18 @@ class ValueBalanceServiceTest {
     }
 
     @Test
-    void returnsEmptyAfterFiveAnswersToday() {
+    void returnsProgressAfterFiveAnswersToday() {
         when(userRepository.findByUuid(userUuid)).thenReturn(Optional.of(user));
         when(answerRepository.countByUserIdAndAnsweredAtGreaterThanEqualAndAnsweredAtLessThan(
                 anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(5L);
 
-        assertThat(service.getQuestion(userUuid)).isEmpty();
+        EvolveResDTO.valueBalanceQuestionDTO result = service.getQuestion(userUuid);
+
+        assertThat(result.questionId()).isNull();
+        assertThat(result.answeredCount()).isEqualTo(5);
+        assertThat(result.dailyLimit()).isEqualTo(5);
+        assertThat(result.dailyLimitReached()).isTrue();
     }
 
     @Test
@@ -82,10 +87,12 @@ class ValueBalanceServiceTest {
                 anyLong(), any(LocalDateTime.class), any(LocalDateTime.class)))
                 .thenReturn(Set.of(ValueBalanceAxis.LOVE));
 
-        EvolveResDTO.valueBalanceQuestionDTO result = service.getQuestion(userUuid).orElseThrow();
+        EvolveResDTO.valueBalanceQuestionDTO result = service.getQuestion(userUuid);
 
         assertThat(result.questionId()).isEqualTo(11L);
         assertThat(result.axis()).isEqualTo(ValueBalanceAxis.COMM);
+        assertThat(result.answeredCount()).isEqualTo(1);
+        assertThat(result.dailyLimit()).isEqualTo(5);
     }
 
     @Test

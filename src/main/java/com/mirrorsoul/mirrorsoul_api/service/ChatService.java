@@ -138,7 +138,7 @@ public class ChatService {
         senderMember.getChatRoom().updateLastMessage(message);
 
         ChatResDTO.MessageDTO result = toMessageDTO(message);
-        publishToRoom(roomId, new ChatWebSocketEventDTO(
+        publishToRoom(roomId, currentUserUuid, new ChatWebSocketEventDTO(
                 "MESSAGE_CREATED", roomId, message.getCreatedAt(), result));
         eventPublisher.publishEvent(new ChatPushRequestedEvent(
                 roomId,
@@ -167,7 +167,7 @@ public class ChatService {
                 .build();
 
         if (updated) {
-            publishToRoom(roomId, new ChatWebSocketEventDTO(
+            publishToRoom(roomId, currentUserUuid, new ChatWebSocketEventDTO(
                     "MESSAGE_READ",
                     roomId,
                     readAt,
@@ -187,10 +187,9 @@ public class ChatService {
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.CHAT_ROOM_ACCESS_DENIED));
     }
 
-    private void publishToRoom(Long roomId, ChatWebSocketEventDTO payload) {
-        Set<UUID> recipients = chatRoomMemberRepository.findAllActiveByRoomId(roomId).stream()
-                .map(member -> member.getUser().getUuid())
-                .collect(Collectors.toSet());
+    private void publishToRoom(Long roomId, UUID actorUuid, ChatWebSocketEventDTO payload) {
+        Set<UUID> recipients = Set.copyOf(
+                chatRoomMemberRepository.findRealtimeRecipientUuids(roomId, actorUuid));
         eventPublisher.publishEvent(new ChatRealtimeEvent(recipients, payload));
     }
 

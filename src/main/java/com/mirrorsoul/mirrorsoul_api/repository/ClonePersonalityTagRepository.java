@@ -10,6 +10,8 @@ import org.springframework.data.repository.query.Param;
 public interface ClonePersonalityTagRepository
         extends JpaRepository<ClonePersonalityTag, Long> {
 
+    List<ClonePersonalityTag> findAllByCloneIdOrderByDisplayOrderAsc(Long cloneId);
+
     @Query("""
             select tag
             from ClonePersonalityTag tag

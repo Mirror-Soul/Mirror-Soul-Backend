@@ -47,6 +47,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
           and not exists (
                 select 1
+                from UserBlock ub
+                where (ub.blocker.id = :currentUserId and ub.blocked.id = candidate.id)
+                   or (ub.blocker.id = candidate.id and ub.blocked.id = :currentUserId)
+          )
+
+          and not exists (
+                select 1
                 from MeetingRequest request
                 where request.status =
                     com.mirrorsoul.mirrorsoul_api.domain.enums.MeetingRequestStatus.ACCEPTED

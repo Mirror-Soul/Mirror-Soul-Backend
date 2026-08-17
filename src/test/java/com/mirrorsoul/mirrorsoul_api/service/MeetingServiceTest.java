@@ -40,7 +40,8 @@ class MeetingServiceTest {
                 chatRoomRepository,
                 chatRoomMemberRepository,
                 userRepository,
-                videoCallRepository
+                videoCallRepository,
+                mock(UserBlockRepository.class)
         );
     }
 

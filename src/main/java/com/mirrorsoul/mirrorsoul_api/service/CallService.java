@@ -12,6 +12,7 @@ import com.mirrorsoul.mirrorsoul_api.dto.call.CallResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.VideoCallRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.UserBlockRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class CallService {
     private final VideoCallRepository videoCallRepository;
     private final UserRepository userRepository;
     private final CloneRepository cloneRepository;
+    private final UserBlockRepository userBlockRepository;
 
     @Transactional
     public CallResDTO.StartCallDTO startCloneCall(UUID cloneUserUuid, CallReqDTO.StartCallDTO request, UUID userUUID) {
@@ -39,6 +41,13 @@ public class CallService {
 
         Clone clone = cloneRepository.findByUserUuid(cloneUserUuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.CLONE_NOT_FOUND));
+        User cloneOwner = clone.getUser();
+        if (caller.getId().equals(cloneOwner.getId())
+                || cloneOwner.getStatus() != com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE
+                || !Boolean.TRUE.equals(cloneOwner.getMatchingEnabled())
+                || userBlockRepository.existsBetween(caller.getId(), cloneOwner.getId())) {
+            throw new GeneralException(GeneralErrorCode.CLONE_NOT_FOUND);
+        }
 
         CallMediaType mediaType = request.mediaType() == null
                 ? CallMediaType.VOICE
@@ -70,6 +79,11 @@ public class CallService {
     @Transactional
     public void markInProgress(Long callId) {
         VideoCall call = getCall(callId);
+
+        if (userBlockRepository.existsBetween(
+                call.getUser().getId(), call.getClone().getUser().getId())) {
+            throw new GeneralException(GeneralErrorCode.CALL_NOT_FOUND);
+        }
 
         if (call.getStatus() == VideoCallStatus.COMPLETED ||
                 call.getStatus() == VideoCallStatus.CANCELLED ||

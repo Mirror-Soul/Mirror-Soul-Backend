@@ -150,8 +150,8 @@ class ChatServiceTest {
             ChatMessage input = invocation.getArgument(0);
             return message(500L, room, sender, input.getClientMessageId(), input.getContent(), createdAt);
         });
-        when(chatRoomMemberRepository.findAllActiveByRoomId(10L))
-                .thenReturn(List.of(senderMember, receiverMember));
+        when(chatRoomMemberRepository.findRealtimeRecipientUuids(10L, senderUuid))
+                .thenReturn(List.of(senderUuid, receiverUuid));
 
         ChatResDTO.MessageDTO result = chatService.sendMessage(
                 senderUuid, 10L, new ChatReqDTO.SendMessageDTO(clientMessageId, "  안녕하세요  "));

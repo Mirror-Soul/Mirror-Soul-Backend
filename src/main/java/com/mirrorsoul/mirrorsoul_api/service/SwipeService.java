@@ -8,6 +8,7 @@ import com.mirrorsoul.mirrorsoul_api.domain.enums.SwipeAction;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.repository.SwipeHistoryRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.UserBlockRepository;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class SwipeService {
 
     private final UserRepository userRepository;
     private final SwipeHistoryRepository swipeHistoryRepository;
+    private final UserBlockRepository userBlockRepository;
 
     @Transactional
     public void swipe(UUID swiperUuid, UUID targetUuid) {
@@ -35,6 +37,10 @@ public class SwipeService {
                 .filter(user -> user.getStatus() == UserStatus.ACTIVE)
                 .filter(user -> Boolean.TRUE.equals(user.getMatchingEnabled()))
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.SWIPE_TARGET_UNAVAILABLE));
+
+        if (userBlockRepository.existsBetween(swiper.getId(), target.getId())) {
+            throw new GeneralException(GeneralErrorCode.SWIPE_TARGET_UNAVAILABLE);
+        }
 
         boolean alreadySwiped = swipeHistoryRepository
                 .existsBySwiperIdAndTargetIdAndCreatedAtGreaterThanEqual(

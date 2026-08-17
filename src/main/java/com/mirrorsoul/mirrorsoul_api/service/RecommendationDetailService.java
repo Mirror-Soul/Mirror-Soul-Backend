@@ -4,18 +4,19 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
 import com.mirrorsoul.mirrorsoul_api.domain.AiVoiceProfile;
 import com.mirrorsoul.mirrorsoul_api.domain.Clone;
+import com.mirrorsoul.mirrorsoul_api.domain.ClonePersonalityTag;
 import com.mirrorsoul.mirrorsoul_api.domain.Region;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
-import com.mirrorsoul.mirrorsoul_api.domain.enums.VideoCallStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.home.HomeResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.AiVoiceProfileRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.ClonePersonalityTagRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.MbtiProfileRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
-import com.mirrorsoul.mirrorsoul_api.repository.VideoCallRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.UserBlockRepository;
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,27 +27,27 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class RecommendationDetailService {
 
-    private static final String TWIN_AVAILABLE = "AVAILABLE";
-    private static final String TWIN_IN_CALL = "IN_CALL";
-
     private final UserRepository userRepository;
+    private final UserBlockRepository userBlockRepository;
     private final CloneRepository cloneRepository;
+    private final MbtiProfileRepository mbtiProfileRepository;
+    private final ClonePersonalityTagRepository clonePersonalityTagRepository;
     private final AiVoiceProfileRepository aiVoiceProfileRepository;
-    private final VideoCallRepository videoCallRepository;
     private final FileService fileService;
 
-    public HomeResDTO.RecommendationDetailDTO getDetail(UUID targetUserUuid) {
+    public HomeResDTO.RecommendationDetailDTO getDetail(UUID currentUserUuid, UUID targetUserUuid) {
+        User currentUser = userRepository.findByUuid(currentUserUuid)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
         User target = userRepository.findByUuid(targetUserUuid)
                 .filter(user -> user.getStatus() == UserStatus.ACTIVE)
                 .filter(user -> Boolean.TRUE.equals(user.getMatchingEnabled()))
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.RECOMMENDATION_TARGET_NOT_FOUND));
+        if (currentUser.getId().equals(target.getId())
+                || userBlockRepository.existsBetween(currentUser.getId(), target.getId())) {
+            throw new GeneralException(GeneralErrorCode.RECOMMENDATION_TARGET_NOT_FOUND);
+        }
         Clone clone = cloneRepository.findByUserUuid(targetUserUuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.CLONE_NOT_FOUND));
-
-        boolean inCall = videoCallRepository.existsByCloneIdAndStatusIn(
-                clone.getId(),
-                List.of(VideoCallStatus.READY, VideoCallStatus.IN_PROGRESS)
-        );
 
         return new HomeResDTO.RecommendationDetailDTO(
                 target.getUuid(),
@@ -56,7 +57,13 @@ public class RecommendationDetailService {
                 clone.getSyncRate(),
                 toRegion(target.getResidenceRegion()),
                 target.getSelfIntroduction(),
-                inCall ? TWIN_IN_CALL : TWIN_AVAILABLE,
+                mbtiProfileRepository.findByUser_Id(target.getId())
+                        .map(profile -> profile.getMbti())
+                        .orElse(null),
+                clonePersonalityTagRepository
+                        .findAllByCloneIdOrderByDisplayOrderAsc(clone.getId()).stream()
+                        .map(ClonePersonalityTag::getContent)
+                        .toList(),
                 findVoicePreview(clone)
         );
     }

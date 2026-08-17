@@ -1,5 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.dto.home;
 
+import com.mirrorsoul.mirrorsoul_api.domain.enums.MbtiType;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,7 +65,8 @@ public final class HomeResDTO {
             Integer syncRate,
             RegionDTO region,
             String selfIntroduction,
-            String twinStatus,
+            MbtiType mbti,
+            List<String> hashtags,
             VoicePreviewDTO voicePreview
     ) {
     }

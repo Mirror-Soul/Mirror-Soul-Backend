@@ -16,6 +16,7 @@ import com.mirrorsoul.mirrorsoul_api.domain.enums.SwipeAction;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.repository.SwipeHistoryRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.UserBlockRepository;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -33,7 +34,8 @@ class SwipeServiceTest {
     void setUp() {
         userRepository = mock(UserRepository.class);
         swipeHistoryRepository = mock(SwipeHistoryRepository.class);
-        swipeService = new SwipeService(userRepository, swipeHistoryRepository);
+        swipeService = new SwipeService(
+                userRepository, swipeHistoryRepository, mock(UserBlockRepository.class));
     }
 
     @Test

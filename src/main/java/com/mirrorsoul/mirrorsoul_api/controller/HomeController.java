@@ -99,7 +99,7 @@ public class HomeController {
 
     // TODO Big Five(개방성, 성실성, 외향성, 우호성, 신경증) 데이터 모델이 확정되면 성격 궁합 지표를 응답에 추가합니다.
     // TODO 사용자 쌍 기준 AI 궁합 분석 생성 및 저장 정책이 확정되면 분석 문구를 응답에 추가합니다.
-    @Operation(summary = "추천 유저 상세 조회", description = "추천 유저의 프로필과 Twin 정보를 조회합니다.")
+    @Operation(summary = "추천 유저 상세 조회", description = "추천 유저의 프로필과 Twin 정보, MBTI, 성격 해시태그를 조회합니다.")
     @GetMapping("/recommendations/{target-user-uuid}")
     public ApiResponse<HomeResDTO.RecommendationDetailDTO> getRecommendationDetail(
             @AuthenticationPrincipal CustomUserDetails currentUser,
@@ -107,7 +107,7 @@ public class HomeController {
     ) {
         return ApiResponse.onSuccess(
                 "추천 유저 상세 조회에 성공했습니다.",
-                recommendationDetailService.getDetail(targetUserUuid)
+                recommendationDetailService.getDetail(currentUser.getUuid(), targetUserUuid)
         );
     }
 

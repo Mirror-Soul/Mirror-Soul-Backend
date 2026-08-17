@@ -25,6 +25,7 @@ import com.mirrorsoul.mirrorsoul_api.repository.CallMatchAnalysisRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.TalkLogRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.VideoCallRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.UserBlockRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -51,7 +52,8 @@ class HistoryServiceTest {
                 videoCallRepository,
                 callMatchAnalysisRepository,
                 cloneRepository,
-                talkLogRepository
+                talkLogRepository,
+                mock(UserBlockRepository.class)
         );
     }
 

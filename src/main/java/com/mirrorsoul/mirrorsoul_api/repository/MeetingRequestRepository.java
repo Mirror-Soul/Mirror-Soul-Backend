@@ -19,6 +19,11 @@ public interface MeetingRequestRepository extends JpaRepository<MeetingRequest, 
             join fetch mr.videoCall videoCall
             where mr.receiver.uuid = :receiverUuid
               and mr.status = :status
+              and not exists (
+                    select 1 from UserBlock ub
+                    where (ub.blocker = mr.receiver and ub.blocked = mr.sender)
+                       or (ub.blocker = mr.sender and ub.blocked = mr.receiver)
+              )
             order by mr.createdAt desc, mr.id desc
             """)
     List<MeetingRequest> findAllReceivedByStatus(
@@ -36,4 +41,17 @@ public interface MeetingRequestRepository extends JpaRepository<MeetingRequest, 
             where mr.id = :id
             """)
     Optional<MeetingRequest> findByIdForUpdate(@Param("id") Long id);
+
+    @Query("""
+            select mr from MeetingRequest mr
+            join fetch mr.sender
+            join fetch mr.receiver
+            where mr.status = com.mirrorsoul.mirrorsoul_api.domain.enums.MeetingRequestStatus.PENDING
+              and ((mr.sender.id = :firstUserId and mr.receiver.id = :secondUserId)
+                or (mr.sender.id = :secondUserId and mr.receiver.id = :firstUserId))
+            """)
+    List<MeetingRequest> findPendingBetween(
+            @Param("firstUserId") Long firstUserId,
+            @Param("secondUserId") Long secondUserId
+    );
 }

@@ -48,6 +48,10 @@ public enum GeneralErrorCode implements BaseErrorCode {
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "USER_4090", "이미 사용 중인 이메일입니다."),
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "USER_4091", "이미 사용 중인 닉네임입니다."),
 
+    // 사용자 차단 관련 에러
+    BLOCK_SELF_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "BLOCK_4000", "자기 자신을 차단할 수 없습니다."),
+    BLOCK_TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "BLOCK_4040", "차단할 사용자를 찾을 수 없습니다."),
+
     // 지역 관련 에러
     REGION_NOT_FOUND(HttpStatus.NOT_FOUND, "REGION_4040", "존재하지 않는 지역입니다."),
 

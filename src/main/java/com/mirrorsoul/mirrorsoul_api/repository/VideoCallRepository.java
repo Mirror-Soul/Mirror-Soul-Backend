@@ -24,6 +24,11 @@ public interface VideoCallRepository extends JpaRepository<VideoCall, Long> {
             join fetch clone.user
             where videoCall.user.uuid = :userUuid
               and videoCall.status = :status
+              and not exists (
+                    select 1 from UserBlock ub
+                    where (ub.blocker = videoCall.user and ub.blocked = clone.user)
+                       or (ub.blocker = clone.user and ub.blocked = videoCall.user)
+              )
             order by videoCall.startedAt desc, videoCall.id desc
             """)
     List<VideoCall> findAllByUserUuidAndStatusOrderByLatest(
@@ -41,6 +46,11 @@ public interface VideoCallRepository extends JpaRepository<VideoCall, Long> {
               and videoCall.startedAt >= :startedAt
               and videoCall.startedAt < :endedBefore
               and (caller.uuid = :userUuid or cloneOwner.uuid = :userUuid)
+              and not exists (
+                    select 1 from UserBlock ub
+                    where (ub.blocker = caller and ub.blocked = cloneOwner)
+                       or (ub.blocker = cloneOwner and ub.blocked = caller)
+              )
             order by videoCall.startedAt desc, videoCall.id desc
             """)
     List<VideoCall> findRecentHistory(

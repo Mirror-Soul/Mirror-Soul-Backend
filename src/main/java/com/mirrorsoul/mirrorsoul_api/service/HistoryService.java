@@ -16,6 +16,7 @@ import com.mirrorsoul.mirrorsoul_api.repository.CallMatchAnalysisRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.TalkLogRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.VideoCallRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.UserBlockRepository;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -44,6 +45,7 @@ public class HistoryService {
     private final CallMatchAnalysisRepository callMatchAnalysisRepository;
     private final CloneRepository cloneRepository;
     private final TalkLogRepository talkLogRepository;
+    private final UserBlockRepository userBlockRepository;
 
     public HistoryResDTO.CallHistoryListDTO getCallHistory(
             UUID currentUserUuid,
@@ -239,6 +241,13 @@ public class HistoryService {
         boolean participant = isSent(call, currentUserUuid) || ownsTargetClone(call, currentUserUuid);
         if (!participant) {
             throw new GeneralException(GeneralErrorCode.CALL_ACCESS_DENIED);
+        }
+        User currentUser = isSent(call, currentUserUuid)
+                ? call.getUser()
+                : call.getClone().getUser();
+        User partner = partnerOf(call, currentUserUuid);
+        if (userBlockRepository.existsBetween(currentUser.getId(), partner.getId())) {
+            throw new GeneralException(GeneralErrorCode.CALL_NOT_FOUND);
         }
         return call;
     }

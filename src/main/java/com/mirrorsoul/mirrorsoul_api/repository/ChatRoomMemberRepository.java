@@ -20,6 +20,14 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
             select member from ChatRoomMember member
             where member.user.uuid = :userUuid
               and member.leftAt is null
+              and not exists (
+                    select 1 from ChatRoomMember partner, UserBlock ub
+                    where partner.chatRoom = member.chatRoom
+                      and partner.user <> member.user
+                      and partner.leftAt is null
+                      and ((ub.blocker = member.user and ub.blocked = partner.user)
+                        or (ub.blocker = partner.user and ub.blocked = member.user))
+              )
             order by coalesce(member.chatRoom.lastMessageAt, member.chatRoom.createdAt) desc,
                      member.chatRoom.id desc
             """)
@@ -31,6 +39,14 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
             where member.chatRoom.id = :roomId
               and member.user.uuid = :userUuid
               and member.leftAt is null
+              and not exists (
+                    select 1 from ChatRoomMember partner, UserBlock ub
+                    where partner.chatRoom = member.chatRoom
+                      and partner.user <> member.user
+                      and partner.leftAt is null
+                      and ((ub.blocker = member.user and ub.blocked = partner.user)
+                        or (ub.blocker = partner.user and ub.blocked = member.user))
+              )
             """)
     Optional<ChatRoomMember> findActiveByRoomIdAndUserUuid(
             @Param("roomId") Long roomId, @Param("userUuid") UUID userUuid);
@@ -42,6 +58,14 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
             where member.chatRoom.id = :roomId
               and member.user.uuid = :userUuid
               and member.leftAt is null
+              and not exists (
+                    select 1 from ChatRoomMember partner, UserBlock ub
+                    where partner.chatRoom = member.chatRoom
+                      and partner.user <> member.user
+                      and partner.leftAt is null
+                      and ((ub.blocker = member.user and ub.blocked = partner.user)
+                        or (ub.blocker = partner.user and ub.blocked = member.user))
+              )
             """)
     Optional<ChatRoomMember> findActiveByRoomIdAndUserUuidForUpdate(
             @Param("roomId") Long roomId, @Param("userUuid") UUID userUuid);
@@ -68,7 +92,25 @@ public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, 
               and member.user.uuid <> :senderUuid
               and member.leftAt is null
               and member.notificationEnabled = true
+              and not exists (
+                    select 1 from UserBlock ub
+                    where (ub.blocker = member.user and ub.blocked.uuid = :senderUuid)
+                       or (ub.blocker.uuid = :senderUuid and ub.blocked = member.user)
+              )
             """)
     List<UUID> findPushRecipientUuids(
             @Param("roomId") Long roomId, @Param("senderUuid") UUID senderUuid);
+
+    @Query("""
+            select member.user.uuid from ChatRoomMember member
+            where member.chatRoom.id = :roomId
+              and member.leftAt is null
+              and not exists (
+                    select 1 from UserBlock ub
+                    where (ub.blocker = member.user and ub.blocked.uuid = :actorUuid)
+                       or (ub.blocker.uuid = :actorUuid and ub.blocked = member.user)
+              )
+            """)
+    List<UUID> findRealtimeRecipientUuids(
+            @Param("roomId") Long roomId, @Param("actorUuid") UUID actorUuid);
 }

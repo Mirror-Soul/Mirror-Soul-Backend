@@ -28,6 +28,7 @@ public class MeetingService {
     private final ChatRoomMemberRepository chatRoomMemberRepository;
     private final UserRepository userRepository;
     private final VideoCallRepository videoCallRepository;
+    private final UserBlockRepository userBlockRepository;
 
     public MeetingResDTO.RequestListDTO getReceivedRequests(UUID currentUserUuid) {
         List<MeetingRequest> requests = meetingRequestRepository.findAllReceivedByStatus(
@@ -64,6 +65,7 @@ public class MeetingService {
         if (receiver.getStatus() != UserStatus.ACTIVE) {
             throw new GeneralException(GeneralErrorCode.MEETING_RECEIVER_INACTIVE);
         }
+        validateNotBlocked(sender, receiver);
 
         String pairKey = pairKey(sender.getId(), receiver.getId());
         if (chatRoomRepository.existsByParticipantPairKey(pairKey)) {
@@ -123,6 +125,7 @@ public class MeetingService {
             return acceptedResponse(request, existingForRequest.get(), false);
         }
         validatePending(request);
+        validateNotBlocked(request.getSender(), request.getReceiver());
 
         String pairKey = pairKey(request.getSender().getId(), request.getReceiver().getId());
         if (chatRoomRepository.existsByParticipantPairKey(pairKey)) {
@@ -168,6 +171,12 @@ public class MeetingService {
     private void validatePending(MeetingRequest request) {
         if (request.getStatus() != MeetingRequestStatus.PENDING) {
             throw new GeneralException(GeneralErrorCode.MEETING_REQUEST_ALREADY_PROCESSED);
+        }
+    }
+
+    private void validateNotBlocked(User first, User second) {
+        if (userBlockRepository.existsBetween(first.getId(), second.getId())) {
+            throw new GeneralException(GeneralErrorCode.MEETING_RECEIVER_INACTIVE);
         }
     }
 

@@ -5,6 +5,7 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralExceptio
 import com.mirrorsoul.mirrorsoul_api.domain.AiVoiceProfile;
 import com.mirrorsoul.mirrorsoul_api.domain.Clone;
 import com.mirrorsoul.mirrorsoul_api.domain.ClonePersonalityTag;
+import com.mirrorsoul.mirrorsoul_api.domain.MbtiProfile;
 import com.mirrorsoul.mirrorsoul_api.domain.Region;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
@@ -48,6 +49,8 @@ public class RecommendationDetailService {
         }
         Clone clone = cloneRepository.findByUserUuid(targetUserUuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.CLONE_NOT_FOUND));
+        MbtiProfile mbtiProfile = mbtiProfileRepository.findByUser_Id(target.getId())
+                .orElse(null);
 
         return new HomeResDTO.RecommendationDetailDTO(
                 target.getUuid(),
@@ -56,10 +59,11 @@ public class RecommendationDetailService {
                 target.getProfileImageUrl(),
                 clone.getSyncRate(),
                 toRegion(target.getResidenceRegion()),
+                target.getJob(),
+                hasSubmittedJobCertification(target),
                 target.getSelfIntroduction(),
-                mbtiProfileRepository.findByUser_Id(target.getId())
-                        .map(profile -> profile.getMbti())
-                        .orElse(null),
+                mbtiProfile == null ? null : mbtiProfile.getMbti(),
+                toMbtiIndicators(mbtiProfile),
                 clonePersonalityTagRepository
                         .findAllByCloneIdOrderByDisplayOrderAsc(clone.getId()).stream()
                         .map(ClonePersonalityTag::getContent)
@@ -93,6 +97,23 @@ public class RecommendationDetailService {
             return null;
         }
         return new HomeResDTO.RegionDTO(region.getSidoName(), region.getSigunguName());
+    }
+
+    private boolean hasSubmittedJobCertification(User user) {
+        return user.getJobCertificationObjectKey() != null
+                && !user.getJobCertificationObjectKey().isBlank();
+    }
+
+    private HomeResDTO.MbtiIndicatorsDTO toMbtiIndicators(MbtiProfile profile) {
+        if (profile == null) {
+            return null;
+        }
+        return new HomeResDTO.MbtiIndicatorsDTO(
+                profile.getIeScore(),
+                profile.getNsScore(),
+                profile.getFtScore(),
+                profile.getPjScore()
+        );
     }
 
     private Integer calculateAge(LocalDate birthDate) {

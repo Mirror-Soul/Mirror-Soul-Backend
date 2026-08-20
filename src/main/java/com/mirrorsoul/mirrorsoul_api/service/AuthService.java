@@ -12,6 +12,7 @@ import com.mirrorsoul.mirrorsoul_api.dto.login.RefreshTokenResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,15 +30,20 @@ public class AuthService {
 
     @Transactional
     public LoginResDTO login(LoginReqDTO request) {
-        User user = userRepository.findByEmail(request.email())
+        User user = userRepository.findByEmailForUpdate(request.email())
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_LOGIN, "Invalid email or password."));
-
-        if (UserStatus.INACTIVE.equals(user.getStatus())) {
-            throw new GeneralException(GeneralErrorCode.FORBIDDEN, "Inactive user.");
-        }
 
         if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new GeneralException(GeneralErrorCode.INVALID_LOGIN, "Invalid email or password.");
+        }
+
+        if (UserStatus.INACTIVE.equals(user.getStatus())) {
+            if (!user.canRecover(LocalDateTime.now())) {
+                throw new GeneralException(GeneralErrorCode.FORBIDDEN, "Account recovery period has expired.");
+            }
+            user.reactivate();
+        } else if (UserStatus.DELETED.equals(user.getStatus())) {
+            throw new GeneralException(GeneralErrorCode.FORBIDDEN, "Deleted user.");
         }
 
         String accessToken = tokenProvider.createAccessToken(user);
@@ -61,7 +67,7 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_TOKEN, "User for token not found."));
 
-        if (UserStatus.INACTIVE.equals(user.getStatus())) {
+        if (UserStatus.INACTIVE.equals(user.getStatus()) || UserStatus.DELETED.equals(user.getStatus())) {
             throw new GeneralException(GeneralErrorCode.FORBIDDEN, "Inactive user.");
         }
 

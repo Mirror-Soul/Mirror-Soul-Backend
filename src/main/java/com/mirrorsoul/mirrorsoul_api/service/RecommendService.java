@@ -6,14 +6,20 @@ import com.mirrorsoul.mirrorsoul_api.domain.Region;
 import com.mirrorsoul.mirrorsoul_api.domain.Sigungu;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.UserPreferredSigungu;
+import com.mirrorsoul.mirrorsoul_api.domain.ClonePersonalityTag;
+import com.mirrorsoul.mirrorsoul_api.domain.MbtiProfile;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.MbtiType;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.RecommendResDTO;
 import com.mirrorsoul.mirrorsoul_api.recommendation.UserEmbeddingRepository;
 import com.mirrorsoul.mirrorsoul_api.recommendation.VectorSimilarityScores;
 import com.mirrorsoul.mirrorsoul_api.repository.UserPreferredSigunguRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.ClonePersonalityTagRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.MbtiProfileRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -38,6 +44,8 @@ public class RecommendService {
     private final UserPreferredSigunguRepository preferredSigunguRepository;
     private final RecommendationScoreCalculator scoreCalculator;
     private final ObjectProvider<UserEmbeddingRepository> embeddingRepositoryProvider;
+    private final MbtiProfileRepository mbtiProfileRepository;
+    private final ClonePersonalityTagRepository clonePersonalityTagRepository;
 
     public RecommendResDTO.RecommendationSliceDTO getRecommendations(
             UUID currentUserUuid,
@@ -74,6 +82,8 @@ public class RecommendService {
                 requester.getUuid(),
                 candidates
         );
+        Map<Long, MbtiType> mbtiByUserId = loadMbtiByUserId(candidates);
+        Map<Long, List<String>> hashtagsByUserId = loadHashtagsByUserId(candidates);
 
         Region requesterResidence = requester.getResidenceRegion();
         List<Sigungu> requesterPreferredSigungu = loadPreferredSigungu(requester);
@@ -91,6 +101,13 @@ public class RecommendService {
                     return new RecommendResDTO.RecommendationDTO(
                             candidate.getUuid(),
                             candidate.getName(),
+                            calculateAge(candidate.getBirthDate(), today),
+                            candidate.getJob(),
+                            hasSubmittedJobCertification(candidate),
+                            toResidence(candidate.getResidenceRegion()),
+                            candidate.getSelfIntroduction(),
+                            mbtiByUserId.get(candidate.getId()),
+                            hashtagsByUserId.getOrDefault(candidate.getId(), List.of()),
                             candidate.getProfileImageUrl(),
                             score
                     );
@@ -138,6 +155,48 @@ public class RecommendService {
                         VectorSimilarityScores::userUuid,
                         Function.identity()
                 ));
+    }
+
+    private Map<Long, MbtiType> loadMbtiByUserId(List<User> candidates) {
+        if (candidates.isEmpty()) {
+            return Map.of();
+        }
+        return mbtiProfileRepository.findAllByUser_IdIn(userIds(candidates)).stream()
+                .collect(Collectors.toMap(
+                        profile -> profile.getUser().getId(),
+                        MbtiProfile::getMbti
+                ));
+    }
+
+    private Map<Long, List<String>> loadHashtagsByUserId(List<User> candidates) {
+        if (candidates.isEmpty()) {
+            return Map.of();
+        }
+        return clonePersonalityTagRepository.findAllByUserIds(userIds(candidates)).stream()
+                .collect(Collectors.groupingBy(
+                        tag -> tag.getClone().getUser().getId(),
+                        Collectors.mapping(ClonePersonalityTag::getContent, Collectors.toList())
+                ));
+    }
+
+    private List<Long> userIds(List<User> candidates) {
+        return candidates.stream().map(User::getId).toList();
+    }
+
+    private Integer calculateAge(LocalDate birthDate, LocalDate today) {
+        return birthDate == null ? null : Period.between(birthDate, today).getYears();
+    }
+
+    private boolean hasSubmittedJobCertification(User user) {
+        return user.getJobCertificationObjectKey() != null
+                && !user.getJobCertificationObjectKey().isBlank();
+    }
+
+    private RecommendResDTO.ResidenceDTO toResidence(Region region) {
+        if (region == null) {
+            return null;
+        }
+        return new RecommendResDTO.ResidenceDTO(region.getSidoName(), region.getSigunguName());
     }
 
 }

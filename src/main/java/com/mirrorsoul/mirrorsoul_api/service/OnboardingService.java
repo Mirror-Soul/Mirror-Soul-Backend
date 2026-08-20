@@ -39,7 +39,7 @@ public class OnboardingService {
             throw new GeneralException(FORBIDDEN, "ONBOARD_A 상태의 사용자만 페르소나를 저장할 수 있습니다.");
         }
 
-        user.setName(req.getNickname());
+        user.setName(req.getNickname().trim());
 
         Region region = regionRepository.findBySidoNameAndSigunguNameAndEupmyeondongName(
                 req.getSidoName(),
@@ -62,12 +62,7 @@ public class OnboardingService {
     @Transactional(readOnly = true)
     public Boolean checkDupNickname(OnboardingReqDTO.checkDupNicknameReqDTO req) {
 
-        String nickname = req.getNickname();
-
-        if (nickname == null || nickname.trim().isEmpty()) {
-            return false;
-        }
-        return !userRepository.existsByName(nickname);
+        return !userRepository.existsByName(req.getNickname().trim());
     }
 
     public void putPersonality(OnboardingReqDTO.personalityReqDTO req, UUID userUuid) {

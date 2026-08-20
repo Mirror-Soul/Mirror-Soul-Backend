@@ -107,6 +107,12 @@ public class User extends BaseTimeEntity {
     @Column(name = "refresh_token", length = 500)
     private String refreshToken;
 
+    @Column(name = "withdrawn_at")
+    private LocalDateTime withdrawnAt;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @Enumerated(EnumType.STRING)
     @Setter
     @Column(nullable = false, length = 20)
@@ -118,6 +124,42 @@ public class User extends BaseTimeEntity {
 
     public void clearRefreshToken() {
         this.refreshToken = null;
+    }
+
+    public void deactivate(LocalDateTime withdrawnAt) {
+        this.status = UserStatus.INACTIVE;
+        this.withdrawnAt = withdrawnAt;
+        clearRefreshToken();
+    }
+
+    public boolean canRecover(LocalDateTime now) {
+        return status == UserStatus.INACTIVE
+                && withdrawnAt != null
+                && now.isBefore(withdrawnAt.plusDays(30));
+    }
+
+    public void reactivate() {
+        this.status = UserStatus.ACTIVE;
+        this.withdrawnAt = null;
+    }
+
+    public void anonymize(LocalDateTime deletedAt) {
+        this.email = "deleted-" + uuid + "@deleted.invalid";
+        this.passwordHash = "DELETED:" + UUID.randomUUID();
+        this.name = "탈퇴한 사용자";
+        this.gender = null;
+        this.job = null;
+        this.jobDescription = null;
+        this.jobCertificationObjectKey = null;
+        this.selfIntroduction = null;
+        this.birthDate = null;
+        this.residenceRegion = null;
+        this.profileImageUrl = null;
+        this.lastActiveAt = null;
+        this.refreshToken = null;
+        this.matchingEnabled = false;
+        this.status = UserStatus.DELETED;
+        this.deletedAt = deletedAt;
     }
 
     public void updatePassword(String passwordHash) {

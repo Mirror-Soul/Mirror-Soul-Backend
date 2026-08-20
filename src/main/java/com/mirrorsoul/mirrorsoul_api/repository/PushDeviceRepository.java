@@ -16,4 +16,6 @@ public interface PushDeviceRepository extends JpaRepository<PushDevice, Long> {
     Optional<PushDevice> findByInstallationIdAndUserUuid(UUID installationId, UUID userUuid);
 
     List<PushDevice> findAllByUserUuidInAndEnabledTrue(Collection<UUID> userUuids);
+
+    void deleteAllByUserUuidIn(Collection<UUID> userUuids);
 }

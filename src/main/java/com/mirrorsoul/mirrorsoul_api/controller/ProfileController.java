@@ -124,7 +124,7 @@ public class ProfileController {
         return ApiResponse.onSuccess("닉네임 수정에 성공했습니다.");
     }
 
-    @Operation(summary = "회원 탈퇴 api", description = "계정을 비활성화(Soft Delete)합니다. 30일 뒤에 계정은 영구 삭제됩니다.")
+    @Operation(summary = "회원 탈퇴 api", description = "계정을 비활성화합니다. 30일 이내에 다시 로그인하면 복구되며, 30일 후에는 개인정보가 익명화됩니다.")
     @DeleteMapping
     public ApiResponse<Void> inActiveAccount (
             @AuthenticationPrincipal CustomUserDetails currentUser

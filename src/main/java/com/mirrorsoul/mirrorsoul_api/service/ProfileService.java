@@ -7,6 +7,7 @@ import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.profile.ProfileReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.profile.ProfileResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -107,8 +108,7 @@ public class ProfileService {
     @Transactional
     public void inactiveAccount(UUID userUuid) {
         User user = getUser(userUuid);
-        user.setStatus(UserStatus.INACTIVE);
-        user.clearRefreshToken();
+        user.deactivate(LocalDateTime.now());
     }
 
     private User getUser(UUID userUuid) {

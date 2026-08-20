@@ -2,6 +2,7 @@ package com.mirrorsoul.mirrorsoul_api.repository;
 
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.Gender;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import jakarta.persistence.LockModeType;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,6 +19,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select user from User user where user.email = :email")
+    Optional<User> findByEmailForUpdate(@Param("email") String email);
+
     Optional<User> findByUuid(UUID uuid);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
@@ -27,6 +32,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Boolean existsByName(String name);
 
     boolean existsByEmail(String email);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    List<User> findAllByStatusAndWithdrawnAtLessThanEqual(
+            UserStatus status,
+            LocalDateTime withdrawnAt
+    );
 
     @Query("""
         select candidate

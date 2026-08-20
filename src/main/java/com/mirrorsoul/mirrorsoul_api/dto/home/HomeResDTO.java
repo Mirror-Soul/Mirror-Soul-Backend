@@ -1,6 +1,7 @@
 package com.mirrorsoul.mirrorsoul_api.dto.home;
 
 import com.mirrorsoul.mirrorsoul_api.domain.enums.MbtiType;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.Job;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,8 +65,11 @@ public final class HomeResDTO {
             String profileImageUrl,
             Integer syncRate,
             RegionDTO region,
+            Job job,
+            boolean jobCertificationSubmitted,
             String selfIntroduction,
             MbtiType mbti,
+            MbtiIndicatorsDTO mbtiIndicators,
             List<String> hashtags,
             VoicePreviewDTO voicePreview
     ) {
@@ -74,6 +78,14 @@ public final class HomeResDTO {
     public record RegionDTO(
             String sidoName,
             String sigunguName
+    ) {
+    }
+
+    public record MbtiIndicatorsDTO(
+            Integer ieScore,
+            Integer nsScore,
+            Integer ftScore,
+            Integer pjScore
     ) {
     }
 

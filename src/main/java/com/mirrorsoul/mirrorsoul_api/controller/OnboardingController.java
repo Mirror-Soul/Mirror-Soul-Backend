@@ -7,6 +7,7 @@ import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewAnswerReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewAnswerResDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewQuestionResDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.onboarding.OnboardingReqDTO;
+import com.mirrorsoul.mirrorsoul_api.dto.onboarding.OnboardingResDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.visual.VisualReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.visual.VisualResDTO;
 import com.mirrorsoul.mirrorsoul_api.service.InterviewService;
@@ -61,11 +62,15 @@ public class OnboardingController {
 
     @Operation(summary = "닉네임 중복 확인", description = "닉네임 사용 가능 여부를 확인합니다.")
     @PostMapping("/profile/check-dup-nickname")
-    public ApiResponse<Void> checkDupNickname(@RequestBody OnboardingReqDTO.checkDupNicknameReqDTO req) {
-        if (onboardingService.checkDupNickname(req)) {
-            return ApiResponse.onSuccess("사용 가능한 닉네임입니다.");
-        }
-        return ApiResponse.onSuccess("사용 불가능한 중복 닉네임입니다.");
+    public ApiResponse<OnboardingResDTO.checkDupNicknameResDTO> checkDupNickname(
+            @Valid @RequestBody OnboardingReqDTO.checkDupNicknameReqDTO req) {
+        boolean available = onboardingService.checkDupNickname(req);
+        OnboardingResDTO.checkDupNicknameResDTO result =
+                OnboardingResDTO.checkDupNicknameResDTO.builder()
+                        .available(available)
+                        .build();
+
+        return ApiResponse.onSuccess("닉네임 중복 확인을 완료했습니다.", result);
     }
 
     @SecurityRequirement(name = "bearerAuth")

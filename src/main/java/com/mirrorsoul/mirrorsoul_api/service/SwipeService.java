@@ -7,6 +7,7 @@ import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.SwipeAction;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.repository.SwipeHistoryRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.RecommendationExposureRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserBlockRepository;
 import java.time.LocalDateTime;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import static com.mirrorsoul.mirrorsoul_api.recommendation.RecommendationPolicy.SWIPE_REEXPOSURE_DAYS;
+import static com.mirrorsoul.mirrorsoul_api.recommendation.RecommendationPolicy.RECOMMENDATION_EXPOSURE_DAYS;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +26,7 @@ public class SwipeService {
     private final UserRepository userRepository;
     private final SwipeHistoryRepository swipeHistoryRepository;
     private final UserBlockRepository userBlockRepository;
+    private final RecommendationExposureRepository recommendationExposureRepository;
 
     @Transactional
     public void swipe(UUID swiperUuid, UUID targetUuid) {
@@ -39,6 +42,15 @@ public class SwipeService {
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.SWIPE_TARGET_UNAVAILABLE));
 
         if (userBlockRepository.existsBetween(swiper.getId(), target.getId())) {
+            throw new GeneralException(GeneralErrorCode.SWIPE_TARGET_UNAVAILABLE);
+        }
+        boolean exposed = recommendationExposureRepository
+                .existsByRequesterIdAndTargetIdAndLastExposedAtGreaterThanEqual(
+                        swiper.getId(),
+                        target.getId(),
+                        LocalDateTime.now().minusDays(RECOMMENDATION_EXPOSURE_DAYS)
+                );
+        if (!exposed) {
             throw new GeneralException(GeneralErrorCode.SWIPE_TARGET_UNAVAILABLE);
         }
 

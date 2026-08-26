@@ -45,6 +45,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/ws/signaling"
+                                , "/internal/value-balance/analysis-jobs/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

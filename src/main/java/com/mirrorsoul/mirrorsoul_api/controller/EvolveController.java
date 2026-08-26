@@ -1,7 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.controller;
 
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.ApiResponse;
-import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralSuccessCode;
 import com.mirrorsoul.mirrorsoul_api.common.security.CustomUserDetails;
 import com.mirrorsoul.mirrorsoul_api.dto.evolve.EvolveReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.evolve.EvolveResDTO;
@@ -71,19 +70,14 @@ public class EvolveController {
     }
 
     @Operation(summary = "Get a value balance question",
-            description = "Returns one active question, up to five answered questions per day.")
+            description = "Returns one random, never-before-answered question in an 8-question set.")
     @GetMapping("/value-balance")
     public ApiResponse<EvolveResDTO.valueBalanceQuestionDTO> getValueBalanceQuestion(
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
-        EvolveResDTO.valueBalanceQuestionDTO response =
-                valueBalanceService.getQuestion(currentUser.getUuid());
-        if (response.dailyLimitReached()) {
-            return ApiResponse.onSuccess(
-                    GeneralSuccessCode.VALUE_BALANCE_DAILY_LIMIT_REACHED, response);
-        }
         return ApiResponse.onSuccess(
-                "Value balance question fetched successfully.", response);
+                "Value balance question fetched successfully.",
+                valueBalanceService.getQuestion(currentUser.getUuid()));
     }
 
     @Operation(summary = "Submit a value balance answer")

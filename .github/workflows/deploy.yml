@@ -54,6 +54,8 @@ jobs:
             export AWS_REGION=${{ secrets.AWS_REGION }}
             export AWS_SQS_VOICE_TRAINING_QUEUE_URL='${{ secrets.AWS_SQS_VOICE_TRAINING_QUEUE_URL }}'
             export AWS_SQS_FACE_TRAINING_QUEUE_URL='${{ secrets.AWS_SQS_FACE_TRAINING_QUEUE_URL }}'
+            export AWS_SQS_VALUE_BALANCE_ANALYSIS_QUEUE_URL='${{ secrets.AWS_SQS_VALUE_BALANCE_ANALYSIS_QUEUE_URL }}'
+            export VALUE_BALANCE_CALLBACK_SECRET='${{ secrets.VALUE_BALANCE_CALLBACK_SECRET }}'
             
             export SMTP_USERNAME='${{ secrets.SMTP_USERNAME }}'
             export SMTP_PASSWORD='${{ secrets.SMTP_PASSWORD }}'

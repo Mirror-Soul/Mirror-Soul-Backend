@@ -17,4 +17,7 @@ public class AwsSqsProperties {
 
     @NotBlank
     private String faceTrainingQueueUrl;
+
+    @NotBlank
+    private String valueBalanceAnalysisQueueUrl;
 }

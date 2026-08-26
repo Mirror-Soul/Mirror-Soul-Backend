@@ -1,7 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.repository;
 
 import com.mirrorsoul.mirrorsoul_api.domain.ValueBalanceQuestion;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -18,10 +17,7 @@ public interface ValueBalanceQuestionRepository extends JpaRepository<ValueBalan
                   select answer.id from ValueBalanceAnswer answer
                   where answer.user.id = :userId
                     and answer.question.id = question.id
-                    and answer.answeredAt >= :answeredSince
               )
             """)
-    List<ValueBalanceQuestion> findActiveNotAnsweredSince(
-            @Param("userId") Long userId,
-            @Param("answeredSince") LocalDateTime answeredSince);
+    List<ValueBalanceQuestion> findActiveNeverAnswered(@Param("userId") Long userId);
 }

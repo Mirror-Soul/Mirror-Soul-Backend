@@ -55,6 +55,10 @@ aws:
   sqs:
     voice-training-queue-url: ${AWS_SQS_VOICE_TRAINING_QUEUE_URL}
     face-training-queue-url: ${AWS_SQS_FACE_TRAINING_QUEUE_URL}
+    value-balance-analysis-queue-url: ${AWS_SQS_VALUE_BALANCE_ANALYSIS_QUEUE_URL}
+
+value-balance:
+  callback-secret: ${VALUE_BALANCE_CALLBACK_SECRET}
 
 vector:
   datasource:

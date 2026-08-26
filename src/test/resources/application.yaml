@@ -31,3 +31,7 @@ aws:
   sqs:
     voice-training-queue-url: https://sqs.ap-northeast-2.amazonaws.com/123456789012/test-voice-training
     face-training-queue-url: https://sqs.ap-northeast-2.amazonaws.com/123456789012/test-face-training
+    value-balance-analysis-queue-url: https://sqs.ap-northeast-2.amazonaws.com/123456789012/test-value-balance-analysis
+
+value-balance:
+  callback-secret: test-value-balance-callback-secret

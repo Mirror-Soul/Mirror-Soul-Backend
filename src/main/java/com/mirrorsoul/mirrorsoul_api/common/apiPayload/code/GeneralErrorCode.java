@@ -97,9 +97,11 @@ public enum GeneralErrorCode implements BaseErrorCode {
     CHAT_MESSAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_4041", "채팅 메시지를 찾을 수 없습니다."),
     CHAT_ROOM_ACCESS_DENIED(HttpStatus.FORBIDDEN, "CHAT_4030", "참여 중인 채팅방이 아닙니다."),
     VALUE_BALANCE_QUESTION_NOT_FOUND(HttpStatus.NOT_FOUND, "VALUE_BALANCE_4040", "Value balance question not found."),
-    VALUE_BALANCE_ALREADY_ANSWERED(HttpStatus.CONFLICT, "VALUE_BALANCE_4090", "This question was already answered today."),
-    VALUE_BALANCE_DAILY_LIMIT_REACHED(HttpStatus.TOO_MANY_REQUESTS, "VALUE_BALANCE_4290", "Daily value balance limit reached."),
+    VALUE_BALANCE_ALREADY_ANSWERED(HttpStatus.CONFLICT, "VALUE_BALANCE_4090", "This question was already answered."),
     VALUE_BALANCE_NO_AVAILABLE_QUESTION(HttpStatus.SERVICE_UNAVAILABLE, "VALUE_BALANCE_5030", "No value balance question is available."),
+    VALUE_BALANCE_SET_LOCKED(HttpStatus.TOO_MANY_REQUESTS, "VALUE_BALANCE_4291", "The next value balance set is still locked."),
+    VALUE_BALANCE_COMPLETED(HttpStatus.CONFLICT, "VALUE_BALANCE_4091", "All value balance sets are completed."),
+    VALUE_BALANCE_ANALYSIS_JOB_NOT_FOUND(HttpStatus.NOT_FOUND, "VALUE_BALANCE_4041", "Value balance analysis job not found."),
     VOICE_TRAINING_TOO_FREQUENT(HttpStatus.TOO_MANY_REQUESTS, "VOICE_TRAINING_4290", "Voice training can be submitted once every 2 minutes."),
     ;
 

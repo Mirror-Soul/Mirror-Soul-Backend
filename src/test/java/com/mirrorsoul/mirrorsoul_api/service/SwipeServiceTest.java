@@ -15,6 +15,7 @@ import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.SwipeAction;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.repository.SwipeHistoryRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.RecommendationExposureRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserBlockRepository;
 import java.time.LocalDateTime;
@@ -29,13 +30,19 @@ class SwipeServiceTest {
     private UserRepository userRepository;
     private SwipeHistoryRepository swipeHistoryRepository;
     private SwipeService swipeService;
+    private RecommendationExposureRepository recommendationExposureRepository;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
         swipeHistoryRepository = mock(SwipeHistoryRepository.class);
+        recommendationExposureRepository = mock(RecommendationExposureRepository.class);
         swipeService = new SwipeService(
-                userRepository, swipeHistoryRepository, mock(UserBlockRepository.class));
+                userRepository,
+                swipeHistoryRepository,
+                mock(UserBlockRepository.class),
+                recommendationExposureRepository
+        );
     }
 
     @Test
@@ -47,6 +54,7 @@ class SwipeServiceTest {
 
         when(userRepository.findByUuid(swiperUuid)).thenReturn(Optional.of(swiper));
         when(userRepository.findByUuid(targetUuid)).thenReturn(Optional.of(target));
+        allowExposure(1L, 2L);
         when(swipeHistoryRepository.existsBySwiperIdAndTargetIdAndCreatedAtGreaterThanEqual(
                 any(), any(), any(LocalDateTime.class)
         )).thenReturn(false);
@@ -69,6 +77,7 @@ class SwipeServiceTest {
 
         when(userRepository.findByUuid(swiperUuid)).thenReturn(Optional.of(swiper));
         when(userRepository.findByUuid(targetUuid)).thenReturn(Optional.of(target));
+        allowExposure(1L, 2L);
         when(swipeHistoryRepository.existsBySwiperIdAndTargetIdAndCreatedAtGreaterThanEqual(
                 any(), any(), any(LocalDateTime.class)
         )).thenReturn(true);
@@ -104,6 +113,32 @@ class SwipeServiceTest {
                 GeneralErrorCode.SWIPE_TARGET_UNAVAILABLE
         );
         verify(swipeHistoryRepository, never()).save(any(SwipeHistory.class));
+    }
+
+    @Test
+    void swipeRejectsTargetThatWasNotExposed() {
+        UUID swiperUuid = UUID.randomUUID();
+        UUID targetUuid = UUID.randomUUID();
+        User swiper = user(1L, UserStatus.ACTIVE, true);
+        User target = user(2L, UserStatus.ACTIVE, true);
+
+        when(userRepository.findByUuid(swiperUuid)).thenReturn(Optional.of(swiper));
+        when(userRepository.findByUuid(targetUuid)).thenReturn(Optional.of(target));
+
+        assertError(
+                () -> swipeService.swipe(swiperUuid, targetUuid),
+                GeneralErrorCode.SWIPE_TARGET_UNAVAILABLE
+        );
+        verify(swipeHistoryRepository, never()).save(any(SwipeHistory.class));
+    }
+
+    private void allowExposure(Long requesterId, Long targetId) {
+        when(recommendationExposureRepository
+                .existsByRequesterIdAndTargetIdAndLastExposedAtGreaterThanEqual(
+                        org.mockito.ArgumentMatchers.eq(requesterId),
+                        org.mockito.ArgumentMatchers.eq(targetId),
+                        any(LocalDateTime.class)
+                )).thenReturn(true);
     }
 
     private User user(Long id, UserStatus status, boolean matchingEnabled) {

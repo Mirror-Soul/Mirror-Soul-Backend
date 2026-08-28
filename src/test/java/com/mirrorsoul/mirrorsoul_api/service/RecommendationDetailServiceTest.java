@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
 
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
@@ -20,9 +21,11 @@ import com.mirrorsoul.mirrorsoul_api.repository.AiVoiceProfileRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.ClonePersonalityTagRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.MbtiProfileRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.RecommendationExposureRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserBlockRepository;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,6 +39,7 @@ class RecommendationDetailServiceTest {
     private UserBlockRepository userBlockRepository;
     private MbtiProfileRepository mbtiProfileRepository;
     private ClonePersonalityTagRepository clonePersonalityTagRepository;
+    private RecommendationExposureRepository recommendationExposureRepository;
     private AiVoiceProfileRepository aiVoiceProfileRepository;
     private FileService fileService;
     private RecommendationDetailService service;
@@ -47,6 +51,7 @@ class RecommendationDetailServiceTest {
         userBlockRepository = mock(UserBlockRepository.class);
         mbtiProfileRepository = mock(MbtiProfileRepository.class);
         clonePersonalityTagRepository = mock(ClonePersonalityTagRepository.class);
+        recommendationExposureRepository = mock(RecommendationExposureRepository.class);
         aiVoiceProfileRepository = mock(AiVoiceProfileRepository.class);
         fileService = mock(FileService.class);
         service = new RecommendationDetailService(
@@ -55,6 +60,7 @@ class RecommendationDetailServiceTest {
                 cloneRepository,
                 mbtiProfileRepository,
                 clonePersonalityTagRepository,
+                recommendationExposureRepository,
                 aiVoiceProfileRepository,
                 fileService
         );
@@ -85,6 +91,12 @@ class RecommendationDetailServiceTest {
         when(target.getProfileImageUrl()).thenReturn("https://example.com/profile.jpg");
         when(target.getResidenceRegion()).thenReturn(region);
         when(target.getSelfIntroduction()).thenReturn("책과 음악을 좋아합니다.");
+        when(recommendationExposureRepository
+                .existsByRequesterIdAndTargetIdAndLastExposedAtGreaterThanEqual(
+                        org.mockito.ArgumentMatchers.eq(99L),
+                        org.mockito.ArgumentMatchers.eq(1L),
+                        any(LocalDateTime.class)
+                )).thenReturn(true);
         when(region.getSidoName()).thenReturn("서울특별시");
         when(region.getSigunguName()).thenReturn("강남구");
 
@@ -117,7 +129,7 @@ class RecommendationDetailServiceTest {
         assertThat(result.region().sigunguName()).isEqualTo("강남구");
         assertThat(result.selfIntroduction()).isEqualTo("책과 음악을 좋아합니다.");
         assertThat(result.mbti()).isEqualTo(MbtiType.INFJ);
-        assertThat(result.hashtags()).containsExactly("사고가 깊은", "차분한 말투");
+        assertThat(result.personalityTags()).containsExactly("사고가 깊은", "차분한 말투");
         assertThat(result.voicePreview().audioUrl())
                 .isEqualTo("https://example.com/signed-voice.mp3");
         assertThat(result.voicePreview().durationMs()).isEqualTo(18_000);
@@ -132,6 +144,28 @@ class RecommendationDetailServiceTest {
         when(userRepository.findByUuid(currentUserUuid)).thenReturn(Optional.of(currentUser));
         when(userRepository.findByUuid(targetUuid)).thenReturn(Optional.of(target));
         when(target.getStatus()).thenReturn(UserStatus.INACTIVE);
+
+        assertThatThrownBy(() -> service.getDetail(currentUserUuid, targetUuid))
+                .isInstanceOfSatisfying(
+                        GeneralException.class,
+                        exception -> assertThat(exception.getCode())
+                                .isEqualTo(GeneralErrorCode.RECOMMENDATION_TARGET_NOT_FOUND)
+                );
+    }
+
+    @Test
+    void getDetailRejectsTargetThatWasNotExposed() {
+        UUID targetUuid = UUID.randomUUID();
+        UUID currentUserUuid = UUID.randomUUID();
+        User currentUser = mock(User.class);
+        User target = mock(User.class);
+
+        when(userRepository.findByUuid(currentUserUuid)).thenReturn(Optional.of(currentUser));
+        when(userRepository.findByUuid(targetUuid)).thenReturn(Optional.of(target));
+        when(currentUser.getId()).thenReturn(99L);
+        when(target.getId()).thenReturn(1L);
+        when(target.getStatus()).thenReturn(UserStatus.ACTIVE);
+        when(target.getMatchingEnabled()).thenReturn(true);
 
         assertThatThrownBy(() -> service.getDetail(currentUserUuid, targetUuid))
                 .isInstanceOfSatisfying(

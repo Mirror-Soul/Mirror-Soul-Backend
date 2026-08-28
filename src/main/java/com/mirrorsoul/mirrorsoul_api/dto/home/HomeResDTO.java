@@ -69,8 +69,8 @@ public final class HomeResDTO {
             boolean jobCertificationSubmitted,
             String selfIntroduction,
             MbtiType mbti,
-            MbtiIndicatorsDTO mbtiIndicators,
-            List<String> hashtags,
+            MbtiAxisScoresDTO mbtiAxisScores,
+            List<String> personalityTags,
             VoicePreviewDTO voicePreview
     ) {
     }
@@ -81,7 +81,7 @@ public final class HomeResDTO {
     ) {
     }
 
-    public record MbtiIndicatorsDTO(
+    public record MbtiAxisScoresDTO(
             Integer ieScore,
             Integer nsScore,
             Integer ftScore,

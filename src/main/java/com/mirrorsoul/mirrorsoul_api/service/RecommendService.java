@@ -8,6 +8,7 @@ import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.UserPreferredSigungu;
 import com.mirrorsoul.mirrorsoul_api.domain.ClonePersonalityTag;
 import com.mirrorsoul.mirrorsoul_api.domain.MbtiProfile;
+import com.mirrorsoul.mirrorsoul_api.domain.RecommendationExposure;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.MbtiType;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.RecommendResDTO;
@@ -17,11 +18,13 @@ import com.mirrorsoul.mirrorsoul_api.repository.UserPreferredSigunguRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.ClonePersonalityTagRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.MbtiProfileRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.RecommendationExposureRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -46,7 +49,9 @@ public class RecommendService {
     private final ObjectProvider<UserEmbeddingRepository> embeddingRepositoryProvider;
     private final MbtiProfileRepository mbtiProfileRepository;
     private final ClonePersonalityTagRepository clonePersonalityTagRepository;
+    private final RecommendationExposureRepository recommendationExposureRepository;
 
+    @Transactional
     public RecommendResDTO.RecommendationSliceDTO getRecommendations(
             UUID currentUserUuid,
             Pageable pageable
@@ -83,7 +88,7 @@ public class RecommendService {
                 candidates
         );
         Map<Long, MbtiType> mbtiByUserId = loadMbtiByUserId(candidates);
-        Map<Long, List<String>> hashtagsByUserId = loadHashtagsByUserId(candidates);
+        Map<Long, List<String>> personalityTagsByUserId = loadPersonalityTagsByUserId(candidates);
 
         Region requesterResidence = requester.getResidenceRegion();
         List<Sigungu> requesterPreferredSigungu = loadPreferredSigungu(requester);
@@ -107,7 +112,7 @@ public class RecommendService {
                             toResidence(candidate.getResidenceRegion()),
                             candidate.getSelfIntroduction(),
                             mbtiByUserId.get(candidate.getId()),
-                            hashtagsByUserId.getOrDefault(candidate.getId(), List.of()),
+                            personalityTagsByUserId.getOrDefault(candidate.getId(), List.of()),
                             candidate.getProfileImageUrl(),
                             score
                     );
@@ -122,6 +127,7 @@ public class RecommendService {
         int toIndex = Math.min(fromIndex + pageable.getPageSize(), rankedCandidates.size());
         List<RecommendResDTO.RecommendationDTO> recommendations =
                 rankedCandidates.subList(fromIndex, toIndex);
+        recordExposures(requester, candidates, recommendations, now);
 
         return new RecommendResDTO.RecommendationSliceDTO(
                 recommendations,
@@ -129,6 +135,48 @@ public class RecommendService {
                 pageable.getPageSize(),
                 toIndex < rankedCandidates.size()
         );
+    }
+
+    private void recordExposures(
+            User requester,
+            List<User> candidates,
+            List<RecommendResDTO.RecommendationDTO> recommendations,
+            LocalDateTime exposedAt
+    ) {
+        if (recommendations.isEmpty()) {
+            return;
+        }
+
+        Set<UUID> exposedUuids = recommendations.stream()
+                .map(RecommendResDTO.RecommendationDTO::userUuid)
+                .collect(Collectors.toSet());
+        List<User> exposedTargets = candidates.stream()
+                .filter(candidate -> exposedUuids.contains(candidate.getUuid()))
+                .toList();
+        List<Long> targetIds = exposedTargets.stream().map(User::getId).toList();
+        Map<Long, RecommendationExposure> existingByTargetId =
+                recommendationExposureRepository
+                        .findAllByRequesterIdAndTargetIdIn(requester.getId(), targetIds).stream()
+                        .collect(Collectors.toMap(
+                                exposure -> exposure.getTarget().getId(),
+                                Function.identity()
+                        ));
+
+        List<RecommendationExposure> exposures = exposedTargets.stream()
+                .map(target -> {
+                    RecommendationExposure exposure = existingByTargetId.get(target.getId());
+                    if (exposure == null) {
+                        return RecommendationExposure.builder()
+                                .requester(requester)
+                                .target(target)
+                                .lastExposedAt(exposedAt)
+                                .build();
+                    }
+                    exposure.markExposedAt(exposedAt);
+                    return exposure;
+                })
+                .toList();
+        recommendationExposureRepository.saveAll(exposures);
     }
 
     private List<Sigungu> loadPreferredSigungu(User requester) {
@@ -168,7 +216,7 @@ public class RecommendService {
                 ));
     }
 
-    private Map<Long, List<String>> loadHashtagsByUserId(List<User> candidates) {
+    private Map<Long, List<String>> loadPersonalityTagsByUserId(List<User> candidates) {
         if (candidates.isEmpty()) {
             return Map.of();
         }

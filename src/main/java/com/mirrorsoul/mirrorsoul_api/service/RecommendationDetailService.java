@@ -14,14 +14,18 @@ import com.mirrorsoul.mirrorsoul_api.repository.AiVoiceProfileRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.ClonePersonalityTagRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.MbtiProfileRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.RecommendationExposureRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserBlockRepository;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import static com.mirrorsoul.mirrorsoul_api.recommendation.RecommendationPolicy.RECOMMENDATION_EXPOSURE_DAYS;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +37,7 @@ public class RecommendationDetailService {
     private final CloneRepository cloneRepository;
     private final MbtiProfileRepository mbtiProfileRepository;
     private final ClonePersonalityTagRepository clonePersonalityTagRepository;
+    private final RecommendationExposureRepository recommendationExposureRepository;
     private final AiVoiceProfileRepository aiVoiceProfileRepository;
     private final FileService fileService;
 
@@ -45,6 +50,15 @@ public class RecommendationDetailService {
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.RECOMMENDATION_TARGET_NOT_FOUND));
         if (currentUser.getId().equals(target.getId())
                 || userBlockRepository.existsBetween(currentUser.getId(), target.getId())) {
+            throw new GeneralException(GeneralErrorCode.RECOMMENDATION_TARGET_NOT_FOUND);
+        }
+        boolean exposed = recommendationExposureRepository
+                .existsByRequesterIdAndTargetIdAndLastExposedAtGreaterThanEqual(
+                        currentUser.getId(),
+                        target.getId(),
+                        LocalDateTime.now().minusDays(RECOMMENDATION_EXPOSURE_DAYS)
+                );
+        if (!exposed) {
             throw new GeneralException(GeneralErrorCode.RECOMMENDATION_TARGET_NOT_FOUND);
         }
         Clone clone = cloneRepository.findByUserUuid(targetUserUuid)
@@ -63,7 +77,7 @@ public class RecommendationDetailService {
                 hasSubmittedJobCertification(target),
                 target.getSelfIntroduction(),
                 mbtiProfile == null ? null : mbtiProfile.getMbti(),
-                toMbtiIndicators(mbtiProfile),
+                toMbtiAxisScores(mbtiProfile),
                 clonePersonalityTagRepository
                         .findAllByCloneIdOrderByDisplayOrderAsc(clone.getId()).stream()
                         .map(ClonePersonalityTag::getContent)
@@ -104,11 +118,11 @@ public class RecommendationDetailService {
                 && !user.getJobCertificationObjectKey().isBlank();
     }
 
-    private HomeResDTO.MbtiIndicatorsDTO toMbtiIndicators(MbtiProfile profile) {
+    private HomeResDTO.MbtiAxisScoresDTO toMbtiAxisScores(MbtiProfile profile) {
         if (profile == null) {
             return null;
         }
-        return new HomeResDTO.MbtiIndicatorsDTO(
+        return new HomeResDTO.MbtiAxisScoresDTO(
                 profile.getIeScore(),
                 profile.getNsScore(),
                 profile.getFtScore(),

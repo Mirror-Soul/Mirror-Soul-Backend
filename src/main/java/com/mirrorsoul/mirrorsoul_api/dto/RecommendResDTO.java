@@ -27,7 +27,7 @@ public final class RecommendResDTO {
             ResidenceDTO residence,
             String selfIntroduction,
             MbtiType mbti,
-            List<String> hashtags,
+            List<String> personalityTags,
             String profileImageUrl,
             int recommendationScore
     ) {

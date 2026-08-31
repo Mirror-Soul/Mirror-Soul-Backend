@@ -4,10 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: production
 
     steps:
       - name: Checkout source
@@ -26,15 +28,95 @@ jobs:
         run: ./gradlew bootJar -x test
 
       - name: Rename jar
-        run: cp build/libs/*SNAPSHOT.jar mirrorsoul-api.jar
+        run: cp build/libs/*SNAPSHOT.jar mirrorsoul-api.jar.new
 
-      - name: Copy jar to EC2
+      - name: Create production environment file
+        shell: bash
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_SQS_VOICE_TRAINING_QUEUE_URL: ${{ secrets.AWS_SQS_VOICE_TRAINING_QUEUE_URL }}
+          AWS_SQS_FACE_TRAINING_QUEUE_URL: ${{ secrets.AWS_SQS_FACE_TRAINING_QUEUE_URL }}
+          AWS_SQS_VALUE_BALANCE_ANALYSIS_QUEUE_URL: ${{ secrets.AWS_SQS_VALUE_BALANCE_ANALYSIS_QUEUE_URL }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          VECTOR_DB_ENABLED: ${{ secrets.VECTOR_DB_ENABLED }}
+          VECTOR_DB_HOST: ${{ secrets.VECTOR_DB_HOST }}
+          VECTOR_DB_PORT: ${{ secrets.VECTOR_DB_PORT }}
+          VECTOR_DB_NAME: ${{ secrets.VECTOR_DB_NAME }}
+          VECTOR_DB_USERNAME: ${{ secrets.VECTOR_DB_USERNAME }}
+          VECTOR_DB_PASSWORD: ${{ secrets.VECTOR_DB_PASSWORD }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          FIREBASE_PUSH_ENABLED: ${{ secrets.FIREBASE_PUSH_ENABLED }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+          FIREBASE_ANDROID_CHANNEL_ID: ${{ secrets.FIREBASE_ANDROID_CHANNEL_ID }}
+          VALUE_BALANCE_CALLBACK_SECRET: ${{ secrets.VALUE_BALANCE_CALLBACK_SECRET }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+        run: |
+          umask 077
+          required_vars=(
+            DB_HOST DB_PORT DB_NAME DB_USERNAME DB_PASSWORD
+            AWS_S3_BUCKET AWS_REGION
+            AWS_SQS_VOICE_TRAINING_QUEUE_URL
+            AWS_SQS_FACE_TRAINING_QUEUE_URL
+            AWS_SQS_VALUE_BALANCE_ANALYSIS_QUEUE_URL
+            SMTP_USERNAME SMTP_PASSWORD
+            VECTOR_DB_ENABLED VECTOR_DB_HOST VECTOR_DB_PORT VECTOR_DB_NAME
+            VECTOR_DB_USERNAME VECTOR_DB_PASSWORD
+            GEMINI_API_KEY KAKAO_REST_API_KEY
+            FIREBASE_PUSH_ENABLED FIREBASE_PROJECT_ID
+            GOOGLE_APPLICATION_CREDENTIALS FIREBASE_ANDROID_CHANNEL_ID
+            VALUE_BALANCE_CALLBACK_SECRET JWT_SECRET
+          )
+          for name in "${required_vars[@]}"; do
+            if [ -z "${!name}" ]; then
+              echo "Required production secret is missing or empty: $name" >&2
+              exit 1
+            fi
+          done
+          {
+            printf 'DB_HOST=%s\n' "$DB_HOST"
+            printf 'DB_PORT=%s\n' "$DB_PORT"
+            printf 'DB_NAME=%s\n' "$DB_NAME"
+            printf 'DB_USERNAME=%s\n' "$DB_USERNAME"
+            printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"
+            printf 'AWS_S3_BUCKET=%s\n' "$AWS_S3_BUCKET"
+            printf 'AWS_REGION=%s\n' "$AWS_REGION"
+            printf 'AWS_SQS_VOICE_TRAINING_QUEUE_URL=%s\n' "$AWS_SQS_VOICE_TRAINING_QUEUE_URL"
+            printf 'AWS_SQS_FACE_TRAINING_QUEUE_URL=%s\n' "$AWS_SQS_FACE_TRAINING_QUEUE_URL"
+            printf 'AWS_SQS_VALUE_BALANCE_ANALYSIS_QUEUE_URL=%s\n' "$AWS_SQS_VALUE_BALANCE_ANALYSIS_QUEUE_URL"
+            printf 'SMTP_USERNAME=%s\n' "$SMTP_USERNAME"
+            printf 'SMTP_PASSWORD=%s\n' "$SMTP_PASSWORD"
+            printf 'VECTOR_DB_ENABLED=%s\n' "$VECTOR_DB_ENABLED"
+            printf 'VECTOR_DB_HOST=%s\n' "$VECTOR_DB_HOST"
+            printf 'VECTOR_DB_PORT=%s\n' "$VECTOR_DB_PORT"
+            printf 'VECTOR_DB_NAME=%s\n' "$VECTOR_DB_NAME"
+            printf 'VECTOR_DB_USERNAME=%s\n' "$VECTOR_DB_USERNAME"
+            printf 'VECTOR_DB_PASSWORD=%s\n' "$VECTOR_DB_PASSWORD"
+            printf 'GEMINI_API_KEY=%s\n' "$GEMINI_API_KEY"
+            printf 'KAKAO_REST_API_KEY=%s\n' "$KAKAO_REST_API_KEY"
+            printf 'FIREBASE_PUSH_ENABLED=%s\n' "$FIREBASE_PUSH_ENABLED"
+            printf 'FIREBASE_PROJECT_ID=%s\n' "$FIREBASE_PROJECT_ID"
+            printf 'GOOGLE_APPLICATION_CREDENTIALS=%s\n' "$GOOGLE_APPLICATION_CREDENTIALS"
+            printf 'FIREBASE_ANDROID_CHANNEL_ID=%s\n' "$FIREBASE_ANDROID_CHANNEL_ID"
+            printf 'VALUE_BALANCE_CALLBACK_SECRET=%s\n' "$VALUE_BALANCE_CALLBACK_SECRET"
+            printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
+          } > .env.new
+
+      - name: Copy deployment files to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
-          source: mirrorsoul-api.jar
+          source: mirrorsoul-api.jar.new,.env.new
           target: /home/ec2-user/app
 
       - name: Deploy on EC2
@@ -44,21 +126,5 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_KEY }}
           script: |
-            export DB_HOST=${{ secrets.DB_HOST }}
-            export DB_PORT=${{ secrets.DB_PORT }}
-            export DB_NAME=${{ secrets.DB_NAME }}
-            export DB_USERNAME=${{ secrets.DB_USERNAME }}
-            export DB_PASSWORD='${{ secrets.DB_PASSWORD }}'
-
-            export AWS_S3_BUCKET=${{ secrets.AWS_S3_BUCKET }}
-            export AWS_REGION=${{ secrets.AWS_REGION }}
-            export AWS_SQS_VOICE_TRAINING_QUEUE_URL='${{ secrets.AWS_SQS_VOICE_TRAINING_QUEUE_URL }}'
-            export AWS_SQS_FACE_TRAINING_QUEUE_URL='${{ secrets.AWS_SQS_FACE_TRAINING_QUEUE_URL }}'
-            export AWS_SQS_VALUE_BALANCE_ANALYSIS_QUEUE_URL='${{ secrets.AWS_SQS_VALUE_BALANCE_ANALYSIS_QUEUE_URL }}'
-            export VALUE_BALANCE_CALLBACK_SECRET='${{ secrets.VALUE_BALANCE_CALLBACK_SECRET }}'
-            
-            export SMTP_USERNAME='${{ secrets.SMTP_USERNAME }}'
-            export SMTP_PASSWORD='${{ secrets.SMTP_PASSWORD }}'
-
             cd /home/ec2-user/app
             ./deploy.sh

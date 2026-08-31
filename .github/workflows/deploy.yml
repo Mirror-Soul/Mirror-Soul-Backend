@@ -109,6 +109,9 @@ jobs:
             printf 'VALUE_BALANCE_CALLBACK_SECRET=%s\n' "$VALUE_BALANCE_CALLBACK_SECRET"
             printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
           } > .env.new
+          # scp-action runs in a separate container, so the staged file must
+          # be readable there. deploy.sh changes it back to mode 600 on EC2.
+          chmod 644 .env.new
 
       - name: Copy deployment files to EC2
         uses: appleboy/scp-action@v0.1.7

@@ -46,7 +46,6 @@ public interface VideoCallRepository extends JpaRepository<VideoCall, Long> {
               and videoCall.startedAt >= :startedAt
               and videoCall.startedAt < :endedBefore
               and (caller.uuid = :userUuid or cloneOwner.uuid = :userUuid)
-              and caller.id <> cloneOwner.id
               and not exists (
                     select 1 from UserBlock ub
                     where (ub.blocker = caller and ub.blocked = cloneOwner)

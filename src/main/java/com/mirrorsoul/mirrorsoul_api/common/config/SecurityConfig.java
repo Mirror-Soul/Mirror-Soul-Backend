@@ -46,6 +46,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/ws/signaling"
                                 , "/internal/value-balance/analysis-jobs/**"
+                                , "/internal/clone-training/*/personality/complete"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

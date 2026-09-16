@@ -40,6 +40,7 @@ public class VectorDataSourceConfig {
                 .dataSource(dataSource)
                 .locations("classpath:db/migration")
                 .validateMigrationNaming(true)
+                .outOfOrder(true)
                 .load();
     }
 

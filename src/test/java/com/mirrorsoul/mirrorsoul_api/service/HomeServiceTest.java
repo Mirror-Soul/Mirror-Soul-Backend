@@ -10,13 +10,17 @@ import static org.mockito.Mockito.when;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
 import com.mirrorsoul.mirrorsoul_api.domain.Sigungu;
+import com.mirrorsoul.mirrorsoul_api.domain.Region;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
-import com.mirrorsoul.mirrorsoul_api.domain.UserPreferredSigungu;
+import com.mirrorsoul.mirrorsoul_api.domain.UserPreferredRegion;
 import com.mirrorsoul.mirrorsoul_api.dto.home.HomeReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.home.HomeResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.SigunguRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserPreferredSigunguRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.RegionRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.UserPreferredRegionRepository;
+import com.mirrorsoul.mirrorsoul_api.region.NearbyRegionFinder;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,6 +32,9 @@ class HomeServiceTest {
     private UserRepository userRepository;
     private UserPreferredSigunguRepository preferredSigunguRepository;
     private SigunguRepository sigunguRepository;
+    private RegionRepository regionRepository;
+    private UserPreferredRegionRepository preferredRegionRepository;
+    private NearbyRegionFinder nearbyRegionFinder;
     private HomeService homeService;
 
     @BeforeEach
@@ -35,10 +42,16 @@ class HomeServiceTest {
         userRepository = mock(UserRepository.class);
         preferredSigunguRepository = mock(UserPreferredSigunguRepository.class);
         sigunguRepository = mock(SigunguRepository.class);
+        regionRepository = mock(RegionRepository.class);
+        preferredRegionRepository = mock(UserPreferredRegionRepository.class);
+        nearbyRegionFinder = mock(NearbyRegionFinder.class);
         homeService = new HomeService(
                 userRepository,
                 preferredSigunguRepository,
-                sigunguRepository
+                sigunguRepository,
+                regionRepository,
+                preferredRegionRepository,
+                nearbyRegionFinder
         );
     }
 
@@ -46,28 +59,30 @@ class HomeServiceTest {
     void getHomeReturnsRemainingTalkTimeAndLatestPreferredRegion() {
         UUID userUuid = UUID.randomUUID();
         User user = mock(User.class);
-        Sigungu sigungu = mock(Sigungu.class);
-        UserPreferredSigungu preferredSigungu = mock(UserPreferredSigungu.class);
+        Region region = mock(Region.class);
+        UserPreferredRegion preferredRegion = mock(UserPreferredRegion.class);
 
         when(userRepository.findByUuid(userUuid)).thenReturn(Optional.of(user));
         when(user.getId()).thenReturn(1L);
         when(user.getRemainingTalkTime()).thenReturn(9_000);
-        when(preferredSigunguRepository.findAllByUserIdOrderByCreatedAtAscIdAsc(1L))
-                .thenReturn(List.of(preferredSigungu));
-        when(preferredSigungu.getSigungu()).thenReturn(sigungu);
-        when(sigungu.getId()).thenReturn(10L);
-        when(sigungu.getSidoName()).thenReturn("서울특별시");
-        when(sigungu.getSigunguName()).thenReturn("강남구");
+        when(preferredRegionRepository.findByUserId(1L)).thenReturn(Optional.of(preferredRegion));
+        when(preferredRegion.getAnchorRegion()).thenReturn(region);
+        when(preferredRegion.getNearbyCount()).thenReturn(3);
+        when(region.getId()).thenReturn(10L);
+        when(region.getSidoName()).thenReturn("서울특별시");
+        when(region.getSigunguName()).thenReturn("강남구");
+        when(region.getEupmyeondongName()).thenReturn("역삼동");
+        when(nearbyRegionFinder.findNearestRegionIds(region, 3))
+                .thenReturn(List.of(10L, 11L, 12L));
 
         HomeResDTO.HomeDTO result = homeService.getHome(userUuid);
 
         assertThat(result.remainingTalkTime().hours()).isEqualTo(2);
         assertThat(result.remainingTalkTime().minutes()).isEqualTo(30);
         assertThat(result.remainingTalkTime().seconds()).isZero();
-        assertThat(result.preferredRegions()).hasSize(1);
-        assertThat(result.preferredRegions().get(0).sigunguId()).isEqualTo(10L);
-        assertThat(result.preferredRegions().get(0).sidoName()).isEqualTo("서울특별시");
-        assertThat(result.preferredRegions().get(0).sigunguName()).isEqualTo("강남구");
+        assertThat(result.preferredRegion().anchorRegionId()).isEqualTo(10L);
+        assertThat(result.preferredRegion().eupmyeondongName()).isEqualTo("역삼동");
+        assertThat(result.preferredRegion().includedRegionIds()).containsExactly(10L, 11L, 12L);
     }
 
     @Test
@@ -78,15 +93,14 @@ class HomeServiceTest {
         when(userRepository.findByUuid(userUuid)).thenReturn(Optional.of(user));
         when(user.getId()).thenReturn(1L);
         when(user.getRemainingTalkTime()).thenReturn(-1);
-        when(preferredSigunguRepository.findAllByUserIdOrderByCreatedAtAscIdAsc(1L))
-                .thenReturn(List.of());
+        when(preferredRegionRepository.findByUserId(1L)).thenReturn(Optional.empty());
 
         HomeResDTO.HomeDTO result = homeService.getHome(userUuid);
 
         assertThat(result.remainingTalkTime().hours()).isZero();
         assertThat(result.remainingTalkTime().minutes()).isZero();
         assertThat(result.remainingTalkTime().seconds()).isZero();
-        assertThat(result.preferredRegions()).isEmpty();
+        assertThat(result.preferredRegion()).isNull();
     }
 
     @Test

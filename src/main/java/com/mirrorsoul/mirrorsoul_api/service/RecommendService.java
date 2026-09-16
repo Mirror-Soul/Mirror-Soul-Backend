@@ -3,9 +3,7 @@ package com.mirrorsoul.mirrorsoul_api.service;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
 import com.mirrorsoul.mirrorsoul_api.domain.Region;
-import com.mirrorsoul.mirrorsoul_api.domain.Sigungu;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
-import com.mirrorsoul.mirrorsoul_api.domain.UserPreferredSigungu;
 import com.mirrorsoul.mirrorsoul_api.domain.ClonePersonalityTag;
 import com.mirrorsoul.mirrorsoul_api.domain.MbtiProfile;
 import com.mirrorsoul.mirrorsoul_api.domain.RecommendationExposure;
@@ -14,8 +12,9 @@ import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.RecommendResDTO;
 import com.mirrorsoul.mirrorsoul_api.recommendation.UserEmbeddingRepository;
 import com.mirrorsoul.mirrorsoul_api.recommendation.VectorSimilarityScores;
-import com.mirrorsoul.mirrorsoul_api.repository.UserPreferredSigunguRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.UserPreferredRegionRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import com.mirrorsoul.mirrorsoul_api.region.NearbyRegionFinder;
 import com.mirrorsoul.mirrorsoul_api.repository.ClonePersonalityTagRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.MbtiProfileRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.RecommendationExposureRepository;
@@ -44,7 +43,8 @@ public class RecommendService {
     private static final int ADULT_AGE = 19;
     private static final int LONG_INACTIVE_DAYS = 30;
     private final UserRepository userRepository;
-    private final UserPreferredSigunguRepository preferredSigunguRepository;
+    private final UserPreferredRegionRepository preferredRegionRepository;
+    private final NearbyRegionFinder nearbyRegionFinder;
     private final RecommendationScoreCalculator scoreCalculator;
     private final ObjectProvider<UserEmbeddingRepository> embeddingRepositoryProvider;
     private final MbtiProfileRepository mbtiProfileRepository;
@@ -73,14 +73,26 @@ public class RecommendService {
         boolean adult = !requester.getBirthDate().isAfter(adultBirthDateCutoff);
         LocalDateTime now = LocalDateTime.now();
 
-        // 차단 도메인이 추가되면 이 후보 쿼리에 양방향 차단 NOT EXISTS 조건을 추가한다.
+        List<Long> includedRegionIds = preferredRegionRepository.findByUserId(requester.getId())
+                .map(preference -> nearbyRegionFinder.findNearestRegionIds(
+                        preference.getAnchorRegion(),
+                        preference.getNearbyCount()
+                ))
+                .orElse(null);
+
+        // JPQL에 빈 collection을 바인딩하지 않도록 미설정 시 dummy ID를 전달한다.
+        boolean filterByRegion = includedRegionIds != null;
+        List<Long> regionIdsForQuery = filterByRegion ? includedRegionIds : List.of(-1L);
+
         List<User> candidates = userRepository.findRecommendationCandidates(
                 requester.getId(),
                 requester.getGender(),
                 adult,
                 adultBirthDateCutoff,
                 now.minusDays(LONG_INACTIVE_DAYS),
-                now.minusDays(SWIPE_REEXPOSURE_DAYS)
+                now.minusDays(SWIPE_REEXPOSURE_DAYS),
+                filterByRegion,
+                regionIdsForQuery
         );
 
         Map<UUID, VectorSimilarityScores> vectorsByUserUuid = loadVectorScores(
@@ -91,8 +103,6 @@ public class RecommendService {
         Map<Long, List<String>> personalityTagsByUserId = loadPersonalityTagsByUserId(candidates);
 
         Region requesterResidence = requester.getResidenceRegion();
-        List<Sigungu> requesterPreferredSigungu = loadPreferredSigungu(requester);
-
         List<RecommendResDTO.RecommendationDTO> rankedCandidates = candidates.stream()
                 .map(candidate -> {
                     int score = scoreCalculator.calculate(
@@ -100,7 +110,6 @@ public class RecommendService {
                             candidate.getBirthDate(),
                             requesterResidence,
                             candidate.getResidenceRegion(),
-                            requesterPreferredSigungu,
                             vectorsByUserUuid.get(candidate.getUuid())
                     );
                     return new RecommendResDTO.RecommendationDTO(
@@ -177,13 +186,6 @@ public class RecommendService {
                 })
                 .toList();
         recommendationExposureRepository.saveAll(exposures);
-    }
-
-    private List<Sigungu> loadPreferredSigungu(User requester) {
-        return preferredSigunguRepository
-                .findAllByUserIdOrderByCreatedAtAscIdAsc(requester.getId()).stream()
-                .map(UserPreferredSigungu::getSigungu)
-                .toList();
     }
 
     private Map<UUID, VectorSimilarityScores> loadVectorScores(

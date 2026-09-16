@@ -66,6 +66,26 @@ public interface VideoCallRepository extends JpaRepository<VideoCall, Long> {
             join fetch videoCall.user caller
             join fetch videoCall.clone clone
             join fetch clone.user cloneOwner
+            where videoCall.status = :status
+              and (caller.uuid = :userUuid or cloneOwner.uuid = :userUuid)
+              and not exists (
+                    select 1 from UserBlock ub
+                    where (ub.blocker = caller and ub.blocked = cloneOwner)
+                       or (ub.blocker = cloneOwner and ub.blocked = caller)
+              )
+            order by videoCall.startedAt desc, videoCall.id desc
+            """)
+    List<VideoCall> findAllHistory(
+            @Param("userUuid") UUID userUuid,
+            @Param("status") VideoCallStatus status
+    );
+
+    @Query("""
+            select videoCall
+            from VideoCall videoCall
+            join fetch videoCall.user caller
+            join fetch videoCall.clone clone
+            join fetch clone.user cloneOwner
             where videoCall.id = :callId
             """)
     Optional<VideoCall> findByIdWithParticipants(@Param("callId") Long callId);

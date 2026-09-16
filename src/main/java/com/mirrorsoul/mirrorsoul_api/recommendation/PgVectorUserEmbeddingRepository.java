@@ -3,6 +3,7 @@ package com.mirrorsoul.mirrorsoul_api.recommendation;
 import com.mirrorsoul.mirrorsoul_api.config.GeminiEmbeddingProperties;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -78,6 +79,19 @@ public class PgVectorUserEmbeddingRepository implements UserEmbeddingRepository 
                 "model", embeddingProperties.getModel(),
                 "dimension", EMBEDDING_DIMENSION
         ));
+    }
+
+    @Override
+    public Optional<String> findSourceHash(UUID userUuid, EmbeddingType type) {
+        String sql = "SELECT %s FROM recommendation.user_embeddings WHERE user_uuid = :userUuid"
+                .formatted(type.sourceHashColumn());
+
+        List<String> hashes = jdbcTemplate.query(
+                sql,
+                Map.of("userUuid", userUuid),
+                (resultSet, rowNumber) -> resultSet.getString(1)
+        );
+        return hashes.stream().filter(java.util.Objects::nonNull).findFirst();
     }
 
     @Override

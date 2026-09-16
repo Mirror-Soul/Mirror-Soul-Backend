@@ -11,6 +11,8 @@ import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewQuestionResDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewAnswerReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewAnswerResDTO;
 import com.mirrorsoul.mirrorsoul_api.event.VoiceTrainingJobRequestedEvent;
+import com.mirrorsoul.mirrorsoul_api.event.UserEmbeddingRequestedEvent;
+import com.mirrorsoul.mirrorsoul_api.recommendation.EmbeddingType;
 import com.mirrorsoul.mirrorsoul_api.repository.InterviewRecordRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.InterviewRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
@@ -77,6 +79,9 @@ public class InterviewService {
 
         if (answeredInterviewCount >= totalInterviewCount) {
             user.setStatus(UserStatus.ONBOARD_D);
+            eventPublisher.publishEvent(
+                    new UserEmbeddingRequestedEvent(userUuid, EmbeddingType.INTERVIEW)
+            );
             VoiceTrainingJob voiceTrainingJob = voiceTrainingJobService.createPendingJob(user);
             eventPublisher.publishEvent(new VoiceTrainingJobRequestedEvent(voiceTrainingJob.getId()));
         }

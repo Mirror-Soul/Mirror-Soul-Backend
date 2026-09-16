@@ -7,11 +7,14 @@ import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.Job;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.onboarding.OnboardingReqDTO;
+import com.mirrorsoul.mirrorsoul_api.event.UserEmbeddingRequestedEvent;
+import com.mirrorsoul.mirrorsoul_api.recommendation.EmbeddingType;
 import com.mirrorsoul.mirrorsoul_api.repository.MbtiProfileRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.RegionRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +32,7 @@ public class OnboardingService {
     private final UserRepository userRepository;
     private final MbtiProfileRepository mbtiProfileRepository;
     private final RegionRepository regionRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     public void postProfile(OnboardingReqDTO.personaReqDTO req, UUID userUuid, Job job) {
 
@@ -57,6 +61,7 @@ public class OnboardingService {
         user.setJobCertificationObjectKey(req.getJobCertificationObjectKey());
         user.setStatus(ONBOARD_B);
         userRepository.save(user);
+        eventPublisher.publishEvent(new UserEmbeddingRequestedEvent(userUuid, EmbeddingType.JOB));
     }
 
     @Transactional(readOnly = true)
@@ -97,5 +102,6 @@ public class OnboardingService {
 
         user.setSelfIntroduction(req.getSelfIntroduction());
         user.setStatus(UserStatus.ONBOARD_C);
+        eventPublisher.publishEvent(new UserEmbeddingRequestedEvent(userUuid, EmbeddingType.PROFILE));
     }
 }

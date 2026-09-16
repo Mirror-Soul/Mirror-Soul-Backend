@@ -94,6 +94,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
                   and swipe.createdAt >= :swipedSince
           )
 
+          and (
+                :filterByRegion = false
+             or candidate.residenceRegion.id in :includedRegionIds
+          )
+
         """)
     List<User> findRecommendationCandidates(
             @Param("currentUserId") Long currentUserId,
@@ -101,7 +106,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("adult") boolean adult,
             @Param("adultBirthDateCutoff") LocalDate adultBirthDateCutoff,
             @Param("activeSince") LocalDateTime activeSince,
-            @Param("swipedSince") LocalDateTime swipedSince
+            @Param("swipedSince") LocalDateTime swipedSince,
+            @Param("filterByRegion") boolean filterByRegion,
+            @Param("includedRegionIds") List<Long> includedRegionIds
     );
 
     @Modifying

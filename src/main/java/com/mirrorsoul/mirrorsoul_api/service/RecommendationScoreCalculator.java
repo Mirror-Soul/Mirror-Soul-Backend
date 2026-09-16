@@ -1,11 +1,10 @@
 package com.mirrorsoul.mirrorsoul_api.service;
 
 import com.mirrorsoul.mirrorsoul_api.domain.Region;
-import com.mirrorsoul.mirrorsoul_api.domain.Sigungu;
+import com.mirrorsoul.mirrorsoul_api.region.GeoDistanceUtils;
 import com.mirrorsoul.mirrorsoul_api.recommendation.VectorSimilarityScores;
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.List;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -21,15 +20,12 @@ public class RecommendationScoreCalculator {
     // ConversationScore(0.15)는 대화 요약 파이프라인 개발 전까지 계산에서 제외한다.
     private static final double AGE_SIGMA_YEARS = 5.0;
     private static final double DISTANCE_LAMBDA_KM = 50.0;
-    private static final double REGION_DISTANCE_ALPHA = 0.5;
-    private static final double EARTH_RADIUS_KM = 6371.0088;
 
     public int calculate(
             LocalDate requesterBirthDate,
             LocalDate candidateBirthDate,
             Region requesterResidence,
             Region candidateResidence,
-            List<Sigungu> requesterPreferredSigungu,
             VectorSimilarityScores vectorScores
     ) {
         WeightedScore score = new WeightedScore();
@@ -44,8 +40,7 @@ public class RecommendationScoreCalculator {
         score.add(ageScore(requesterBirthDate, candidateBirthDate), AGE_WEIGHT);
         score.add(regionScore(
                 requesterResidence,
-                candidateResidence,
-                requesterPreferredSigungu
+                candidateResidence
         ), REGION_WEIGHT);
 
         return score.toPercentage();
@@ -66,55 +61,25 @@ public class RecommendationScoreCalculator {
 
     Double regionScore(
             Region requesterResidence,
-            Region candidateResidence,
-            List<Sigungu> requesterPreferredSigungu
+            Region candidateResidence
     ) {
-        if (candidateResidence == null) {
+        if (!hasCoordinates(requesterResidence) || !hasCoordinates(candidateResidence)) {
             return null;
         }
 
-        Double distanceScore = null;
-        if (hasCoordinates(requesterResidence) && hasCoordinates(candidateResidence)) {
-            double residenceDistance = distanceKm(requesterResidence, candidateResidence);
-            distanceScore = Math.exp(-residenceDistance / DISTANCE_LAMBDA_KM);
-        }
-
-        Double preferredScore = requesterPreferredSigungu.isEmpty()
-                ? null
-                : requesterPreferredSigungu.stream().anyMatch(sigungu ->
-                        sigungu.getSidoName().equals(candidateResidence.getSidoName())
-                                && sigungu.getSigunguName().equals(candidateResidence.getSigunguName())
-                ) ? 1.0 : 0.0;
-
-        if (preferredScore == null) {
-            return distanceScore;
-        }
-        if (distanceScore == null) {
-            return preferredScore;
-        }
-        return REGION_DISTANCE_ALPHA * distanceScore
-                + (1.0 - REGION_DISTANCE_ALPHA) * preferredScore;
+        double residenceDistance = GeoDistanceUtils.distanceKm(
+                requesterResidence.getLatitude(),
+                requesterResidence.getLongitude(),
+                candidateResidence.getLatitude(),
+                candidateResidence.getLongitude()
+        );
+        return Math.exp(-residenceDistance / DISTANCE_LAMBDA_KM);
     }
 
     private boolean hasCoordinates(Region region) {
         return region != null
                 && region.getLatitude() != null
                 && region.getLongitude() != null;
-    }
-
-    private double distanceKm(Region first, Region second) {
-        double firstLatitude = Math.toRadians(first.getLatitude().doubleValue());
-        double secondLatitude = Math.toRadians(second.getLatitude().doubleValue());
-        double latitudeDifference = secondLatitude - firstLatitude;
-        double longitudeDifference = Math.toRadians(
-                second.getLongitude().doubleValue() - first.getLongitude().doubleValue()
-        );
-
-        double haversine = Math.pow(Math.sin(latitudeDifference / 2.0), 2)
-                + Math.cos(firstLatitude) * Math.cos(secondLatitude)
-                * Math.pow(Math.sin(longitudeDifference / 2.0), 2);
-        return 2.0 * EARTH_RADIUS_KM
-                * Math.asin(Math.sqrt(Math.min(1.0, haversine)));
     }
 
     private static final class WeightedScore {

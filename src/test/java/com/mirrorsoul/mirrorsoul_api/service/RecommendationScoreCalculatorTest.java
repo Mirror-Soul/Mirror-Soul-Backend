@@ -5,11 +5,10 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.mirrorsoul.mirrorsoul_api.domain.Region;
-import com.mirrorsoul.mirrorsoul_api.domain.Sigungu;
+import com.mirrorsoul.mirrorsoul_api.region.GeoDistanceUtils;
 import com.mirrorsoul.mirrorsoul_api.recommendation.VectorSimilarityScores;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
@@ -22,9 +21,6 @@ class RecommendationScoreCalculatorTest {
     void 동일한_나이와_지역이고_모든_벡터가_일치하면_100점이다() {
         LocalDate birthDate = LocalDate.now().minusYears(25);
         Region region = region(37.5665, 126.9780);
-        when(region.getSidoName()).thenReturn("서울특별시");
-        when(region.getSigunguName()).thenReturn("중구");
-        Sigungu sigungu = sigungu("서울특별시", "중구");
         VectorSimilarityScores vectors = new VectorSimilarityScores(
                 UUID.randomUUID(),
                 1.0,
@@ -39,7 +35,6 @@ class RecommendationScoreCalculatorTest {
                 birthDate,
                 region,
                 region,
-                List.of(sigungu),
                 vectors
         );
 
@@ -63,7 +58,6 @@ class RecommendationScoreCalculatorTest {
                 birthDate,
                 null,
                 null,
-                List.of(),
                 vectors
         );
 
@@ -88,37 +82,29 @@ class RecommendationScoreCalculatorTest {
     }
 
     @Test
-    void 후보자의_시군구가_선호지역과_일치하면_선호점수는_1이다() {
+    void 거리가_가까울수록_지역점수가_높다() {
         Region requester = region(37.0, 127.0);
-        Region candidate = region(37.1, 127.1);
-        when(candidate.getSidoName()).thenReturn("서울특별시");
-        when(candidate.getSigunguName()).thenReturn("강남구");
+        Region closeCandidate = region(37.01, 127.01);
+        Region farCandidate = region(38.0, 128.0);
 
-        Double score = calculator.regionScore(
-                requester,
-                candidate,
-                List.of(sigungu("서울특별시", "강남구"))
-        );
+        Double closeScore = calculator.regionScore(requester, closeCandidate);
+        Double farScore = calculator.regionScore(requester, farCandidate);
 
-        double distanceOnly = Math.exp(-distanceKm(requester, candidate) / 50.0);
-        assertThat(score).isEqualTo((distanceOnly + 1.0) / 2.0);
+        assertThat(closeScore).isGreaterThan(farScore);
     }
 
     @Test
-    void 후보자의_시군구가_선호지역과_다르면_선호점수는_0이다() {
+    void 지역점수는_공용_거리계산식을_사용한다() {
         Region requester = region(37.0, 127.0);
         Region candidate = region(37.1, 127.1);
-        when(candidate.getSidoName()).thenReturn("서울특별시");
-        when(candidate.getSigunguName()).thenReturn("송파구");
 
-        Double score = calculator.regionScore(
-                requester,
-                candidate,
-                List.of(sigungu("서울특별시", "강남구"))
+        Double score = calculator.regionScore(requester, candidate);
+
+        double distance = GeoDistanceUtils.distanceKm(
+                requester.getLatitude(), requester.getLongitude(),
+                candidate.getLatitude(), candidate.getLongitude()
         );
-
-        double distanceOnly = Math.exp(-distanceKm(requester, candidate) / 50.0);
-        assertThat(score).isEqualTo(distanceOnly / 2.0);
+        assertThat(score).isEqualTo(Math.exp(-distance / 50.0));
     }
 
     private Region region(double latitude, double longitude) {
@@ -128,23 +114,4 @@ class RecommendationScoreCalculatorTest {
         return region;
     }
 
-    private Sigungu sigungu(String sidoName, String sigunguName) {
-        Sigungu sigungu = mock(Sigungu.class);
-        when(sigungu.getSidoName()).thenReturn(sidoName);
-        when(sigungu.getSigunguName()).thenReturn(sigunguName);
-        return sigungu;
-    }
-
-    private double distanceKm(Region first, Region second) {
-        double firstLatitude = Math.toRadians(first.getLatitude().doubleValue());
-        double secondLatitude = Math.toRadians(second.getLatitude().doubleValue());
-        double latitudeDifference = secondLatitude - firstLatitude;
-        double longitudeDifference = Math.toRadians(
-                second.getLongitude().doubleValue() - first.getLongitude().doubleValue()
-        );
-        double haversine = Math.pow(Math.sin(latitudeDifference / 2.0), 2)
-                + Math.cos(firstLatitude) * Math.cos(secondLatitude)
-                * Math.pow(Math.sin(longitudeDifference / 2.0), 2);
-        return 2.0 * 6371.0088 * Math.asin(Math.sqrt(Math.min(1.0, haversine)));
-    }
 }

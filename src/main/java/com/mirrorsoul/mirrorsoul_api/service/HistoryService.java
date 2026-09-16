@@ -39,8 +39,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class HistoryService {
 
-    private static final int HISTORY_DAYS = 7;
-
     private final VideoCallRepository videoCallRepository;
     private final CallMatchAnalysisRepository callMatchAnalysisRepository;
     private final CloneRepository cloneRepository;
@@ -52,13 +50,9 @@ public class HistoryService {
             HistoryReqDTO.HistoryType type
     ) {
         LocalDate today = LocalDate.now();
-        LocalDateTime historyStart = today.minusDays(HISTORY_DAYS - 1L).atStartOfDay();
-        LocalDateTime historyEnd = today.plusDays(1).atStartOfDay();
-        List<VideoCall> recentCalls = videoCallRepository.findRecentHistory(
+        List<VideoCall> recentCalls = videoCallRepository.findAllHistory(
                 currentUserUuid,
-                VideoCallStatus.COMPLETED,
-                historyStart,
-                historyEnd
+                VideoCallStatus.COMPLETED
         );
 
         long sentCount = recentCalls.stream()

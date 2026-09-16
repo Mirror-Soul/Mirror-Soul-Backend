@@ -72,11 +72,9 @@ class HistoryServiceTest {
                 11L, currentUser, sarahClone, today.atTime(14, 30), 503, CallMediaType.VIDEO);
         VideoCall received = call(
                 10L, emily, myClone, today.minusDays(1).atTime(19, 20), 765, CallMediaType.VOICE);
-        when(videoCallRepository.findRecentHistory(
+        when(videoCallRepository.findAllHistory(
                 currentUserUuid,
-                VideoCallStatus.COMPLETED,
-                today.minusDays(6).atStartOfDay(),
-                today.plusDays(1).atStartOfDay()
+                VideoCallStatus.COMPLETED
         )).thenReturn(List.of(sent, received));
 
         CallMatchAnalysis analysis = analysis(sent, 92, List.of("커피", "음악", "주말 계획"));
@@ -131,11 +129,9 @@ class HistoryServiceTest {
         VideoCall received = call(
                 10L, emily, myClone, today.atTime(11, 15), 765, CallMediaType.VOICE);
 
-        when(videoCallRepository.findRecentHistory(
+        when(videoCallRepository.findAllHistory(
                 currentUserUuid,
-                VideoCallStatus.COMPLETED,
-                today.minusDays(6).atStartOfDay(),
-                today.plusDays(1).atStartOfDay()
+                VideoCallStatus.COMPLETED
         )).thenReturn(List.of(sent, received));
         when(callMatchAnalysisRepository.findAllByVideoCallIdIn(List.of(10L)))
                 .thenReturn(List.of());
@@ -165,11 +161,9 @@ class HistoryServiceTest {
         VideoCall ownCloneCall = call(
                 12L, currentUser, myClone, today.atTime(15, 0), 300, CallMediaType.VOICE);
 
-        when(videoCallRepository.findRecentHistory(
+        when(videoCallRepository.findAllHistory(
                 currentUserUuid,
-                VideoCallStatus.COMPLETED,
-                today.minusDays(6).atStartOfDay(),
-                today.plusDays(1).atStartOfDay()
+                VideoCallStatus.COMPLETED
         )).thenReturn(List.of(ownCloneCall));
         when(callMatchAnalysisRepository.findAllByVideoCallIdIn(List.of(12L)))
                 .thenReturn(List.of());

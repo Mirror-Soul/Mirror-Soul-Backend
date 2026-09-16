@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Face profile result queue, DLQ, and least-privilege worker/backend policies
+Parameters:
+  QueueName:
+    Type: String
+    Default: mirrorsoul-face-training-results
+    AllowedPattern: '[a-zA-Z0-9_-]{1,70}'
+  GpuIamUserName:
+    Type: String
+    Description: Existing GPU worker IAM user name (not ARN)
+  BackendIamRoleName:
+    Type: String
+    Description: Existing backend EC2 IAM role name (not ARN)
+Resources:
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      QueueName: !Sub '${QueueName}-dlq'
+      MessageRetentionPeriod: 1209600
+      SqsManagedSseEnabled: true
+  ResultQueue:
+    Type: AWS::SQS::Queue
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      QueueName: !Ref QueueName
+      MessageRetentionPeriod: 345600
+      ReceiveMessageWaitTimeSeconds: 10
+      VisibilityTimeout: 120
+      SqsManagedSseEnabled: true
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
+        maxReceiveCount: 5
+  WorkerSendPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${QueueName}-send'
+      Users: [!Ref GpuIamUserName]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: sqs:SendMessage
+            Resource: !GetAtt ResultQueue.Arn
+  BackendConsumePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub '${QueueName}-consume'
+      Roles: [!Ref BackendIamRoleName]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              - sqs:GetQueueAttributes
+              - sqs:ChangeMessageVisibility
+            Resource: !GetAtt ResultQueue.Arn
+Outputs:
+  ResultQueueUrl:
+    Value: !Ref ResultQueue
+  ResultQueueArn:
+    Value: !GetAtt ResultQueue.Arn
+  DeadLetterQueueUrl:
+    Value: !Ref DeadLetterQueue

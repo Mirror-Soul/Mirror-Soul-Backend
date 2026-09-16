@@ -34,4 +34,19 @@ public class Clone extends BaseTimeEntity {
 
     @Column(columnDefinition = "TEXT")
     private String summary;
+
+    @lombok.Builder.Default
+    @Column(nullable = false, length = 20)
+    private String status = "PENDING";
+
+    @Column(name = "personality_training_completed", nullable = false)
+    private boolean personalityTrainingCompleted;
+
+    public void updatePersonalityTrainingCompleted(boolean completed) {
+        personalityTrainingCompleted = completed;
+    }
+
+    public void refreshReadiness(boolean voiceActive, boolean faceReady) {
+        status = voiceActive && faceReady && personalityTrainingCompleted ? "READY" : "PENDING";
+    }
 }

@@ -25,6 +25,21 @@ public class AiFaceProfile extends BaseTimeEntity {
             foreignKey = @ForeignKey(name = "fk_ai_face_profiles_face_training_job"))
     private FaceTrainingJob faceTrainingJob;
 
+    @Column(length = 100)
+    private String bucket;
+
+    @Column(name = "profile_key", length = 500)
+    private String profileKey;
+
+    @Column(name = "portrait_key", length = 500)
+    private String portraitKey;
+
+    @Column(name = "manifest_key", length = 500)
+    private String manifestKey;
+
+    @Column(name = "quality_gate_passed")
+    private Boolean qualityGatePassed;
+
     @Column(name = "avatar_cache_object_key", length = 500)
     private String avatarCacheObjectKey;
 
@@ -45,4 +60,25 @@ public class AiFaceProfile extends BaseTimeEntity {
 
     @Column(name = "is_active", nullable = false)
     private boolean active;
+
+    public static AiFaceProfile ready(Clone clone, FaceTrainingJob job, String bucket,
+            String profileKey, String portraitKey, String manifestKey, String previewKey) {
+        AiFaceProfile profile = new AiFaceProfile();
+        profile.clone = clone;
+        profile.faceTrainingJob = job;
+        profile.bucket = bucket;
+        profile.profileKey = profileKey;
+        profile.portraitKey = portraitKey;
+        profile.manifestKey = manifestKey;
+        profile.previewImageObjectKey = portraitKey;
+        profile.previewVideoObjectKey = previewKey;
+        profile.qualityGatePassed = true;
+        profile.status = "READY";
+        profile.active = true;
+        return profile;
+    }
+
+    public void deactivate() {
+        active = false;
+    }
 }

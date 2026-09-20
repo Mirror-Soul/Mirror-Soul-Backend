@@ -1,6 +1,7 @@
 package com.mirrorsoul.mirrorsoul_api.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -12,6 +13,9 @@ import com.mirrorsoul.mirrorsoul_api.domain.enums.CallMediaType;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.VideoCallStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.match.MatchResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.VideoCallRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
+import java.util.Optional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -22,11 +26,37 @@ class MatchServiceTest {
 
     private VideoCallRepository videoCallRepository;
     private MatchService matchService;
+    private UserRepository userRepository;
 
     @BeforeEach
     void setUp() {
         videoCallRepository = mock(VideoCallRepository.class);
-        matchService = new MatchService(videoCallRepository);
+        userRepository = mock(UserRepository.class);
+        matchService = new MatchService(videoCallRepository, userRepository);
+    }
+
+    @Test
+    void matchingCanBeDisabledAndReenabledAndRepeatedRequestsKeepTheRequestedState() {
+        UUID uuid = UUID.randomUUID();
+        User user = User.builder().uuid(uuid).matchingEnabled(true).build();
+        when(userRepository.findByUuid(uuid)).thenReturn(Optional.of(user));
+
+        assertThat(matchService.getMatchingStatus(uuid).matchingEnabled()).isTrue();
+        assertThat(matchService.updateMatchingStatus(uuid, false).matchingEnabled()).isFalse();
+        assertThat(user.getMatchingEnabled()).isFalse();
+        assertThat(matchService.updateMatchingStatus(uuid, false).matchingEnabled()).isFalse();
+        assertThat(matchService.getMatchingStatus(uuid).matchingEnabled()).isFalse();
+        assertThat(matchService.updateMatchingStatus(uuid, true).matchingEnabled()).isTrue();
+        assertThat(user.getMatchingEnabled()).isTrue();
+    }
+
+    @Test
+    void matchingStatusRejectsUnknownUser() {
+        UUID uuid = UUID.randomUUID();
+        when(userRepository.findByUuid(uuid)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> matchService.getMatchingStatus(uuid)).isInstanceOf(GeneralException.class);
+        assertThatThrownBy(() -> matchService.updateMatchingStatus(uuid, false)).isInstanceOf(GeneralException.class);
     }
 
     @Test

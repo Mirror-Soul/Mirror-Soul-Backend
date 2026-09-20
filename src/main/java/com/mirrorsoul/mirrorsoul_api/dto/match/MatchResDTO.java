@@ -8,6 +8,9 @@ import lombok.Builder;
 
 public class MatchResDTO {
 
+    public record MatchingStatusDTO(boolean matchingEnabled) {
+    }
+
     @Builder
     public record TwinListDTO(
             int totalCount,

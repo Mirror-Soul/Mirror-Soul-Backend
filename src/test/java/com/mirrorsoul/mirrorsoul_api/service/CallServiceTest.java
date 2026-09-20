@@ -1,6 +1,7 @@
 package com.mirrorsoul.mirrorsoul_api.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -23,6 +24,31 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class CallServiceTest {
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(CallMediaType.class)
+    void disabledMatchingRejectsOtherUsersCalls(CallMediaType mediaType) {
+        UUID callerUuid = UUID.randomUUID();
+        UUID ownerUuid = UUID.randomUUID();
+        User caller = mock(User.class);
+        User owner = User.builder().id(2L).uuid(ownerUuid)
+                .status(com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE)
+                .matchingEnabled(true).build();
+        Clone clone = mock(Clone.class);
+        when(caller.getId()).thenReturn(1L);
+        when(caller.hasTalkTime()).thenReturn(true);
+        when(clone.getUser()).thenReturn(owner);
+        when(userRepository.findByUuid(callerUuid)).thenReturn(Optional.of(caller));
+        when(userRepository.findByUuid(ownerUuid)).thenReturn(Optional.of(owner));
+        when(cloneRepository.findByUserUuid(ownerUuid)).thenReturn(Optional.of(clone));
+
+        new MatchService(videoCallRepository, userRepository).updateMatchingStatus(ownerUuid, false);
+
+        assertThatThrownBy(() -> callService.startCloneCall(
+                ownerUuid, new CallReqDTO.StartCallDTO(mediaType), callerUuid))
+                .isInstanceOf(com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException.class);
+        verify(videoCallRepository, never()).save(any(VideoCall.class));
+    }
 
     private VideoCallRepository videoCallRepository;
     private UserRepository userRepository;

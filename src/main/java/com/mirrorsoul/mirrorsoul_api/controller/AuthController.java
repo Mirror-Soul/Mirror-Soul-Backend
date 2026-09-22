@@ -55,14 +55,14 @@ public class AuthController {
         return ApiResponse.onSuccess("로그아웃에 성공했습니다.");
     }
 
-    @Operation(summary = "비밀번호 재설정 인증번호 발송", description = "가입 여부와 관계없이 동일한 성공 응답을 반환합니다.")
+    @Operation(summary = "비밀번호 재설정 인증번호 발송", description = "가입된 활성 계정의 이메일로 인증번호를 발송합니다.")
     @PostMapping("/password-reset/send-code")
     public ApiResponse<Void> sendPasswordResetCode(
             @Valid @RequestBody PasswordResetReqDTO.SendCodeDTO request,
             HttpSession session
     ) {
         passwordResetService.sendCode(request, session);
-        return ApiResponse.onSuccess("가입된 이메일인 경우 인증번호를 전송했습니다.");
+        return ApiResponse.onSuccess("인증번호를 전송했습니다.");
     }
 
     @Operation(summary = "비밀번호 재설정 인증번호 확인")

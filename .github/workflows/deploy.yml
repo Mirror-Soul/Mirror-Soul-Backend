@@ -40,6 +40,8 @@ jobs:
           DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
           AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
+          CLOUDWATCH_METRICS_ENABLED: ${{ vars.CLOUDWATCH_METRICS_ENABLED || 'false' }}
+          METRICS_INSTANCE_ID: ${{ vars.METRICS_INSTANCE_ID || 'api-1' }}
           AWS_SQS_VOICE_TRAINING_QUEUE_URL: ${{ secrets.AWS_SQS_VOICE_TRAINING_QUEUE_URL }}
           AWS_SQS_FACE_TRAINING_QUEUE_URL: ${{ secrets.AWS_SQS_FACE_TRAINING_QUEUE_URL }}
           AWS_SQS_FACE_TRAINING_RESULT_QUEUE_URL: ${{ secrets.AWS_SQS_FACE_TRAINING_RESULT_QUEUE_URL }}
@@ -100,6 +102,9 @@ jobs:
             printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"
             printf 'AWS_S3_BUCKET=%s\n' "$AWS_S3_BUCKET"
             printf 'AWS_REGION=%s\n' "$AWS_REGION"
+            printf 'CLOUDWATCH_METRICS_ENABLED=%s\n' "$CLOUDWATCH_METRICS_ENABLED"
+            printf 'METRICS_INSTANCE_ID=%s\n' "$METRICS_INSTANCE_ID"
+            printf 'APP_ENV=production\n'
             printf 'AWS_SQS_VOICE_TRAINING_QUEUE_URL=%s\n' "$AWS_SQS_VOICE_TRAINING_QUEUE_URL"
             printf 'AWS_SQS_FACE_TRAINING_QUEUE_URL=%s\n' "$AWS_SQS_FACE_TRAINING_QUEUE_URL"
             printf 'AWS_SQS_FACE_TRAINING_RESULT_QUEUE_URL=%s\n' "$AWS_SQS_FACE_TRAINING_RESULT_QUEUE_URL"

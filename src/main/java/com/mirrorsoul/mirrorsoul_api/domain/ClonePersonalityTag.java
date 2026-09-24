@@ -50,4 +50,14 @@ public class ClonePersonalityTag extends BaseTimeEntity {
 
     @Column(name = "display_order", nullable = false)
     private Byte displayOrder;
+
+    private ClonePersonalityTag(Clone clone, String content, byte displayOrder) {
+        this.clone = clone;
+        this.content = content;
+        this.displayOrder = displayOrder;
+    }
+
+    public static ClonePersonalityTag create(Clone clone, String content, byte displayOrder) {
+        return new ClonePersonalityTag(clone, content, displayOrder);
+    }
 }

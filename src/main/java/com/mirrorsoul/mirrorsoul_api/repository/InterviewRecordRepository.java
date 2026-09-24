@@ -3,6 +3,7 @@ package com.mirrorsoul.mirrorsoul_api.repository;
 import com.mirrorsoul.mirrorsoul_api.domain.InterviewRecord;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface InterviewRecordRepository extends JpaRepository<InterviewRecord, Long> {
@@ -11,5 +12,6 @@ public interface InterviewRecordRepository extends JpaRepository<InterviewRecord
 
     long countByUser_Id(Long userId);
 
+    @EntityGraph(attributePaths = "interview")
     List<InterviewRecord> findAllByUser_IdOrderByInterview_IdAsc(Long userId);
 }

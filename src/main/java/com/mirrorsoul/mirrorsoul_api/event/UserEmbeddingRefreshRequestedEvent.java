@@ -1,0 +1,10 @@
+package com.mirrorsoul.mirrorsoul_api.event;
+
+import com.mirrorsoul.mirrorsoul_api.recommendation.EmbeddingType;
+import java.util.UUID;
+
+public record UserEmbeddingRefreshRequestedEvent(
+        UUID userUuid,
+        EmbeddingType type
+) {
+}

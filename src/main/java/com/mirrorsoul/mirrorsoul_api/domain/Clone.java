@@ -34,4 +34,12 @@ public class Clone extends BaseTimeEntity {
 
     @Column(columnDefinition = "TEXT")
     private String summary;
+
+    @Column(name = "profile_source_hash", length = 64)
+    private String profileSourceHash;
+
+    public void updateProfile(String summary, String profileSourceHash) {
+        this.summary = summary;
+        this.profileSourceHash = profileSourceHash;
+    }
 }

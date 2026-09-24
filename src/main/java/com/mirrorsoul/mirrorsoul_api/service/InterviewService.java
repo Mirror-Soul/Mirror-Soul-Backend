@@ -2,6 +2,8 @@ package com.mirrorsoul.mirrorsoul_api.service;
 
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
+import com.mirrorsoul.mirrorsoul_api.cloneprofile.CloneProfileRefreshRequestService;
+import com.mirrorsoul.mirrorsoul_api.cloneprofile.CloneProfileTrigger;
 import com.mirrorsoul.mirrorsoul_api.domain.Interview;
 import com.mirrorsoul.mirrorsoul_api.domain.InterviewRecord;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
@@ -11,6 +13,8 @@ import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewQuestionResDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewAnswerReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.interview.InterviewAnswerResDTO;
 import com.mirrorsoul.mirrorsoul_api.event.VoiceTrainingJobRequestedEvent;
+import com.mirrorsoul.mirrorsoul_api.event.UserEmbeddingRefreshRequestedEvent;
+import com.mirrorsoul.mirrorsoul_api.recommendation.EmbeddingType;
 import com.mirrorsoul.mirrorsoul_api.repository.InterviewRecordRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.InterviewRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
@@ -34,6 +38,7 @@ public class InterviewService {
     private final FileService fileService;
     private final VoiceTrainingJobService voiceTrainingJobService;
     private final ApplicationEventPublisher eventPublisher;
+    private final CloneProfileRefreshRequestService cloneProfileRefreshRequestService;
 
     public InterviewQuestionResDTO.questionListResDTO getQuestions() {
         return InterviewQuestionResDTO.questionListResDTO.builder()
@@ -79,6 +84,14 @@ public class InterviewService {
             user.setStatus(UserStatus.ONBOARD_D);
             VoiceTrainingJob voiceTrainingJob = voiceTrainingJobService.createPendingJob(user);
             eventPublisher.publishEvent(new VoiceTrainingJobRequestedEvent(voiceTrainingJob.getId()));
+            eventPublisher.publishEvent(
+                    new UserEmbeddingRefreshRequestedEvent(userUuid, EmbeddingType.INTERVIEW)
+            );
+            cloneProfileRefreshRequestService.request(
+                    userUuid, CloneProfileTrigger.ONBOARDING_COMPLETED);
+        } else {
+            cloneProfileRefreshRequestService.request(
+                    userUuid, CloneProfileTrigger.INTERVIEW_UPDATED);
         }
 
         return new InterviewAnswerResDTO(

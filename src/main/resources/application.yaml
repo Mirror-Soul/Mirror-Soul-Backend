@@ -80,6 +80,24 @@ gemini:
     model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
     dimensions: ${GEMINI_EMBEDDING_DIMENSIONS:1536}
     task-type: ${GEMINI_EMBEDDING_TASK_TYPE:SEMANTIC_SIMILARITY}
+  generation:
+    enabled: ${GEMINI_GENERATION_ENABLED:false}
+    base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_GENERATION_MODEL:gemini-3.6-flash}
+    temperature: ${GEMINI_GENERATION_TEMPERATURE:0.3}
+    max-output-tokens: ${GEMINI_GENERATION_MAX_OUTPUT_TOKENS:1500}
+    prompt-version: ${GEMINI_GENERATION_PROMPT_VERSION:clone-profile-v1}
+
+clone-profile:
+  generation:
+    max-interviews: ${CLONE_PROFILE_MAX_INTERVIEWS:20}
+    max-question-characters: ${CLONE_PROFILE_MAX_QUESTION_CHARACTERS:300}
+    max-answer-characters: ${CLONE_PROFILE_MAX_ANSWER_CHARACTERS:1000}
+    max-total-characters: ${CLONE_PROFILE_MAX_TOTAL_CHARACTERS:12000}
+    max-attempts: ${CLONE_PROFILE_MAX_ATTEMPTS:3}
+    interview-compaction-version: recent-v1
+    recovery-delay-ms: ${CLONE_PROFILE_RECOVERY_DELAY_MS:30000}
 
 region:
   geocoding:

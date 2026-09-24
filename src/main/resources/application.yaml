@@ -71,6 +71,12 @@ face-result:
 clone-training:
   callback-secret: ${CLONE_TRAINING_CALLBACK_SECRET:}
 
+rag:
+  profile:
+    enabled: ${RAG_PROFILE_ENABLED:false}
+    base-url: ${AI_SERVER_BASE_URL:}
+    poll-ms: ${RAG_PROFILE_POLL_MS:10000}
+
 vector:
   datasource:
     enabled: ${VECTOR_DB_ENABLED:true}

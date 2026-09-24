@@ -47,6 +47,8 @@ jobs:
           AWS_SQS_FACE_TRAINING_RESULT_QUEUE_URL: ${{ secrets.AWS_SQS_FACE_TRAINING_RESULT_QUEUE_URL }}
           FACE_RESULT_CONSUMER_ENABLED: ${{ vars.FACE_RESULT_CONSUMER_ENABLED || 'false' }}
           CLONE_TRAINING_CALLBACK_SECRET: ${{ secrets.CLONE_TRAINING_CALLBACK_SECRET }}
+          RAG_PROFILE_ENABLED: ${{ vars.RAG_PROFILE_ENABLED || 'false' }}
+          AI_SERVER_BASE_URL: ${{ secrets.AI_SERVER_BASE_URL }}
           AWS_SQS_VALUE_BALANCE_ANALYSIS_QUEUE_URL: ${{ secrets.AWS_SQS_VALUE_BALANCE_ANALYSIS_QUEUE_URL }}
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
@@ -86,6 +88,14 @@ jobs:
               exit 1
             fi
           done
+          if [ "$RAG_PROFILE_ENABLED" = "true" ]; then
+            for name in AI_SERVER_BASE_URL CLONE_TRAINING_CALLBACK_SECRET; do
+              if [ -z "${!name}" ]; then
+                echo "Required RAG profile secret is missing or empty: $name" >&2
+                exit 1
+              fi
+            done
+          fi
           if [ "$FACE_RESULT_CONSUMER_ENABLED" = "true" ]; then
             for name in AWS_SQS_FACE_TRAINING_RESULT_QUEUE_URL CLONE_TRAINING_CALLBACK_SECRET; do
               if [ -z "${!name}" ]; then
@@ -110,6 +120,8 @@ jobs:
             printf 'AWS_SQS_FACE_TRAINING_RESULT_QUEUE_URL=%s\n' "$AWS_SQS_FACE_TRAINING_RESULT_QUEUE_URL"
             printf 'FACE_RESULT_CONSUMER_ENABLED=%s\n' "$FACE_RESULT_CONSUMER_ENABLED"
             printf 'CLONE_TRAINING_CALLBACK_SECRET=%s\n' "$CLONE_TRAINING_CALLBACK_SECRET"
+            printf 'RAG_PROFILE_ENABLED=%s\n' "$RAG_PROFILE_ENABLED"
+            printf 'AI_SERVER_BASE_URL=%s\n' "$AI_SERVER_BASE_URL"
             printf 'AWS_SQS_VALUE_BALANCE_ANALYSIS_QUEUE_URL=%s\n' "$AWS_SQS_VALUE_BALANCE_ANALYSIS_QUEUE_URL"
             printf 'SMTP_USERNAME=%s\n' "$SMTP_USERNAME"
             printf 'SMTP_PASSWORD=%s\n' "$SMTP_PASSWORD"

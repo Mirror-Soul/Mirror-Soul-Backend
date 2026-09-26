@@ -12,6 +12,8 @@ public interface ClonePersonalityTagRepository
 
     List<ClonePersonalityTag> findAllByCloneIdOrderByDisplayOrderAsc(Long cloneId);
 
+    void deleteAllByCloneId(Long cloneId);
+
     @Query("""
             select tag
             from ClonePersonalityTag tag

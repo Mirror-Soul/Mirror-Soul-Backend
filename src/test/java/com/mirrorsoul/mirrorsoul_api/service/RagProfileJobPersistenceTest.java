@@ -6,7 +6,7 @@ import com.mirrorsoul.mirrorsoul_api.common.jpaAuditing.JpaAuditingConfig;
 import com.mirrorsoul.mirrorsoul_api.domain.Clone;
 import com.mirrorsoul.mirrorsoul_api.domain.*;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.*;
-import com.mirrorsoul.mirrorsoul_api.event.UserEmbeddingRequestedEvent;
+import com.mirrorsoul.mirrorsoul_api.event.UserEmbeddingRefreshRequestedEvent;
 import com.mirrorsoul.mirrorsoul_api.recommendation.EmbeddingType;
 import com.mirrorsoul.mirrorsoul_api.repository.*;
 import java.time.*;
@@ -65,13 +65,13 @@ class RagProfileJobPersistenceTest {
     }
 
     private void enqueue() {
-        tx.executeWithoutResult(status -> events.publishEvent(new UserEmbeddingRequestedEvent(uuid, EmbeddingType.INTERVIEW)));
+        tx.executeWithoutResult(status -> events.publishEvent(new UserEmbeddingRefreshRequestedEvent(uuid, EmbeddingType.INTERVIEW)));
     }
 
     @Test
     void rollbackDoesNotLeaveDeliveryAndCommittedDataBuildsCorrectPayload() {
         assertThatThrownBy(() -> tx.executeWithoutResult(status -> {
-            events.publishEvent(new UserEmbeddingRequestedEvent(uuid, EmbeddingType.INTERVIEW));
+            events.publishEvent(new UserEmbeddingRefreshRequestedEvent(uuid, EmbeddingType.INTERVIEW));
             throw new IllegalStateException("rollback");
         })).isInstanceOf(IllegalStateException.class);
         assertThat(jobs.findById(cloneId)).isEmpty();
@@ -142,7 +142,7 @@ class RagProfileJobPersistenceTest {
     void initialProfileWaitsForInterviewsAndWithdrawnUserIsNotSent() {
         tx.executeWithoutResult(status -> {
             users.findByUuid(uuid).orElseThrow().setStatus(UserStatus.ONBOARD_C);
-            events.publishEvent(new UserEmbeddingRequestedEvent(uuid, EmbeddingType.PROFILE));
+            events.publishEvent(new UserEmbeddingRefreshRequestedEvent(uuid, EmbeddingType.PROFILE));
         });
         assertThat(jobs.findById(cloneId)).isEmpty();
         tx.executeWithoutResult(status -> users.findByUuid(uuid).orElseThrow().setStatus(UserStatus.ACTIVE));

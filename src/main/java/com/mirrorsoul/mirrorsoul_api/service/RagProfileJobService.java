@@ -3,7 +3,7 @@ package com.mirrorsoul.mirrorsoul_api.service;
 import com.mirrorsoul.mirrorsoul_api.domain.RagProfileJob;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.RagProfileRequest;
-import com.mirrorsoul.mirrorsoul_api.event.UserEmbeddingRequestedEvent;
+import com.mirrorsoul.mirrorsoul_api.event.UserEmbeddingRefreshRequestedEvent;
 import com.mirrorsoul.mirrorsoul_api.recommendation.EmbeddingType;
 import com.mirrorsoul.mirrorsoul_api.repository.*;
 import java.time.*;
@@ -26,7 +26,7 @@ public class RagProfileJobService {
     // Synchronous listener joins the saving transaction: rollback also removes the request.
     @EventListener
     @Transactional(propagation = Propagation.MANDATORY)
-    public void request(UserEmbeddingRequestedEvent event) {
+    public void request(UserEmbeddingRefreshRequestedEvent event) {
         if (event.type() != EmbeddingType.PROFILE && event.type() != EmbeddingType.INTERVIEW) return;
         var existing = clones.findByUserUuid(event.userUuid());
         if (existing.isEmpty()) throw new IllegalStateException("RAG profile requires an existing clone");

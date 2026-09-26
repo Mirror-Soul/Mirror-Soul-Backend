@@ -35,12 +35,20 @@ public class Clone extends BaseTimeEntity {
     @Column(columnDefinition = "TEXT")
     private String summary;
 
+    @Column(name = "profile_source_hash", length = 64)
+    private String profileSourceHash;
+
     @lombok.Builder.Default
     @Column(nullable = false, length = 20)
     private String status = "PENDING";
 
     @Column(name = "personality_training_completed", nullable = false)
     private boolean personalityTrainingCompleted;
+
+    public void updateProfile(String summary, String profileSourceHash) {
+        this.summary = summary;
+        this.profileSourceHash = profileSourceHash;
+    }
 
     public void updatePersonalityTrainingCompleted(boolean completed) {
         personalityTrainingCompleted = completed;

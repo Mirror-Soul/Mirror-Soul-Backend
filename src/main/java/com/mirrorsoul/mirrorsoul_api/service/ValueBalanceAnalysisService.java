@@ -2,6 +2,8 @@ package com.mirrorsoul.mirrorsoul_api.service;
 
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
+import com.mirrorsoul.mirrorsoul_api.cloneprofile.CloneProfileRefreshRequestService;
+import com.mirrorsoul.mirrorsoul_api.cloneprofile.CloneProfileTrigger;
 import com.mirrorsoul.mirrorsoul_api.domain.ValueBalanceAnalysisJob;
 import com.mirrorsoul.mirrorsoul_api.dto.valuebalance.ValueBalanceAnalysisCallbackDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.ValueBalanceAnalysisJobRepository;
@@ -16,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ValueBalanceAnalysisService {
     private final ValueBalanceAnalysisJobRepository jobRepository;
+    private final CloneProfileRefreshRequestService cloneProfileRefreshRequestService;
 
     @Value("${value-balance.callback-secret}")
     private String callbackSecret;
@@ -30,5 +33,7 @@ public class ValueBalanceAnalysisService {
         ValueBalanceAnalysisJob job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.VALUE_BALANCE_ANALYSIS_JOB_NOT_FOUND));
         job.complete(request.personalitySummary());
+        cloneProfileRefreshRequestService.request(
+                job.getUser().getUuid(), CloneProfileTrigger.VALUE_BALANCE_COMPLETED);
     }
 }

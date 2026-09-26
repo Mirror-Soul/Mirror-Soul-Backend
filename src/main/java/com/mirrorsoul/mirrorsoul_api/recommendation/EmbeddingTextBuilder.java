@@ -1,101 +1,85 @@
 package com.mirrorsoul.mirrorsoul_api.recommendation;
 
-import com.mirrorsoul.mirrorsoul_api.domain.Clone;
 import com.mirrorsoul.mirrorsoul_api.domain.InterviewRecord;
+import com.mirrorsoul.mirrorsoul_api.domain.Clone;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
-import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
-import com.mirrorsoul.mirrorsoul_api.repository.InterviewRecordRepository;
-import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.Job;
 import java.util.List;
-import java.util.UUID;
-import lombok.RequiredArgsConstructor;
+import java.util.Optional;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 @Component
-@RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class EmbeddingTextBuilder {
 
-    private final UserRepository userRepository;
-    private final CloneRepository cloneRepository;
-    private final InterviewRecordRepository interviewRecordRepository;
-    private final JobKoreanLabelMapper jobLabelMapper;
-
-    public String build(UUID userUuid, EmbeddingType type) {
-        return switch (type) {
-            case JOB -> buildJobText(userUuid);
-            case PROFILE -> buildProfileText(userUuid);
-            case CLONE_SUMMARY -> buildCloneSummaryText(userUuid);
-            case INTERVIEW -> buildInterviewText(userUuid);
-            case CONVERSATION -> throw new IllegalArgumentException(
-                    "Conversation embedding is not supported yet"
-            );
-        };
-    }
-
-    private String buildJobText(UUID userUuid) {
-        User user = getUser(userUuid);
-        return """
-                직업 분야: %s
-                직무 설명: %s
-                """.formatted(
-                jobLabelMapper.toKoreanLabel(user.getJob()),
-                normalize(user.getJobDescription())
-        ).strip();
-    }
-
-    private String buildProfileText(UUID userUuid) {
-        User user = getUser(userUuid);
-        return """
-                사용자 자기소개:
-
-                %s
-                """.formatted(normalize(user.getSelfIntroduction())).strip();
-    }
-
-    private String buildCloneSummaryText(UUID userUuid) {
-        Clone clone = cloneRepository.findByUserUuid(userUuid)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Clone not found for user: " + userUuid
-                ));
-        return """
-                클론 요약:
-
-                %s
-                """.formatted(normalize(clone.getSummary())).strip();
-    }
-
-    private String buildInterviewText(UUID userUuid) {
-        User user = getUser(userUuid);
-        List<String> responses = interviewRecordRepository
-                .findAllByUser_IdOrderByInterview_IdAsc(user.getId()).stream()
-                .filter(record -> StringUtils.hasText(record.getAnswerText()))
-                .map(this::toInterviewResponse)
-                .toList();
-
-        if (responses.isEmpty()) {
-            return "";
+    public Optional<String> buildJobText(User user) {
+        if (user.getJob() == null) {
+            return Optional.empty();
         }
-        return "사용자 인터뷰 응답:\n\n" + String.join("\n\n", responses);
+
+        StringBuilder text = new StringBuilder()
+                .append("직업 분야: ")
+                .append(toKoreanJobName(user.getJob()));
+        if (StringUtils.hasText(user.getJobDescription())) {
+            text.append("\n직무 설명: ")
+                    .append(normalize(user.getJobDescription()));
+        }
+        return Optional.of(text.toString());
     }
 
-    private String toInterviewResponse(InterviewRecord record) {
-        return "질문: %s\n답변: %s".formatted(
-                normalize(record.getInterview().getQuestion()),
-                normalize(record.getAnswerText())
-        );
+    public Optional<String> buildProfileText(User user) {
+        if (!StringUtils.hasText(user.getSelfIntroduction())) {
+            return Optional.empty();
+        }
+        return Optional.of("자기소개:\n" + normalize(user.getSelfIntroduction()));
     }
 
-    private User getUser(UUID userUuid) {
-        return userRepository.findByUuid(userUuid)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "User not found: " + userUuid
-                ));
+    public Optional<String> buildInterviewText(List<InterviewRecord> records) {
+        if (records.isEmpty()
+                || records.stream().anyMatch(record -> !StringUtils.hasText(record.getAnswerText()))) {
+            return Optional.empty();
+        }
+
+        StringBuilder text = new StringBuilder("사용자 인터뷰 응답:\n");
+        for (InterviewRecord record : records) {
+            text.append("\n질문: ")
+                    .append(normalize(record.getInterview().getQuestion()))
+                    .append("\n답변: ")
+                    .append(normalize(record.getAnswerText()))
+                    .append('\n');
+        }
+        return Optional.of(text.toString().stripTrailing());
+    }
+
+    public Optional<String> buildCloneSummaryText(Clone clone) {
+        if (!StringUtils.hasText(clone.getSummary())) {
+            return Optional.empty();
+        }
+        return Optional.of("클론 요약:\n" + normalize(clone.getSummary()));
     }
 
     private String normalize(String value) {
-        return value == null ? "" : value.trim();
+        return value.replace("\r\n", "\n").replace('\r', '\n').strip();
+    }
+
+    private String toKoreanJobName(Job job) {
+        return switch (job) {
+            case IT_TECH -> "기술 및 IT";
+            case DESIGN -> "디자인";
+            case PLANNING_STRATEGY -> "기획 및 전략";
+            case MARKETING_PR -> "마케팅 및 PR";
+            case SALES_BUSINESS -> "영업 및 비즈니스";
+            case HR_RECRUITING -> "인사 및 채용";
+            case FINANCE_ACCOUNTING -> "재무 및 회계";
+            case OPERATIONS_CS -> "운영 및 고객지원";
+            case EDUCATION -> "교육";
+            case MEDICAL_HEALTHCARE -> "의료 및 헬스케어";
+            case MEDIA_CONTENT -> "미디어 및 콘텐츠";
+            case LEGAL_PUBLIC -> "법률 및 공공";
+            case MANUFACTURING_ENGINEERING -> "제조 및 엔지니어링";
+            case STUDENT -> "학생";
+            case FREELANCER -> "프리랜서";
+            case ETC -> "기타";
+        };
     }
 }

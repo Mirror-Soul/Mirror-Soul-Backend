@@ -1,6 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.event;
 
-import com.mirrorsoul.mirrorsoul_api.recommendation.UserEmbeddingService;
+import com.mirrorsoul.mirrorsoul_api.service.UserEmbeddingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -17,12 +17,12 @@ public class UserEmbeddingEventHandler {
 
     @Async("embeddingTaskExecutor")
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handle(UserEmbeddingRequestedEvent event) {
+    public void handle(UserEmbeddingRefreshRequestedEvent event) {
         try {
-            userEmbeddingService.generate(event.userUuid(), event.type());
+            userEmbeddingService.refresh(event.userUuid(), event.type());
         } catch (RuntimeException exception) {
             log.error(
-                    "Failed to generate user embedding. userUuid={}, type={}",
+                    "Failed to refresh user embedding. userUuid={}, type={}",
                     event.userUuid(),
                     event.type(),
                     exception

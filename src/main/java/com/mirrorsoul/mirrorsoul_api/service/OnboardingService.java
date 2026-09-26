@@ -1,13 +1,15 @@
 package com.mirrorsoul.mirrorsoul_api.service;
 
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
+import com.mirrorsoul.mirrorsoul_api.cloneprofile.CloneProfileRefreshRequestService;
+import com.mirrorsoul.mirrorsoul_api.cloneprofile.CloneProfileTrigger;
 import com.mirrorsoul.mirrorsoul_api.domain.MbtiProfile;
 import com.mirrorsoul.mirrorsoul_api.domain.Region;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.Job;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.onboarding.OnboardingReqDTO;
-import com.mirrorsoul.mirrorsoul_api.event.UserEmbeddingRequestedEvent;
+import com.mirrorsoul.mirrorsoul_api.event.UserEmbeddingRefreshRequestedEvent;
 import com.mirrorsoul.mirrorsoul_api.recommendation.EmbeddingType;
 import com.mirrorsoul.mirrorsoul_api.repository.MbtiProfileRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.RegionRepository;
@@ -33,6 +35,7 @@ public class OnboardingService {
     private final MbtiProfileRepository mbtiProfileRepository;
     private final RegionRepository regionRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final CloneProfileRefreshRequestService cloneProfileRefreshRequestService;
 
     public void postProfile(OnboardingReqDTO.personaReqDTO req, UUID userUuid, Job job) {
 
@@ -61,7 +64,9 @@ public class OnboardingService {
         user.setJobCertificationObjectKey(req.getJobCertificationObjectKey());
         user.setStatus(ONBOARD_B);
         userRepository.save(user);
-        eventPublisher.publishEvent(new UserEmbeddingRequestedEvent(userUuid, EmbeddingType.JOB));
+        eventPublisher.publishEvent(
+                new UserEmbeddingRefreshRequestedEvent(userUuid, EmbeddingType.JOB)
+        );
     }
 
     @Transactional(readOnly = true)
@@ -102,6 +107,9 @@ public class OnboardingService {
 
         user.setSelfIntroduction(req.getSelfIntroduction());
         user.setStatus(UserStatus.ONBOARD_C);
-        eventPublisher.publishEvent(new UserEmbeddingRequestedEvent(userUuid, EmbeddingType.PROFILE));
+        eventPublisher.publishEvent(
+                new UserEmbeddingRefreshRequestedEvent(userUuid, EmbeddingType.PROFILE)
+        );
+        cloneProfileRefreshRequestService.request(userUuid, CloneProfileTrigger.PERSONALITY_UPDATED);
     }
 }

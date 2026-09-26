@@ -83,15 +83,19 @@ public class PgVectorUserEmbeddingRepository implements UserEmbeddingRepository 
 
     @Override
     public Optional<String> findSourceHash(UUID userUuid, EmbeddingType type) {
+        String sourceHashColumn = type.sourceHashColumn();
         String sql = "SELECT %s FROM recommendation.user_embeddings WHERE user_uuid = :userUuid"
-                .formatted(type.sourceHashColumn());
+                .formatted(sourceHashColumn);
 
         List<String> hashes = jdbcTemplate.query(
                 sql,
                 Map.of("userUuid", userUuid),
-                (resultSet, rowNumber) -> resultSet.getString(1)
+                (resultSet, rowNumber) -> resultSet.getString(sourceHashColumn)
         );
-        return hashes.stream().filter(java.util.Objects::nonNull).findFirst();
+        if (hashes.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(hashes.get(0));
     }
 
     @Override

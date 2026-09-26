@@ -99,7 +99,7 @@ gemini:
     dimensions: ${GEMINI_EMBEDDING_DIMENSIONS:1536}
     task-type: ${GEMINI_EMBEDDING_TASK_TYPE:SEMANTIC_SIMILARITY}
   generation:
-    enabled: ${GEMINI_GENERATION_ENABLED:false}
+    enabled: ${GEMINI_GENERATION_ENABLED:true}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com}
     api-key: ${GEMINI_API_KEY:}
     model: ${GEMINI_GENERATION_MODEL:gemini-3.6-flash}

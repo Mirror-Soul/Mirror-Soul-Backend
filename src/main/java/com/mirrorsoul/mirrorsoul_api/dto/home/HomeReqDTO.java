@@ -1,6 +1,7 @@
 package com.mirrorsoul.mirrorsoul_api.dto.home;
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -17,6 +18,17 @@ public final class HomeReqDTO {
             @NotNull(message = "충전할 대화 시간은 필수입니다.")
             @Min(value = 1, message = "충전할 대화 시간은 1초 이상이어야 합니다.")
             Integer seconds
+    ) {
+    }
+
+    public record UpdatePreferredRegionDTO(
+            @NotNull(message = "기준 지역은 필수입니다.")
+            Long anchorRegionId,
+
+            @NotNull(message = "포함할 동 개수는 필수입니다.")
+            @Min(value = 1, message = "최소 1개 이상이어야 합니다.")
+            @Max(value = 50, message = "최대 50개까지 설정할 수 있습니다.")
+            Integer nearbyCount
     ) {
     }
 

@@ -31,7 +31,6 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
-
     @Bean(name = "cloneProfileTaskExecutor")
     public Executor cloneProfileTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();

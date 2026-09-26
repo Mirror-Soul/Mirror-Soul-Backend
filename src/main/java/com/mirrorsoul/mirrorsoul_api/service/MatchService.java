@@ -1,6 +1,9 @@
 package com.mirrorsoul.mirrorsoul_api.service;
 
 import com.mirrorsoul.mirrorsoul_api.domain.Clone;
+import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
+import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
+import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.VideoCall;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.VideoCallStatus;
@@ -22,6 +25,24 @@ import org.springframework.transaction.annotation.Transactional;
 public class MatchService {
 
     private final VideoCallRepository videoCallRepository;
+    private final UserRepository userRepository;
+
+    public MatchResDTO.MatchingStatusDTO getMatchingStatus(UUID userUuid) {
+        User user = getUser(userUuid);
+        return new MatchResDTO.MatchingStatusDTO(Boolean.TRUE.equals(user.getMatchingEnabled()));
+    }
+
+    @Transactional
+    public MatchResDTO.MatchingStatusDTO updateMatchingStatus(UUID userUuid, boolean matchingEnabled) {
+        User user = getUser(userUuid);
+        user.updateMatchingEnabled(matchingEnabled);
+        return new MatchResDTO.MatchingStatusDTO(Boolean.TRUE.equals(user.getMatchingEnabled()));
+    }
+
+    private User getUser(UUID userUuid) {
+        return userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
+    }
 
     public MatchResDTO.TwinListDTO getTwins(UUID userUuid) {
         List<VideoCall> completedCalls = videoCallRepository.findAllByUserUuidAndStatusOrderByLatest(

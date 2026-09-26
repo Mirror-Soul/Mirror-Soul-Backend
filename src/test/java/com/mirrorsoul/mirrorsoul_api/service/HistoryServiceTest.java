@@ -72,11 +72,9 @@ class HistoryServiceTest {
                 11L, currentUser, sarahClone, today.atTime(14, 30), 503, CallMediaType.VIDEO);
         VideoCall received = call(
                 10L, emily, myClone, today.minusDays(1).atTime(19, 20), 765, CallMediaType.VOICE);
-        when(videoCallRepository.findRecentHistory(
+        when(videoCallRepository.findAllHistory(
                 currentUserUuid,
-                VideoCallStatus.COMPLETED,
-                today.minusDays(6).atStartOfDay(),
-                today.plusDays(1).atStartOfDay()
+                VideoCallStatus.COMPLETED
         )).thenReturn(List.of(sent, received));
 
         CallMatchAnalysis analysis = analysis(sent, 92, List.of("커피", "음악", "주말 계획"));
@@ -131,11 +129,9 @@ class HistoryServiceTest {
         VideoCall received = call(
                 10L, emily, myClone, today.atTime(11, 15), 765, CallMediaType.VOICE);
 
-        when(videoCallRepository.findRecentHistory(
+        when(videoCallRepository.findAllHistory(
                 currentUserUuid,
-                VideoCallStatus.COMPLETED,
-                today.minusDays(6).atStartOfDay(),
-                today.plusDays(1).atStartOfDay()
+                VideoCallStatus.COMPLETED
         )).thenReturn(List.of(sent, received));
         when(callMatchAnalysisRepository.findAllByVideoCallIdIn(List.of(10L)))
                 .thenReturn(List.of());
@@ -154,6 +150,40 @@ class HistoryServiceTest {
                 .satisfies(group -> assertThat(group.histories()).singleElement()
                         .satisfies(history -> assertThat(history.callId()).isEqualTo(10L)));
         verify(callMatchAnalysisRepository).findAllByVideoCallIdIn(List.of(10L));
+    }
+
+    @Test
+    void getCallHistoryIncludesCallWithOwnClone() {
+        LocalDate today = LocalDate.now();
+        UUID currentUserUuid = UUID.randomUUID();
+        User currentUser = user(currentUserUuid, "나", today.minusYears(26));
+        Clone myClone = clone(currentUser, 88);
+        VideoCall ownCloneCall = call(
+                12L, currentUser, myClone, today.atTime(15, 0), 300, CallMediaType.VOICE);
+
+        when(videoCallRepository.findAllHistory(
+                currentUserUuid,
+                VideoCallStatus.COMPLETED
+        )).thenReturn(List.of(ownCloneCall));
+        when(callMatchAnalysisRepository.findAllByVideoCallIdIn(List.of(12L)))
+                .thenReturn(List.of());
+        when(cloneRepository.findAllByUserUuidIn(List.of(currentUserUuid)))
+                .thenReturn(List.of(myClone));
+
+        HistoryResDTO.CallHistoryListDTO result = historyService.getCallHistory(
+                currentUserUuid,
+                HistoryReqDTO.HistoryType.ALL
+        );
+
+        assertThat(result.summary().totalCount()).isEqualTo(1);
+        assertThat(result.summary().sentCount()).isEqualTo(1);
+        assertThat(result.groups()).singleElement()
+                .satisfies(group -> assertThat(group.histories()).singleElement()
+                        .satisfies(history -> {
+                            assertThat(history.callId()).isEqualTo(12L);
+                            assertThat(history.partner().userUuid()).isEqualTo(currentUserUuid);
+                            assertThat(history.partner().twinSyncRate()).isEqualTo(88);
+                        }));
     }
 
     @Test

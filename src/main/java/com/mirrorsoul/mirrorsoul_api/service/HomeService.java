@@ -3,13 +3,18 @@ package com.mirrorsoul.mirrorsoul_api.service;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
 import com.mirrorsoul.mirrorsoul_api.domain.Sigungu;
+import com.mirrorsoul.mirrorsoul_api.domain.Region;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
+import com.mirrorsoul.mirrorsoul_api.domain.UserPreferredRegion;
 import com.mirrorsoul.mirrorsoul_api.domain.UserPreferredSigungu;
 import com.mirrorsoul.mirrorsoul_api.dto.home.HomeReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.home.HomeResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.SigunguRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserPreferredSigunguRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.RegionRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.UserPreferredRegionRepository;
+import com.mirrorsoul.mirrorsoul_api.region.NearbyRegionFinder;
 import java.util.UUID;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -29,15 +34,18 @@ public class HomeService {
     private final UserRepository userRepository;
     private final UserPreferredSigunguRepository preferredSigunguRepository;
     private final SigunguRepository sigunguRepository;
+    private final RegionRepository regionRepository;
+    private final UserPreferredRegionRepository preferredRegionRepository;
+    private final NearbyRegionFinder nearbyRegionFinder;
 
     public HomeResDTO.HomeDTO getHome(UUID userUuid) {
         User user = userRepository.findByUuid(userUuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
 
-        List<HomeResDTO.PreferredRegionDTO> preferredRegions = preferredSigunguRepository
-                .findAllByUserIdOrderByCreatedAtAscIdAsc(user.getId()).stream()
-                .map(userPreferredSigungu -> toPreferredRegion(userPreferredSigungu.getSigungu()))
-                .toList();
+        HomeResDTO.PreferredRegionSettingDTO preferredRegion = preferredRegionRepository
+                .findByUserId(user.getId())
+                .map(this::toPreferredRegionSetting)
+                .orElse(null);
 
         int remainingTalkTimeInSeconds = Math.max(
                 user.getRemainingTalkTime() == null ? 0 : user.getRemainingTalkTime(),
@@ -46,8 +54,33 @@ public class HomeService {
 
         return new HomeResDTO.HomeDTO(
                 toTalkTime(remainingTalkTimeInSeconds),
-                preferredRegions
+                preferredRegion
         );
+    }
+
+    @Transactional
+    public HomeResDTO.PreferredRegionSettingDTO updatePreferredRegion(
+            UUID userUuid,
+            HomeReqDTO.UpdatePreferredRegionDTO request
+    ) {
+        User user = userRepository.findByUuid(userUuid)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
+        Region anchorRegion = regionRepository.findById(request.anchorRegionId())
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.REGION_NOT_FOUND));
+
+        UserPreferredRegion preference = preferredRegionRepository.findByUserId(user.getId())
+                .map(existing -> {
+                    existing.update(anchorRegion, request.nearbyCount());
+                    return existing;
+                })
+                .orElseGet(() -> UserPreferredRegion.builder()
+                        .user(user)
+                        .anchorRegion(anchorRegion)
+                        .nearbyCount(request.nearbyCount())
+                        .build());
+
+        preferredRegionRepository.save(preference);
+        return toPreferredRegionSetting(preference);
     }
 
     @Transactional
@@ -133,6 +166,20 @@ public class HomeService {
                 sigungu.getId(),
                 sigungu.getSidoName(),
                 sigungu.getSigunguName()
+        );
+    }
+
+    private HomeResDTO.PreferredRegionSettingDTO toPreferredRegionSetting(
+            UserPreferredRegion preference
+    ) {
+        Region anchor = preference.getAnchorRegion();
+        return new HomeResDTO.PreferredRegionSettingDTO(
+                anchor.getId(),
+                anchor.getSidoName(),
+                anchor.getSigunguName(),
+                anchor.getEupmyeondongName(),
+                preference.getNearbyCount(),
+                nearbyRegionFinder.findNearestRegionIds(anchor, preference.getNearbyCount())
         );
     }
 }

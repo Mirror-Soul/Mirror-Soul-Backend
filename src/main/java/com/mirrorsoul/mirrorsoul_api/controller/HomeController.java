@@ -69,6 +69,18 @@ public class HomeController {
         );
     }
 
+    @Operation(summary = "탐색 지역 설정", description = "기준 읍면동과 앵커를 포함한 탐색 동네 개수를 설정합니다.")
+    @PutMapping("/preferred-region")
+    public ApiResponse<HomeResDTO.PreferredRegionSettingDTO> updatePreferredRegion(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody HomeReqDTO.UpdatePreferredRegionDTO request
+    ) {
+        return ApiResponse.onSuccess(
+                "탐색 지역 설정에 성공했습니다.",
+                homeService.updatePreferredRegion(currentUser.getUuid(), request)
+        );
+    }
+
     @Operation(summary = "선호 지역 선택지 조회", description = "선호 지역 설정에 사용할 시군구 ID와 이름을 조회합니다.")
     @GetMapping("/preferred-regions/options")
     public ApiResponse<HomeResDTO.SigunguOptionsDTO> getPreferredRegionOptions() {

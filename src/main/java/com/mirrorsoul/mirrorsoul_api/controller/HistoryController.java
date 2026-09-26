@@ -29,8 +29,8 @@ public class HistoryController {
     private final HistoryService historyService;
 
     @Operation(
-            summary = "최근 7일 통화 내역 조회",
-            description = "최근 7일간의 통화 내역을 통화 방향으로 필터링하여 날짜별로 조회합니다. 쿼리 파라미터 ENUM은 ALL, RECEIVED, SENT"
+            summary = "전체 통화 내역 조회",
+            description = "전체 통화 내역을 통화 방향으로 필터링하여 날짜별로 조회합니다. 쿼리 파라미터 ENUM은 ALL, RECEIVED, SENT"
     )
     @GetMapping("/calls")
     public ApiResponse<HistoryResDTO.CallHistoryListDTO> getCallHistory(
@@ -38,7 +38,7 @@ public class HistoryController {
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         return ApiResponse.onSuccess(
-                "최근 7일 통화 내역 조회에 성공했습니다.",
+                "전체 통화 내역 조회에 성공했습니다.",
                 historyService.getCallHistory(currentUser.getUuid(), type)
         );
     }

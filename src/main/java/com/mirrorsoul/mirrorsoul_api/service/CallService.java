@@ -42,10 +42,11 @@ public class CallService {
         Clone clone = cloneRepository.findByUserUuid(cloneUserUuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.CLONE_NOT_FOUND));
         User cloneOwner = clone.getUser();
-        if (caller.getId().equals(cloneOwner.getId())
-                || cloneOwner.getStatus() != com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE
-                || !Boolean.TRUE.equals(cloneOwner.getMatchingEnabled())
-                || userBlockRepository.existsBetween(caller.getId(), cloneOwner.getId())) {
+        boolean callingOwnClone = caller.getId().equals(cloneOwner.getId());
+        if (!callingOwnClone && (
+                cloneOwner.getStatus() != com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE
+                        || !Boolean.TRUE.equals(cloneOwner.getMatchingEnabled())
+                        || userBlockRepository.existsBetween(caller.getId(), cloneOwner.getId()))) {
             throw new GeneralException(GeneralErrorCode.CLONE_NOT_FOUND);
         }
 

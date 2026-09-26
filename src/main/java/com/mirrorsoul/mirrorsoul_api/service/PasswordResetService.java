@@ -33,8 +33,10 @@ public class PasswordResetService {
         String code = createCode();
 
         userRepository.findByEmail(email)
-                .filter(user -> user.getStatus() != UserStatus.INACTIVE)
-                .ifPresent(user -> mailService.sendPasswordResetCode(email, code));
+                .filter(candidate -> candidate.getStatus() != UserStatus.INACTIVE)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.EMAIL_NOT_FOUND));
+
+        mailService.sendPasswordResetCode(email, code);
 
         session.setAttribute(PasswordResetConst.TARGET, email);
         session.setAttribute(PasswordResetConst.CODE, code);

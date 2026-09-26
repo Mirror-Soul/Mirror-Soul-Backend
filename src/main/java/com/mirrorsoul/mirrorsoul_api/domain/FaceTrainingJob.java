@@ -43,6 +43,12 @@ public class FaceTrainingJob {
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
+    @Column(name = "error_code", length = 100)
+    private String errorCode;
+
+    @Column(name = "error_retryable")
+    private Boolean errorRetryable;
+
     @OneToMany(mappedBy = "faceTrainingJob", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FaceTrainingJobFile> files = new ArrayList<>();
 
@@ -77,6 +83,37 @@ public class FaceTrainingJob {
     public void markMessageSent(String sqsMessageId) {
         this.sqsMessageId = sqsMessageId;
         this.errorMessage = null;
+    }
+
+    public boolean isTerminal() {
+        return status == FaceTrainingJobStatus.COMPLETED || status == FaceTrainingJobStatus.FAILED;
+    }
+
+    public void markProcessing() {
+        if (isTerminal()) return;
+        status = FaceTrainingJobStatus.PROCESSING;
+        if (startedAt == null) startedAt = LocalDateTime.now();
+    }
+
+    public void complete() {
+        markProcessing();
+        status = FaceTrainingJobStatus.COMPLETED;
+        errorMessage = null;
+        errorCode = null;
+        errorRetryable = null;
+        finishedAt = LocalDateTime.now();
+    }
+
+    public void recordFailure(String code, String message, boolean retryable) {
+        if (isTerminal()) return;
+        markProcessing();
+        errorCode = code;
+        errorMessage = message;
+        errorRetryable = retryable;
+        if (!retryable) {
+            status = FaceTrainingJobStatus.FAILED;
+            finishedAt = LocalDateTime.now();
+        }
     }
 
     public void markDispatchFailed(String errorMessage) {

@@ -36,10 +36,11 @@ public class FaceTrainingJobPublisher {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void publish(Long faceTrainingJobId) {
-        FaceTrainingJob job = faceTrainingJobRepository.findById(faceTrainingJobId)
+        FaceTrainingJob job = faceTrainingJobRepository.findLockedById(faceTrainingJobId)
                 .orElseThrow(() -> new IllegalArgumentException(
                         "FaceTrainingJob not found: " + faceTrainingJobId
                 ));
+        if (job.isTerminal() || job.getSqsMessageId() != null) return;
         Clone clone = cloneRepository.findByUserUuid(job.getUser().getUuid())
                 .orElseThrow(() -> new IllegalStateException(
                         "Clone not found for user: " + job.getUser().getUuid()

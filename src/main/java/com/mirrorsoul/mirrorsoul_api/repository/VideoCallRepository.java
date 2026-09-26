@@ -46,7 +46,6 @@ public interface VideoCallRepository extends JpaRepository<VideoCall, Long> {
               and videoCall.startedAt >= :startedAt
               and videoCall.startedAt < :endedBefore
               and (caller.uuid = :userUuid or cloneOwner.uuid = :userUuid)
-              and caller.id <> cloneOwner.id
               and not exists (
                     select 1 from UserBlock ub
                     where (ub.blocker = caller and ub.blocked = cloneOwner)
@@ -59,6 +58,26 @@ public interface VideoCallRepository extends JpaRepository<VideoCall, Long> {
             @Param("status") VideoCallStatus status,
             @Param("startedAt") LocalDateTime startedAt,
             @Param("endedBefore") LocalDateTime endedBefore
+    );
+
+    @Query("""
+            select videoCall
+            from VideoCall videoCall
+            join fetch videoCall.user caller
+            join fetch videoCall.clone clone
+            join fetch clone.user cloneOwner
+            where videoCall.status = :status
+              and (caller.uuid = :userUuid or cloneOwner.uuid = :userUuid)
+              and not exists (
+                    select 1 from UserBlock ub
+                    where (ub.blocker = caller and ub.blocked = cloneOwner)
+                       or (ub.blocker = cloneOwner and ub.blocked = caller)
+              )
+            order by videoCall.startedAt desc, videoCall.id desc
+            """)
+    List<VideoCall> findAllHistory(
+            @Param("userUuid") UUID userUuid,
+            @Param("status") VideoCallStatus status
     );
 
     @Query("""

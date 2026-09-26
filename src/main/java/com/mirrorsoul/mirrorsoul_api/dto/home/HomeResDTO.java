@@ -12,7 +12,7 @@ public final class HomeResDTO {
 
     public record HomeDTO(
             TalkTimeDTO remainingTalkTime,
-            List<PreferredRegionDTO> preferredRegions
+            PreferredRegionSettingDTO preferredRegion
     ) {
     }
 
@@ -32,6 +32,16 @@ public final class HomeResDTO {
 
     public record PreferredRegionsDTO(
             List<PreferredRegionDTO> preferredRegions
+    ) {
+    }
+
+    public record PreferredRegionSettingDTO(
+            Long anchorRegionId,
+            String sidoName,
+            String sigunguName,
+            String eupmyeondongName,
+            Integer nearbyCount,
+            List<Long> includedRegionIds
     ) {
     }
 

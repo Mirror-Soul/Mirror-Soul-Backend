@@ -57,15 +57,35 @@ class PasswordResetServiceTest {
     }
 
     @Test
-    void sendCodeDoesNotRevealMissingAccountByThrowingOrSendingMail() {
+    void sendCodeRejectsMissingAccount() {
         String email = "missing@example.com";
         when(userRepository.findByEmail(email)).thenReturn(Optional.empty());
         MockHttpSession session = new MockHttpSession();
 
-        service.sendCode(new PasswordResetReqDTO.SendCodeDTO(email), session);
+        assertError(
+                () -> service.sendCode(new PasswordResetReqDTO.SendCodeDTO(email), session),
+                GeneralErrorCode.EMAIL_NOT_FOUND
+        );
 
         verify(mailService, never()).sendPasswordResetCode(anyString(), anyString());
-        assertThat(session.getAttribute(PasswordResetConst.TARGET)).isEqualTo(email);
+        assertThat(session.getAttribute(PasswordResetConst.TARGET)).isNull();
+    }
+
+    @Test
+    void sendCodeRejectsInactiveAccount() {
+        String email = "inactive@example.com";
+        User user = mock(User.class);
+        when(user.getStatus()).thenReturn(UserStatus.INACTIVE);
+        when(userRepository.findByEmail(email)).thenReturn(Optional.of(user));
+        MockHttpSession session = new MockHttpSession();
+
+        assertError(
+                () -> service.sendCode(new PasswordResetReqDTO.SendCodeDTO(email), session),
+                GeneralErrorCode.EMAIL_NOT_FOUND
+        );
+
+        verify(mailService, never()).sendPasswordResetCode(anyString(), anyString());
+        assertThat(session.getAttribute(PasswordResetConst.TARGET)).isNull();
     }
 
     @Test

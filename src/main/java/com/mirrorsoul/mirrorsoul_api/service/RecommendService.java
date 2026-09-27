@@ -90,7 +90,7 @@ public class RecommendService {
                 adult,
                 adultBirthDateCutoff,
                 now.minusDays(LONG_INACTIVE_DAYS),
-                now.minusDays(SWIPE_REEXPOSURE_DAYS),
+                //now.minusDays(SWIPE_REEXPOSURE_DAYS),
                 filterByRegion,
                 regionIdsForQuery
         );

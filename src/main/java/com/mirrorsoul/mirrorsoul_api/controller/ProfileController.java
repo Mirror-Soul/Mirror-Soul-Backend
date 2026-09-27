@@ -4,6 +4,7 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.ApiResponse;
 import com.mirrorsoul.mirrorsoul_api.common.security.CustomUserDetails;
 import com.mirrorsoul.mirrorsoul_api.dto.profile.ProfileReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.profile.ProfileResDTO;
+import com.mirrorsoul.mirrorsoul_api.service.MyProfileDetailService;
 import com.mirrorsoul.mirrorsoul_api.service.ProfileService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class ProfileController {
 
     private final ProfileService profileService;
+    private final MyProfileDetailService myProfileDetailService;
 
     @Operation(summary = "마이페이지 진입 api", description = "마이페이지에 필요한 이름, 이메일 정보를 조회합니다.")
     @GetMapping
@@ -30,6 +32,20 @@ public class ProfileController {
         return ApiResponse.onSuccess(
                 "마이페이지 조회에 성공했습니다.",
                 profileService.getMyProfile(currentUser.getUuid())
+        );
+    }
+
+    @Operation(
+            summary = "내 프로필 상세 조회 api",
+            description = "로그인 사용자의 프로필, 직업, Twin 정보, MBTI 지표, 성격 해시태그와 음성 미리듣기 정보를 조회합니다."
+    )
+    @GetMapping("/profile")
+    public ApiResponse<ProfileResDTO.MyProfileDetailDTO> getMyProfileDetail(
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        return ApiResponse.onSuccess(
+                "내 프로필 상세 조회에 성공했습니다.",
+                myProfileDetailService.getDetail(currentUser.getUuid())
         );
     }
 

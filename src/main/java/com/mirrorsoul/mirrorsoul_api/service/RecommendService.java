@@ -33,8 +33,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import static com.mirrorsoul.mirrorsoul_api.recommendation.RecommendationPolicy.SWIPE_REEXPOSURE_DAYS;
-
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -90,7 +88,6 @@ public class RecommendService {
                 adult,
                 adultBirthDateCutoff,
                 now.minusDays(LONG_INACTIVE_DAYS),
-                //now.minusDays(SWIPE_REEXPOSURE_DAYS),
                 filterByRegion,
                 regionIdsForQuery
         );

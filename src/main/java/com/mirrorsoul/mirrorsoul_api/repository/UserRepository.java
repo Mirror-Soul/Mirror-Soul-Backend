@@ -86,14 +86,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
                   )
           )
 
-          and not exists (
-                select 1
-                from SwipeHistory swipe
-                where swipe.swiper.id = :currentUserId
-                  and swipe.target.id = candidate.id
-                  and swipe.createdAt >= :swipedSince
-          )
-
           and (
                 :filterByRegion = false
              or candidate.residenceRegion.id in :includedRegionIds
@@ -106,7 +98,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("adult") boolean adult,
             @Param("adultBirthDateCutoff") LocalDate adultBirthDateCutoff,
             @Param("activeSince") LocalDateTime activeSince,
-            //@Param("swipedSince") LocalDateTime swipedSince,
             @Param("filterByRegion") boolean filterByRegion,
             @Param("includedRegionIds") List<Long> includedRegionIds
     );

@@ -38,8 +38,9 @@ public class EvolveService {
 
     public EvolveResDTO.twinSyncDTO twinSync(UUID uuid) {
 
-        Integer syncRate = cloneRepository.findSyncRateByUserUuid(uuid)
+        var clone = cloneRepository.findByUserUuid(uuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.CLONE_NOT_FOUND));
+        var syncRate = clone.getVisibleSyncRate();
 
         VoiceTrainingJobSource voiceUpdate = VoiceTrainingJobSource.VOICE_UPDATE;
         long voiceTrainingCount = voiceTrainingJobRepository.countByUser_UuidAndSource(uuid, voiceUpdate);

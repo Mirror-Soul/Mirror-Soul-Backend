@@ -56,6 +56,7 @@ public class FaceTrainingResultService {
             return;
         }
         require("READY_FOR_RENDERING".equals(result.profileStatus()), "Invalid profile status");
+        CloneSimilarityCalculator.validateScore(result.faceScore());
         var artifacts = result.artifacts();
         require(artifacts != null && Objects.equals(storage.getBucket(), artifacts.bucket()), "Invalid result bucket");
         String prefix = "face-results/" + message.userUuid() + "/job-" + job.getId() + "/";
@@ -70,7 +71,11 @@ public class FaceTrainingResultService {
         boolean newerProfileExists = activeProfiles.stream()
                 .anyMatch(existing -> existing.getFaceTrainingJob().getId() > job.getId());
         if (newerProfileExists) profile.deactivate();
-        else activeProfiles.forEach(AiFaceProfile::deactivate);
+        else {
+            activeProfiles.forEach(AiFaceProfile::deactivate);
+            clone.updateFaceSimilarity(job.getId(), result.faceScore());
+        }
+        profile.updateRenderingQuality(result.faceScore());
         profiles.saveAndFlush(profile);
         job.complete();
         readiness.refreshLocked(clone);

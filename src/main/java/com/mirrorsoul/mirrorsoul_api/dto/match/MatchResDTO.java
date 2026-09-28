@@ -1,5 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.dto.match;
 
+import java.math.BigDecimal;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.CallMediaType;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -25,7 +26,7 @@ public class MatchResDTO {
             Integer age,
             String profileImageUrl,
             String twinAvatarImageUrl,
-            Integer twinSyncRate,
+            BigDecimal twinSyncRate,
             String twinSummary,
             Long latestCallId,
             CallMediaType latestCallMediaType,

@@ -1,5 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.dto.profile;
 
+import java.math.BigDecimal;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.Job;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.MbtiType;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.SpeechSpeed;
@@ -18,7 +19,7 @@ public class ProfileResDTO {
             String name,
             Integer age,
             String profileImageUrl,
-            Integer syncRate,
+            BigDecimal syncRate,
             RegionDTO region,
             Job job,
             String jobDescription,

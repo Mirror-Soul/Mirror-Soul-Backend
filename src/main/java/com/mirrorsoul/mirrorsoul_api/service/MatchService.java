@@ -82,7 +82,7 @@ public class MatchService {
                 .age(calculateAge(twinOwner.getBirthDate()))
                 .profileImageUrl(twinOwner.getProfileImageUrl())
                 .twinAvatarImageUrl(twin.getAvatarImageUrl())
-                .twinSyncRate(twin.getSyncRate())
+                .twinSyncRate(twin.getVisibleSyncRate())
                 .twinSummary(twin.getSummary())
                 .latestCallId(latestCall.getId())
                 .latestCallMediaType(latestCall.getMediaType())

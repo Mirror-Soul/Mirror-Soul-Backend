@@ -1,5 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.dto.home;
 
+import java.math.BigDecimal;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.MbtiType;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.Job;
 import java.util.List;
@@ -73,7 +74,7 @@ public final class HomeResDTO {
             String name,
             Integer age,
             String profileImageUrl,
-            Integer syncRate,
+            BigDecimal syncRate,
             RegionDTO region,
             Job job,
             boolean jobCertificationSubmitted,

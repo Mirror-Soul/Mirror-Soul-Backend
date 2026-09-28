@@ -86,7 +86,7 @@ class MyProfileDetailServiceTest {
 
         when(cloneRepository.findByUserUuid(userUuid)).thenReturn(Optional.of(clone));
         when(clone.getId()).thenReturn(10L);
-        when(clone.getSyncRate()).thenReturn(94);
+        when(clone.getVisibleSyncRate()).thenReturn(java.math.BigDecimal.valueOf(94));
         when(mbtiProfileRepository.findByUser_Id(1L)).thenReturn(Optional.of(mbtiProfile));
         when(mbtiProfile.getMbti()).thenReturn(MbtiType.INFJ);
         when(mbtiProfile.getIeScore()).thenReturn(40);
@@ -113,7 +113,7 @@ class MyProfileDetailServiceTest {
         assertThat(result.email()).isEqualTo("me@example.com");
         assertThat(result.name()).isEqualTo("서연");
         assertThat(result.age()).isEqualTo(28);
-        assertThat(result.syncRate()).isEqualTo(94);
+        assertThat(result.syncRate()).isEqualByComparingTo("94");
         assertThat(result.region().sigunguName()).isEqualTo("강남구");
         assertThat(result.job()).isEqualTo(Job.IT_TECH);
         assertThat(result.jobDescription()).isEqualTo("백엔드 개발자");

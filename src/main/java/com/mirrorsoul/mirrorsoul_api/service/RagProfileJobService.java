@@ -60,7 +60,7 @@ public class RagProfileJobService {
         var request = new RagProfileRequest(user.getUuid(), cloneId, "clone-" + cloneId,
                 user.getBirthDate() == null ? null : Period.between(user.getBirthDate(), LocalDate.now()).getYears(),
                 user.getGender() == null ? null : user.getGender().name().toLowerCase(Locale.ROOT),
-                mbti, user.getSelfIntroduction(), List.of(), List.of(), samples, 12);
+                mbti, user.getSelfIntroduction(), List.of(), List.of(), samples, 12, job.getRequestedRevision());
         return new ClaimedProfile(cloneId, job.getRequestedRevision(), token, request);
     }
 

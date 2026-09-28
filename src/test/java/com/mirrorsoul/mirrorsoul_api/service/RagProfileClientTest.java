@@ -25,7 +25,7 @@ class RagProfileClientTest {
 
     private RagProfileRequest request() {
         return new RagProfileRequest(uuid, 14L, "clone-14", 24, "male", "INFP", "소개",
-                List.of(), List.of(), List.of(new RagProfileRequest.InterviewSample(1L, "", "질문", "답변")), 12);
+                List.of(), List.of(), List.of(new RagProfileRequest.InterviewSample(1L, "", "질문", "답변")), 12, 2L);
     }
 
     @Test
@@ -36,6 +36,7 @@ class RagProfileClientTest {
                 .andExpect(jsonPath("$.userId").value(uuid.toString()))
                 .andExpect(jsonPath("$.cloneId").value(14))
                 .andExpect(jsonPath("$.aiProfileId").value("clone-14"))
+                .andExpect(jsonPath("$.sourceRevision").value(2))
                 .andExpect(jsonPath("$.interviewSamples[0].transcript").value("답변"))
                 .andRespond(withSuccess("""
                         {"success":true,"documentId":"member_profile_1","status":"stored",

@@ -49,7 +49,9 @@ class EvolveServiceTest {
         LocalDateTime latestSubmission = LocalDateTime.of(2026, 8, 13, 14, 30);
         VoiceTrainingJob latestJob = mock(VoiceTrainingJob.class);
 
-        when(cloneRepository.findSyncRateByUserUuid(userUuid)).thenReturn(Optional.of(76));
+        var clone = com.mirrorsoul.mirrorsoul_api.domain.Clone.builder()
+                .syncRate(new java.math.BigDecimal("76.6")).status("READY").build();
+        when(cloneRepository.findByUserUuid(userUuid)).thenReturn(Optional.of(clone));
         when(voiceTrainingJobRepository.countByUser_UuidAndSource(
                 userUuid, VoiceTrainingJobSource.VOICE_UPDATE)).thenReturn(3L);
         when(voiceTrainingJobRepository.findFirstByUser_UuidAndSourceOrderByCreatedAtDescIdDesc(
@@ -58,7 +60,7 @@ class EvolveServiceTest {
 
         EvolveResDTO.twinSyncDTO result = service.twinSync(userUuid);
 
-        assertThat(result.getSyncRate()).isEqualTo(76);
+        assertThat(result.getSyncRate()).isEqualTo(new java.math.BigDecimal("76.6"));
         assertThat(result.getVoiceTrainingCount()).isEqualTo(3L);
         assertThat(result.getLastVoiceTrainingAt()).isEqualTo(latestSubmission);
     }
@@ -66,7 +68,9 @@ class EvolveServiceTest {
     @Test
     void twinSyncReturnsZeroAndNullWhenVoiceHasNeverBeenTrained() {
         UUID userUuid = UUID.randomUUID();
-        when(cloneRepository.findSyncRateByUserUuid(userUuid)).thenReturn(Optional.of(76));
+        var clone = com.mirrorsoul.mirrorsoul_api.domain.Clone.builder()
+                .syncRate(java.math.BigDecimal.valueOf(76)).status("READY").build();
+        when(cloneRepository.findByUserUuid(userUuid)).thenReturn(Optional.of(clone));
         when(voiceTrainingJobRepository.findFirstByUser_UuidAndSourceOrderByCreatedAtDescIdDesc(
                 userUuid, VoiceTrainingJobSource.VOICE_UPDATE)).thenReturn(Optional.empty());
 
@@ -98,5 +102,14 @@ class EvolveServiceTest {
 
         assertThat(result.getSentenceId()).isEqualTo(20L);
         assertThat(result.getSpeechLine()).isEqualTo("새로운 문장");
+    }
+
+    @Test
+    void twinSyncHidesPendingScoreWithoutTreatingExistingCloneAsMissing() {
+        UUID userUuid = UUID.randomUUID();
+        var clone = com.mirrorsoul.mirrorsoul_api.domain.Clone.builder()
+                .syncRate(new java.math.BigDecimal("28.5")).status("PENDING").build();
+        when(cloneRepository.findByUserUuid(userUuid)).thenReturn(Optional.of(clone));
+        assertThat(service.twinSync(userUuid).getSyncRate()).isNull();
     }
 }

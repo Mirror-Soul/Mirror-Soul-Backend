@@ -49,7 +49,7 @@ class RagProfileJobPersistenceTest {
             var user = users.saveAndFlush(User.builder().uuid(uuid).email(uuid + "@example.com")
                     .passwordHash("hash").status(UserStatus.ONBOARD_D).birthDate(LocalDate.now().minusYears(24))
                     .gender(Gender.MALE).selfIntroduction("소개").build());
-            cloneId = clones.saveAndFlush(Clone.builder().user(user).syncRate(0).build()).getId();
+            cloneId = clones.saveAndFlush(Clone.builder().user(user).syncRate(java.math.BigDecimal.valueOf(0)).build()).getId();
             mbtis.save(MbtiProfile.create(user, MbtiType.INFP, 50, 50, 50, 50));
             try {
                 var constructor = Interview.class.getDeclaredConstructor();
@@ -80,6 +80,7 @@ class RagProfileJobPersistenceTest {
         assertThat(claim.request().userId()).isEqualTo(uuid);
         assertThat(claim.request().cloneId()).isEqualTo(cloneId);
         assertThat(claim.request().aiProfileId()).isEqualTo("clone-" + cloneId);
+        assertThat(claim.request().sourceRevision()).isEqualTo(claim.revision());
         assertThat(claim.request().mbti()).isEqualTo("INFP");
         assertThat(claim.request().age()).isEqualTo(24);
         assertThat(claim.request().gender()).isEqualTo("male");

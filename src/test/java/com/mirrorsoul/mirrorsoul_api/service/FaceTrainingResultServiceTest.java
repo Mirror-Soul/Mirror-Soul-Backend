@@ -138,4 +138,40 @@ class FaceTrainingResultServiceTest {
         service.handle(message("COMPLETED", result(true), null));
         assertThat(older.isActive()).isFalse();
     }
+
+    @Test
+    void renderingScoreIsPersistedAndDuplicateCannotChangeIt() {
+        var scored = new Result("READY_FOR_RENDERING", result(true).artifacts(), true,
+                new java.math.BigDecimal("82.35"));
+        service.handle(message("COMPLETED", scored, null));
+        service.handle(message("COMPLETED", new Result("READY_FOR_RENDERING", result(true).artifacts(), true,
+                java.math.BigDecimal.ZERO), null));
+        assertThat(clone.getFaceSimilarityScore()).isEqualByComparingTo("82.35");
+        assertThat(clone.getSimilarityFaceJobId()).isEqualTo(3L);
+        var saved = ArgumentCaptor.forClass(AiFaceProfile.class);
+        verify(profiles).saveAndFlush(saved.capture());
+        assertThat(saved.getValue().getQualityScore()).isEqualTo(82.35);
+    }
+
+    @Test
+    void staleFaceResultCannotChangeLatestComponent() {
+        clone.updateFaceSimilarity(4L, new java.math.BigDecimal("90"));
+        var newerJob = FaceTrainingJob.create(job.getUser(), FaceTrainingJobSource.ONBOARDING_FACE);
+        ReflectionTestUtils.setField(newerJob, "id", 4L);
+        when(profiles.findAllByCloneIdAndActiveTrue(2L)).thenReturn(List.of(
+                AiFaceProfile.ready(clone, newerJob, "test-bucket", "profile", "portrait", "manifest", null)));
+        service.handle(message("COMPLETED", new Result("READY_FOR_RENDERING", result(true).artifacts(), true,
+                java.math.BigDecimal.ZERO), null));
+        assertThat(clone.getFaceSimilarityScore()).isEqualByComparingTo("90");
+    }
+
+    @Test
+    void invalidRenderingScoreDoesNotFinalizeJob() {
+        assertThatThrownBy(() -> service.handle(message("COMPLETED", new Result("READY_FOR_RENDERING",
+                result(true).artifacts(), true, new java.math.BigDecimal("100.01")), null)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(job.getStatus()).isEqualTo(FaceTrainingJobStatus.PENDING);
+        assertThat(clone.getSimilarityFaceJobId()).isNull();
+        verifyNoInteractions(profiles, readiness);
+    }
 }

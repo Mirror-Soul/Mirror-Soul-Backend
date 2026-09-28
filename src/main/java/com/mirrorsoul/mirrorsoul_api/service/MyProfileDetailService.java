@@ -46,7 +46,7 @@ public class MyProfileDetailService {
                 user.getName(),
                 calculateAge(user.getBirthDate()),
                 user.getProfileImageUrl(),
-                clone == null ? null : clone.getSyncRate(),
+                clone == null ? null : clone.getVisibleSyncRate(),
                 toRegion(user.getResidenceRegion()),
                 user.getJob(),
                 user.getJobDescription(),

@@ -26,6 +26,7 @@ public class MeetingService {
     private final CallMatchAnalysisRepository callMatchAnalysisRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final ChatRoomMemberRepository chatRoomMemberRepository;
+    private final ChatMessageRepository chatMessageRepository;
     private final UserRepository userRepository;
     private final VideoCallRepository videoCallRepository;
     private final UserBlockRepository userBlockRepository;
@@ -144,6 +145,15 @@ public class MeetingService {
                 ChatRoomMember.builder().chatRoom(chatRoom).user(request.getSender()).joinedAt(joinedAt).build(),
                 ChatRoomMember.builder().chatRoom(chatRoom).user(request.getReceiver()).joinedAt(joinedAt).build()
         ));
+
+        ChatMessage firstMessage = chatMessageRepository.saveAndFlush(ChatMessage.builder()
+                .chatRoom(chatRoom)
+                .sender(request.getSender())
+                .clientMessageId(UUID.randomUUID())
+                .messageType(ChatMessageType.TEXT)
+                .content(request.getMessage())
+                .build());
+        chatRoom.updateLastMessage(firstMessage);
 
         return acceptedResponse(request, chatRoom, true);
     }

@@ -195,7 +195,7 @@ public class HistoryService {
                         .name(partner.getName())
                         .age(calculateAge(partner.getBirthDate(), LocalDate.now()))
                         .profileImageUrl(partner.getProfileImageUrl())
-                        .twinSyncRate(partnerClone == null ? null : partnerClone.getSyncRate())
+                        .twinSyncRate(partnerClone == null ? null : partnerClone.getVisibleSyncRate())
                         .build())
                 .description(isSent(call, currentUserUuid)
                         ? partner.getName() + "의 Twin과 대화"
@@ -331,7 +331,7 @@ public class HistoryService {
                         .name(partner.getName())
                         .age(calculateAge(partner.getBirthDate(), today))
                         .profileImageUrl(partner.getProfileImageUrl())
-                        .twinSyncRate(partnerClone == null ? null : partnerClone.getSyncRate())
+                        .twinSyncRate(partnerClone == null ? null : partnerClone.getVisibleSyncRate())
                         .build())
                 .description(sent ? "내가 시작한 통화" : partner.getName() + "의 Twin과 통화")
                 .mediaType(call.getMediaType())

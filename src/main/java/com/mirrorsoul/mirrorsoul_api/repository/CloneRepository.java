@@ -6,10 +6,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.Lock;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.repository.query.Param;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.domain.Pageable;
-import jakarta.persistence.LockModeType;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.Collection;
 import java.util.List;
@@ -25,7 +24,7 @@ public interface CloneRepository extends JpaRepository<Clone, Long> {
     List<Long> findIdsAfter(@Param("afterId") Long afterId, Pageable pageable);
 
     @Query("select c.syncRate from Clone c where c.user.uuid = :userUuid")
-    Optional<Integer> findSyncRateByUserUuid(@Param("userUuid") UUID userUuid);
+    Optional<BigDecimal> findSyncRateByUserUuid(@Param("userUuid") UUID userUuid);
 
     Optional<Clone> findByUserUuid(UUID userUuid);
 

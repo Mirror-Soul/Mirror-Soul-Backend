@@ -24,6 +24,7 @@
 | `interviewSamples[].questionText` | 저장된 질문 원문 |
 | `interviewSamples[].transcript` | 저장된 `answerText`. 비어 있는 답변은 samples에서 제외 |
 | `keywordLimit` | 12 |
+| `sourceRevision` | `rag_profile_jobs.requested_revision`. 완료 콜백에서 같은 값을 반환 |
 
 **연동 확인 필요:** 빈 관심사·분류 및 빈 samples를 AI API가 허용하는지 확인해야 합니다.
 `answerText`는 기존 인터뷰 API에서 선택 입력입니다. 백엔드가 음성 파일을 STT로 변환하지는 않으므로,
@@ -42,7 +43,16 @@ POST /internal/clone-training/{cloneId}/personality/complete
 X-Clone-Training-Callback-Secret: <공유 비밀값>
 ```
 
-요청 본문은 없습니다. 기존 콜백 인증 및 처리 로직을 그대로 사용합니다.
+본문 없는 구버전 요청도 계속 지원합니다. 신규 AI는 다음 점수 JSON을 전송합니다.
+
+```json
+{"calculationVersion":"clone-similarity-v1","profileScore":64.25,
+ "dataReliabilityScore":91.5,"penaltyScore":1.5,"sourceRevision":2}
+```
+
+`sourceRevision`은 학습 요청에서 전달받은 값입니다. 임의 생성하지 않습니다.
+revision 없는 점수 JSON은 최초 점수 저장에만 허용합니다. 점수 갱신에는 revision이 필요합니다.
+세부 계약과 기존 회원 전환은 [클론 완성도 점수](clone-similarity.md)를 참고합니다.
 백엔드는 AI API 성공 응답만으로 완료 플래그를 켜거나 콜백을 자체 호출하지 않습니다.
 콜백으로 `personality_training_completed=true`가 되고, 활성 음성 프로필 ACTIVE 및 활성 얼굴 프로필 READY까지 충족하면 클론이 READY가 됩니다.
 공유 비밀값은 AI 서버에도 동일하게 설정해야 하며, AI 서버에서 백엔드 콜백 주소로 접근할 수 있어야 합니다.
@@ -59,7 +69,7 @@ AI 서버는 저장과 콜백을 모두 완료한 후에만 성공 응답을 반
 - 전송 중 새 변경이 등록되면 이전 응답이 새 revision을 완료 처리하지 않습니다. 다음 전송 시 최신 DB 값을 다시 읽습니다.
 - 초기 성격 저장(ONBOARD_C)에서는 인터뷰 완료를 기다립니다. ONBOARD_D/ACTIVE 상태의 PROFILE/INTERVIEW 이벤트는 갱신 작업을 등록합니다.
 - 현재 서비스에는 가입 후 MBTI/자기소개/인터뷰를 수정하는 별도 API가 없습니다. 이후 수정 API에서 같은 트랜잭션으로 `UserEmbeddingRequestedEvent`의 PROFILE 또는 INTERVIEW를 발행하면 이 경로로 자동 전송됩니다.
-- 이미 학습 완료된 클론은 갱신 중에도 기존 완료 플래그를 유지합니다. 현재 콜백은 revision이 없어 어떤 갱신의 완료인지 구분할 수 없습니다. 최신 버전 완료 여부를 READY 조건으로 사용하려면 AI와 revision 콜백 계약을 확장해야 합니다.
+- 이미 학습 완료된 클론은 갱신 중에도 기존 완료 플래그를 유지합니다. 신규 점수 콜백은 `sourceRevision`으로 오래된 결과와 중복을 무시합니다. 본문 없는 구버전 콜백은 점수를 변경하지 않습니다. READY는 기존 완료 플래그를 기준으로 유지합니다.
 - 작업 확보 시 INACTIVE/DELETED 회원은 전송하지 않습니다. 이미 전송 중인 요청 취소나 AI 저장 데이터 삭제는 이 API 계약에 포함되지 않습니다.
 - 프로필 원문/AI 오류 응답/비밀값을 작업 테이블이나 로그에 남기지 않습니다. 실패 유형과 cloneId만 기록합니다.
 

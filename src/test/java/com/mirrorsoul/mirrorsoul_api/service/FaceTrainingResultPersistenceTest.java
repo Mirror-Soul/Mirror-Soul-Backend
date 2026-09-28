@@ -58,7 +58,7 @@ class FaceTrainingResultPersistenceTest {
             User user = users.saveAndFlush(User.builder().uuid(uuid).email(uuid + "@example.com")
                     .passwordHash("hash").status(UserStatus.ACTIVE).build());
             userId = user.getId();
-            cloneId = clones.saveAndFlush(Clone.builder().user(user).syncRate(0).build()).getId();
+            cloneId = clones.saveAndFlush(Clone.builder().user(user).syncRate(java.math.BigDecimal.valueOf(0)).build()).getId();
             jobId = jobs.saveAndFlush(FaceTrainingJob.create(user, FaceTrainingJobSource.ONBOARDING_FACE)).getId();
         });
     }
@@ -67,7 +67,8 @@ class FaceTrainingResultPersistenceTest {
         String prefix = "face-results/" + uuid + "/job-" + jobId + "/";
         return new FaceTrainingResultDTO("FACE_PROFILE_BUILD_STATUS", jobId, uuid, cloneId, "COMPLETED",
                 new Result("READY_FOR_RENDERING", new Artifacts("test-bucket", prefix + "face-profile.json",
-                        prefix + "portrait.jpg", prefix + "preprocess-manifest.json", null), true), null);
+                        prefix + "portrait.jpg", prefix + "preprocess-manifest.json", null), true,
+                        new java.math.BigDecimal("82.35")), null);
     }
 
     @Test
@@ -85,6 +86,7 @@ class FaceTrainingResultPersistenceTest {
             executor.shutdownNow();
         }
         assertThat(profiles.findAllByCloneIdAndActiveTrue(cloneId)).hasSize(1);
+        assertThat(clones.findById(cloneId).orElseThrow().getFaceSimilarityScore()).isEqualByComparingTo("82.35");
         assertThat(jobs.findById(jobId).orElseThrow().getStatus()).isEqualTo(FaceTrainingJobStatus.COMPLETED);
         readiness.updatePersonalityTraining(cloneId, true);
         assertThat(clones.findById(cloneId).orElseThrow().getStatus()).isEqualTo("PENDING");
@@ -106,7 +108,23 @@ class FaceTrainingResultPersistenceTest {
         })).isInstanceOf(IllegalStateException.class);
         assertThat(jobs.findById(jobId).orElseThrow().getStatus()).isEqualTo(FaceTrainingJobStatus.PENDING);
         assertThat(profiles.findAllByCloneIdAndActiveTrue(cloneId)).isEmpty();
+        assertThat(clones.findById(cloneId).orElseThrow().getFaceSimilarityScore()).isNull();
         service.handle(completed());
         assertThat(profiles.findAllByCloneIdAndActiveTrue(cloneId)).hasSize(1);
+    }
+
+    @Test
+    void lastFaceComponentSwitchesLegacyTotalInTheResultTransaction() {
+        new TransactionTemplate(transactions).executeWithoutResult(tx -> {
+            Clone clone = clones.findLockedById(cloneId).orElseThrow();
+            clone.updateVoiceSimilarity(1L, new java.math.BigDecimal("100"));
+            clone.updateProfileSimilarity(null, new java.math.BigDecimal("100"),
+                    new java.math.BigDecimal("100"), java.math.BigDecimal.ZERO);
+        });
+        assertThat(clones.findById(cloneId).orElseThrow().getSimilarityScoreVersion()).isNull();
+        service.handle(completed());
+        Clone clone = clones.findById(cloneId).orElseThrow();
+        assertThat(clone.getSyncRate()).isEqualByComparingTo("90.0");
+        assertThat(clone.getSimilarityScoreVersion()).isEqualTo(CloneSimilarityCalculator.VERSION);
     }
 }

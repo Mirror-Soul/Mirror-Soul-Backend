@@ -53,6 +53,7 @@ public class SecurityConfig {
                                 "/ws/signaling"
                                 , "/internal/value-balance/analysis-jobs/**"
                                 , "/internal/clone-training/*/personality/complete"
+                                , "/internal/clone-training/*/voice/complete"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

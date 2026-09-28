@@ -5,6 +5,7 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralExceptio
 import com.mirrorsoul.mirrorsoul_api.common.jwt.TokenProvider;
 import com.mirrorsoul.mirrorsoul_api.common.mail.EmailAuthConst;
 import com.mirrorsoul.mirrorsoul_api.domain.Clone;
+import com.mirrorsoul.mirrorsoul_api.domain.CloneSimilarityCalculator;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.join.JoinReqDTO;
@@ -12,6 +13,7 @@ import com.mirrorsoul.mirrorsoul_api.dto.join.JoinResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import jakarta.servlet.http.HttpSession;
+import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -76,7 +78,8 @@ public class JoinService {
 
         Clone clone = Clone.builder()
                 .user(user)
-                .syncRate(0)
+                .syncRate(new BigDecimal("0.0"))
+                .similarityScoreVersion(CloneSimilarityCalculator.VERSION)
                 .build();
 
         cloneRepository.save(clone);

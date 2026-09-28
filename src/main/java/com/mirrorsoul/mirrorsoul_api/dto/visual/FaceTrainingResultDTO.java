@@ -2,12 +2,18 @@ package com.mirrorsoul.mirrorsoul_api.dto.visual;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import java.util.UUID;
+import java.math.BigDecimal;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record FaceTrainingResultDTO(String eventType, Long jobId, UUID userUuid,
         Long cloneId, String status, Result result, Failure error) {
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record Result(String profileStatus, Artifacts artifacts, Boolean qualityGatePassed) {}
+    public record Result(String profileStatus, Artifacts artifacts, Boolean qualityGatePassed,
+            BigDecimal faceScore) {
+        public Result(String profileStatus, Artifacts artifacts, Boolean qualityGatePassed) {
+            this(profileStatus, artifacts, qualityGatePassed, null);
+        }
+    }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Artifacts(String bucket, String profileKey, String portraitKey,

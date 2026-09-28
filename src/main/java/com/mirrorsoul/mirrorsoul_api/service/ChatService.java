@@ -74,7 +74,8 @@ public class ChatService {
                 .map(member -> toRoomDTO(
                         member,
                         partnersByRoomId.get(member.getChatRoom().getId()),
-                        messagesById.get(member.getChatRoom().getLastMessageId()),
+                        member.getChatRoom().getLastMessageId() == null
+                                ? null : messagesById.get(member.getChatRoom().getLastMessageId()),
                         similaritiesByCallId,
                         currentUserUuid
                 ))

@@ -77,7 +77,7 @@ class MatchServiceTest {
         Clone firstTwin = mock(Clone.class);
         when(firstTwin.getUser()).thenReturn(firstTwinOwner);
         when(firstTwin.getAvatarImageUrl()).thenReturn("https://example.com/jessica-twin.png");
-        when(firstTwin.getSyncRate()).thenReturn(90);
+        when(firstTwin.getVisibleSyncRate()).thenReturn(java.math.BigDecimal.valueOf(90));
         when(firstTwin.getSummary()).thenReturn("여행과 사진 이야기를 좋아하는 Twin");
 
         Clone secondTwin = mock(Clone.class);
@@ -119,7 +119,7 @@ class MatchServiceTest {
         assertThat(firstTwinResult.latestCallId()).isEqualTo(30L);
         assertThat(firstTwinResult.lastCalledAt()).isEqualTo(firstTwinLastCalledAt);
         assertThat(firstTwinResult.totalCallCount()).isEqualTo(2);
-        assertThat(firstTwinResult.twinSyncRate()).isEqualTo(90);
+        assertThat(firstTwinResult.twinSyncRate()).isEqualByComparingTo("90");
 
         verify(videoCallRepository).findAllByUserUuidAndStatusOrderByLatest(
                 currentUserUuid,

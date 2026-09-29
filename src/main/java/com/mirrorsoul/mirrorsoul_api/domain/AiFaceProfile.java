@@ -1,6 +1,7 @@
 package com.mirrorsoul.mirrorsoul_api.domain;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -80,5 +81,11 @@ public class AiFaceProfile extends BaseTimeEntity {
 
     public void deactivate() {
         active = false;
+    }
+
+    public void updateRenderingQuality(BigDecimal score) {
+        CloneSimilarityCalculator.validateScore(score);
+        qualityScore = score == null ? null : score.doubleValue();
+        faceSimilarityScore = qualityScore;
     }
 }

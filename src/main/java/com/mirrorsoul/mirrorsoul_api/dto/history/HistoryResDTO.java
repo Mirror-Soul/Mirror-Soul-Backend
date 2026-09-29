@@ -1,5 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.dto.history;
 
+import java.math.BigDecimal;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.CallMediaType;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -72,7 +73,7 @@ public class HistoryResDTO {
             String name,
             Integer age,
             String profileImageUrl,
-            Integer twinSyncRate
+            BigDecimal twinSyncRate
     ) {
     }
 

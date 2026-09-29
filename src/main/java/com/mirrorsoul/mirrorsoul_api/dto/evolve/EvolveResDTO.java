@@ -1,5 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.dto.evolve;
 
+import java.math.BigDecimal;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.ValueBalanceAxis;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,7 +16,7 @@ public class EvolveResDTO {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class twinSyncDTO {
-        Integer syncRate;
+        BigDecimal syncRate;
         Long voiceTrainingCount;
         LocalDateTime lastVoiceTrainingAt;
     }

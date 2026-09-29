@@ -71,7 +71,7 @@ public class RecommendationDetailService {
                 target.getName(),
                 calculateAge(target.getBirthDate()),
                 target.getProfileImageUrl(),
-                clone.getSyncRate(),
+                clone.getVisibleSyncRate(),
                 toRegion(target.getResidenceRegion()),
                 target.getJob(),
                 hasSubmittedJobCertification(target),

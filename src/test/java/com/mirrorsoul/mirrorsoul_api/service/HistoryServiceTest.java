@@ -99,7 +99,7 @@ class HistoryServiceTest {
         assertThat(sentResult.type()).isEqualTo(HistoryReqDTO.HistoryType.SENT);
         assertThat(sentResult.partner().name()).isEqualTo("Sarah");
         assertThat(sentResult.partner().age()).isEqualTo(28);
-        assertThat(sentResult.partner().twinSyncRate()).isEqualTo(94);
+        assertThat(sentResult.partner().twinSyncRate()).isEqualByComparingTo("94");
         assertThat(sentResult.matchTarget()).isEqualTo(HistoryResDTO.MatchTarget.PARTNER_TWIN);
         assertThat(sentResult.matchScore()).isEqualTo(92);
         assertThat(sentResult.topics()).containsExactly("커피", "음악", "주말 계획");
@@ -182,7 +182,7 @@ class HistoryServiceTest {
                         .satisfies(history -> {
                             assertThat(history.callId()).isEqualTo(12L);
                             assertThat(history.partner().userUuid()).isEqualTo(currentUserUuid);
-                            assertThat(history.partner().twinSyncRate()).isEqualTo(88);
+                            assertThat(history.partner().twinSyncRate()).isEqualByComparingTo("88");
                         }));
     }
 
@@ -253,7 +253,7 @@ class HistoryServiceTest {
 
         assertThat(result.callNumber()).isEqualTo(2);
         assertThat(result.partner().name()).isEqualTo("Emily");
-        assertThat(result.partner().twinSyncRate()).isEqualTo(89);
+        assertThat(result.partner().twinSyncRate()).isEqualByComparingTo("89");
         assertThat(result.talkLogs()).extracting(HistoryResDTO.TalkLogDTO::speaker)
                 .containsExactly(
                         HistoryResDTO.TalkLogSpeaker.PARTNER,
@@ -338,7 +338,7 @@ class HistoryServiceTest {
     private Clone clone(User user, int syncRate) {
         return Clone.builder()
                 .user(user)
-                .syncRate(syncRate)
+                .syncRate(java.math.BigDecimal.valueOf(syncRate)).status("READY")
                 .build();
     }
 

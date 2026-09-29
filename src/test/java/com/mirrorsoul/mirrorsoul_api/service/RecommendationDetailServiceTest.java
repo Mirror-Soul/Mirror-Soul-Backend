@@ -102,7 +102,7 @@ class RecommendationDetailServiceTest {
 
         when(cloneRepository.findByUserUuid(targetUuid)).thenReturn(Optional.of(clone));
         when(clone.getId()).thenReturn(10L);
-        when(clone.getSyncRate()).thenReturn(94);
+        when(clone.getVisibleSyncRate()).thenReturn(java.math.BigDecimal.valueOf(94));
         when(mbtiProfileRepository.findByUser_Id(1L)).thenReturn(Optional.of(mbtiProfile));
         when(mbtiProfile.getMbti()).thenReturn(MbtiType.INFJ);
         when(firstTag.getContent()).thenReturn("사고가 깊은");
@@ -124,7 +124,7 @@ class RecommendationDetailServiceTest {
 
         assertThat(result.name()).isEqualTo("서연");
         assertThat(result.age()).isEqualTo(28);
-        assertThat(result.syncRate()).isEqualTo(94);
+        assertThat(result.syncRate()).isEqualByComparingTo("94");
         assertThat(result.region().sidoName()).isEqualTo("서울특별시");
         assertThat(result.region().sigunguName()).isEqualTo("강남구");
         assertThat(result.selfIntroduction()).isEqualTo("책과 음악을 좋아합니다.");

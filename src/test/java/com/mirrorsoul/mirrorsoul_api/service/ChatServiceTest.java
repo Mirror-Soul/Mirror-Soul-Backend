@@ -98,6 +98,46 @@ class ChatServiceTest {
     }
 
     @Test
+    void getRoomsReturnsNewRoomWithoutMessagesOrAnalysis() {
+        UUID currentUserUuid = UUID.randomUUID();
+        User currentUser = user(1L, currentUserUuid);
+        User partner = user(2L, UUID.randomUUID());
+        VideoCall videoCall = mock(VideoCall.class);
+        when(videoCall.getId()).thenReturn(30L);
+        MeetingRequest meetingRequest = MeetingRequest.builder()
+                .sender(currentUser)
+                .receiver(partner)
+                .videoCall(videoCall)
+                .message("만남 신청")
+                .build();
+        ChatRoom room = ChatRoom.builder()
+                .id(10L)
+                .participantPairKey("1:2")
+                .roomType(ChatRoomType.DIRECT)
+                .createdFromMeetingRequest(meetingRequest)
+                .build();
+        ChatRoomMember myMembership = member(100L, room, currentUser);
+        ChatRoomMember partnerMembership = member(101L, room, partner);
+
+        when(chatRoomMemberRepository.findAllActiveByUserUuid(currentUserUuid))
+                .thenReturn(List.of(myMembership));
+        when(chatRoomMemberRepository.findAllActiveByRoomIdIn(List.of(10L)))
+                .thenReturn(List.of(myMembership, partnerMembership));
+        when(callMatchAnalysisRepository.findAllByVideoCallIdIn(List.of(30L)))
+                .thenReturn(List.of());
+
+        ChatResDTO.RoomListDTO result = chatService.getRooms(currentUserUuid);
+
+        assertThat(result.totalCount()).isEqualTo(1);
+        assertThat(result.rooms().get(0).chatRoomId()).isEqualTo(10L);
+        assertThat(result.rooms().get(0).partner().userUuid()).isEqualTo(partner.getUuid());
+        assertThat(result.rooms().get(0).lastMessage()).isNull();
+        assertThat(result.rooms().get(0).unreadCount()).isZero();
+        assertThat(result.rooms().get(0).partner().twinSimilarity()).isNull();
+        verify(chatMessageRepository, never()).findAllWithSenderByIdIn(any());
+    }
+
+    @Test
     void getNotificationSettingReturnsCurrentUsersRoomSetting() {
         UUID userUuid = UUID.randomUUID();
         User user = user(1L, userUuid);

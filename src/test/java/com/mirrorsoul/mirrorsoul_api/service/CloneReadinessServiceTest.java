@@ -30,7 +30,7 @@ class CloneReadinessServiceTest {
     @Test
     void callbackRequiresConfiguredMatchingSecret() {
         var readiness = mock(CloneReadinessService.class);
-        var callback = new CloneTrainingCallbackService(readiness);
+        var callback = new CloneTrainingCallbackService(readiness, mock(CloneSimilarityService.class));
         ReflectionTestUtils.setField(callback, "secret", "");
         assertThatThrownBy(() -> callback.completePersonality(1L, "")).isInstanceOf(RuntimeException.class);
         ReflectionTestUtils.setField(callback, "secret", "expected-secret");

@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProfileService {
 
     private final UserRepository userRepository;
+    private final FileService fileService;
 
     public ProfileResDTO.myProfileDTO getMyProfile(UUID userUuid) {
         User user = getUser(userUuid);
@@ -26,6 +27,7 @@ public class ProfileService {
         return ProfileResDTO.myProfileDTO.builder()
                 .name(user.getName())
                 .email(user.getEmail())
+                .profileImageUrl(user.getProfileImageUrl())
                 .build();
     }
 
@@ -103,6 +105,26 @@ public class ProfileService {
         }
 
         user.setName(nickname);
+    }
+
+    @Transactional
+    public ProfileResDTO.ProfileImageDTO modifyProfileImage(
+            UUID userUuid,
+            ProfileReqDTO.modifyProfileImageReqDTO request
+    ) {
+        User user = getUser(userUuid);
+        FileService.VerifiedS3Object image = fileService.verifyProfileImageAndBuildFileUrl(
+                userUuid,
+                request.getObjectKey()
+        );
+        user.updateProfileImage(image.fileUrl(), image.objectKey());
+        return new ProfileResDTO.ProfileImageDTO(image.fileUrl());
+    }
+
+    @Transactional
+    public void deleteProfileImage(UUID userUuid) {
+        User user = getUser(userUuid);
+        user.clearProfileImage();
     }
 
     @Transactional

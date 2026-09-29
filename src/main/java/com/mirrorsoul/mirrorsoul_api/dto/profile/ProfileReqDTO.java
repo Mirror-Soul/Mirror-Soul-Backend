@@ -44,6 +44,14 @@ public class ProfileReqDTO {
     @Getter
     @Setter
     @NoArgsConstructor
+    public static class modifyProfileImageReqDTO {
+        @NotBlank(message = "프로필 이미지 object key는 필수입니다.")
+        String objectKey;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
     public static class alarmSettingReqDTO {
         @NotNull
         Boolean missedCallNotificationEnabled;

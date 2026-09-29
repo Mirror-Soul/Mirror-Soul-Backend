@@ -32,7 +32,9 @@ public class FileService {
     private final AwsS3Properties awsS3Properties;
 
     public PresignedUrlResDTO createPresignedUrl(UUID userUuid, PresignedUrlReqDTO request) {
-        String directory = UploadDirectory.from(request.directory()).value();
+        UploadDirectory uploadDirectory = UploadDirectory.from(request.directory());
+        uploadDirectory.validateContentType(request.contentType());
+        String directory = uploadDirectory.value();
         String sanitizedFileName = sanitizeFileName(request.fileName());
         String objectKey = directory + "/" + userUuid + "/" + UUID.randomUUID() + "-" + sanitizedFileName;
 
@@ -93,6 +95,10 @@ public class FileService {
 
     public VerifiedS3Object verifyFaceVideoAndBuildFileUrl(UUID userUuid, String objectKey) {
         return verifyUploadedObjectAndBuildFileUrl(userUuid, objectKey, UploadFileType.FACE_VIDEO);
+    }
+
+    public VerifiedS3Object verifyProfileImageAndBuildFileUrl(UUID userUuid, String objectKey) {
+        return verifyUploadedObjectAndBuildFileUrl(userUuid, objectKey, UploadFileType.PROFILE_IMAGE);
     }
 
     private VerifiedS3Object verifyUploadedObjectAndBuildFileUrl(
@@ -187,7 +193,8 @@ public class FileService {
         INTERVIEWS("interviews"),
         VOICE_UPDATES("voice-updates"),
         FACE_VIDEOS("face-videos"),
-        JOB_CERTIFICATIONS("job-certifications");
+        JOB_CERTIFICATIONS("job-certifications"),
+        PROFILE_IMAGES("profile-images");
 
         private final String value;
 
@@ -197,6 +204,22 @@ public class FileService {
 
         public String value() {
             return value;
+        }
+
+        public void validateContentType(String contentType) {
+            if (this != PROFILE_IMAGES) {
+                return;
+            }
+
+            boolean supportedType = "image/jpeg".equalsIgnoreCase(contentType)
+                    || "image/png".equalsIgnoreCase(contentType)
+                    || "image/webp".equalsIgnoreCase(contentType);
+            if (!supportedType) {
+                throw new GeneralException(
+                        GeneralErrorCode.INVALID_PARAMETER,
+                        "Profile image contentType must be one of: image/jpeg, image/png, image/webp."
+                );
+            }
         }
 
         public static UploadDirectory from(String value) {
@@ -216,7 +239,8 @@ public class FileService {
         private static GeneralException invalidDirectory() {
             return new GeneralException(
                     GeneralErrorCode.INVALID_PARAMETER,
-                    "directory must be one of: interviews, voice-updates, face-videos, job-certifications"
+                    "directory must be one of: interviews, voice-updates, face-videos, "
+                            + "job-certifications, profile-images"
             );
         }
     }
@@ -224,9 +248,11 @@ public class FileService {
     private enum UploadFileType {
         INTERVIEW_AUDIO("interviews"),
         VOICE_UPDATE_AUDIO("voice-updates"),
-        FACE_VIDEO("face-videos");
+        FACE_VIDEO("face-videos"),
+        PROFILE_IMAGE("profile-images");
 
         private static final long MAX_FACE_VIDEO_SIZE_BYTES = 100L * 1024 * 1024;
+        private static final long MAX_PROFILE_IMAGE_SIZE_BYTES = 5L * 1024 * 1024;
 
         private final String requiredPrefix;
 
@@ -239,10 +265,14 @@ public class FileService {
         }
 
         public void validateMetadata(HeadObjectResponse metadata) {
-            if (this != FACE_VIDEO) {
-                return;
+            if (this == FACE_VIDEO) {
+                validateFaceVideo(metadata);
+            } else if (this == PROFILE_IMAGE) {
+                validateProfileImage(metadata);
             }
+        }
 
+        private void validateFaceVideo(HeadObjectResponse metadata) {
             String contentType = metadata.contentType();
             boolean supportedType = "video/mp4".equalsIgnoreCase(contentType)
                     || "video/quicktime".equalsIgnoreCase(contentType)
@@ -260,6 +290,28 @@ public class FileService {
                 throw new GeneralException(
                         GeneralErrorCode.INVALID_PARAMETER,
                         "Face video size must be greater than 0 and at most 100 MB."
+                );
+            }
+        }
+
+        private void validateProfileImage(HeadObjectResponse metadata) {
+            String contentType = metadata.contentType();
+            boolean supportedType = "image/jpeg".equalsIgnoreCase(contentType)
+                    || "image/png".equalsIgnoreCase(contentType)
+                    || "image/webp".equalsIgnoreCase(contentType);
+            if (!supportedType) {
+                throw new GeneralException(
+                        GeneralErrorCode.INVALID_PARAMETER,
+                        "Profile image contentType must be one of: image/jpeg, image/png, image/webp."
+                );
+            }
+
+            if (metadata.contentLength() == null
+                    || metadata.contentLength() <= 0
+                    || metadata.contentLength() > MAX_PROFILE_IMAGE_SIZE_BYTES) {
+                throw new GeneralException(
+                        GeneralErrorCode.INVALID_PARAMETER,
+                        "Profile image size must be greater than 0 and at most 5 MB."
                 );
             }
         }

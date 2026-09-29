@@ -53,6 +53,11 @@ public class ProfileResDTO {
     ) {
     }
 
+    public record ProfileImageDTO(
+            String profileImageUrl
+    ) {
+    }
+
     @Builder
     @Getter
     @NoArgsConstructor
@@ -60,6 +65,7 @@ public class ProfileResDTO {
     public static class myProfileDTO {
         String name;
         String email;
+        String profileImageUrl;
     }
 
     @Builder

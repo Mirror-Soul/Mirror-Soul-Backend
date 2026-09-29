@@ -113,6 +113,7 @@ class MyProfileDetailServiceTest {
         assertThat(result.email()).isEqualTo("me@example.com");
         assertThat(result.name()).isEqualTo("서연");
         assertThat(result.age()).isEqualTo(28);
+        assertThat(result.profileImageUrl()).isEqualTo("https://example.com/profile.jpg");
         assertThat(result.syncRate()).isEqualTo(94);
         assertThat(result.region().sigunguName()).isEqualTo("강남구");
         assertThat(result.job()).isEqualTo(Job.IT_TECH);

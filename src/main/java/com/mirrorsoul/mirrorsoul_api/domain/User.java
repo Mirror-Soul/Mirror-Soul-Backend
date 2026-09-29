@@ -101,6 +101,9 @@ public class User extends BaseTimeEntity {
     @Column(name = "profile_image_url", length = 500)
     private String profileImageUrl;
 
+    @Column(name = "profile_image_object_key", length = 500)
+    private String profileImageObjectKey;
+
     @Column(name = "last_active_at")
     private LocalDateTime lastActiveAt;
 
@@ -155,6 +158,7 @@ public class User extends BaseTimeEntity {
         this.birthDate = null;
         this.residenceRegion = null;
         this.profileImageUrl = null;
+        this.profileImageObjectKey = null;
         this.lastActiveAt = null;
         this.refreshToken = null;
         this.matchingEnabled = false;
@@ -191,6 +195,16 @@ public class User extends BaseTimeEntity {
 
     public void updateResidenceRegion(Region residenceRegion) {
         this.residenceRegion = residenceRegion;
+    }
+
+    public void updateProfileImage(String profileImageUrl, String profileImageObjectKey) {
+        this.profileImageUrl = profileImageUrl;
+        this.profileImageObjectKey = profileImageObjectKey;
+    }
+
+    public void clearProfileImage() {
+        this.profileImageUrl = null;
+        this.profileImageObjectKey = null;
     }
 
     public boolean hasTalkTime() {

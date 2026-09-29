@@ -24,7 +24,7 @@ public class ProfileController {
     private final ProfileService profileService;
     private final MyProfileDetailService myProfileDetailService;
 
-    @Operation(summary = "마이페이지 진입 api", description = "마이페이지에 필요한 이름, 이메일 정보를 조회합니다.")
+    @Operation(summary = "마이페이지 진입 api", description = "마이페이지에 필요한 이름, 이메일, 프로필 사진 URL을 조회합니다.")
     @GetMapping
     public ApiResponse<ProfileResDTO.myProfileDTO> getMyProfile(
             @AuthenticationPrincipal CustomUserDetails currentUser
@@ -47,6 +47,30 @@ public class ProfileController {
                 "내 프로필 상세 조회에 성공했습니다.",
                 myProfileDetailService.getDetail(currentUser.getUuid())
         );
+    }
+
+    @Operation(
+            summary = "프로필 사진 등록/변경 api",
+            description = "Presigned URL로 profile-images 경로에 업로드한 objectKey를 전달합니다. 기존 사진이 없으면 등록, 있으면 변경됩니다."
+    )
+    @PatchMapping("/profile-image")
+    public ApiResponse<ProfileResDTO.ProfileImageDTO> modifyProfileImage(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody ProfileReqDTO.modifyProfileImageReqDTO request
+    ) {
+        return ApiResponse.onSuccess(
+                "프로필 사진을 저장했습니다.",
+                profileService.modifyProfileImage(currentUser.getUuid(), request)
+        );
+    }
+
+    @Operation(summary = "프로필 사진 삭제 api", description = "등록된 프로필 사진을 기본 상태로 되돌립니다.")
+    @DeleteMapping("/profile-image")
+    public ApiResponse<Void> deleteProfileImage(
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        profileService.deleteProfileImage(currentUser.getUuid());
+        return ApiResponse.onSuccess("프로필 사진을 삭제했습니다.");
     }
 
     @Operation(summary = "나의 시간 조회 api", description = "나의 현재 남은 시간을 조회합니다.")

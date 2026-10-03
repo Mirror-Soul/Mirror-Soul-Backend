@@ -24,12 +24,13 @@ class CloneTrainingControllerTest {
     private final CloneReadinessService readiness = mock(CloneReadinessService.class);
     private final CloneSimilarityService similarity = mock(CloneSimilarityService.class);
     private MockMvc mvc;
+    private CloneTrainingCallbackService callback;
     private static final String URL = "/internal/clone-training/1/personality/complete";
     private static final String HEADER = "X-Clone-Training-Callback-Secret";
 
     @BeforeEach
     void setup() {
-        var callback = new CloneTrainingCallbackService(readiness, similarity);
+        callback = new CloneTrainingCallbackService(readiness, similarity);
         ReflectionTestUtils.setField(callback, "secret", "test-secret");
         mvc = MockMvcBuilders.standaloneSetup(new CloneTrainingController(callback))
                 .setControllerAdvice(new ExceptionAdvice()).build();
@@ -76,6 +77,17 @@ class CloneTrainingControllerTest {
                 .contentType(MediaType.APPLICATION_JSON).content("{\"jobId\":3,\"voiceScore\":82.35}"))
                 .andExpect(status().isForbidden());
         verifyNoInteractions(readiness, similarity);
+    }
+
+    @Test
+    void voiceCallbackIsDisabledWhenQueueConsumerIsEnabled() throws Exception {
+        ReflectionTestUtils.setField(callback, "voiceResultConsumerEnabled", true);
+        mvc.perform(post("/internal/clone-training/1/voice/complete").header(HEADER, "test-secret")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"jobId\":3,\"voiceScore\":82.35}"))
+                .andExpect(status().isForbidden());
+        verifyNoInteractions(similarity);
+        mvc.perform(post(URL).header(HEADER, "test-secret")).andExpect(status().isOk());
+        verify(readiness).updatePersonalityTraining(1L, true);
     }
 
     @ParameterizedTest

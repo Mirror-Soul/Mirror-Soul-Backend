@@ -62,6 +62,12 @@ public class VoiceTrainingJob {
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
+    @Column(name = "error_code", length = 100)
+    private String errorCode;
+
+    @Column(name = "error_retryable")
+    private Boolean errorRetryable;
+
     @OneToMany(mappedBy = "voiceTrainingJob", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<VoiceTrainingJobFile> files = new ArrayList<>();
 
@@ -109,8 +115,40 @@ public class VoiceTrainingJob {
     }
 
     public void markDispatchFailed(String errorMessage) {
+        if (isTerminal()) return;
         this.status = VoiceTrainingJobStatus.FAILED;
         this.errorMessage = errorMessage;
         this.finishedAt = LocalDateTime.now();
+    }
+
+    public boolean isTerminal() {
+        return status == VoiceTrainingJobStatus.COMPLETED || status == VoiceTrainingJobStatus.FAILED;
+    }
+
+    public void markProcessing() {
+        if (isTerminal()) return;
+        status = VoiceTrainingJobStatus.PROCESSING;
+        if (startedAt == null) startedAt = LocalDateTime.now();
+    }
+
+    public void complete() {
+        markProcessing();
+        status = VoiceTrainingJobStatus.COMPLETED;
+        errorMessage = null;
+        errorCode = null;
+        errorRetryable = null;
+        finishedAt = LocalDateTime.now();
+    }
+
+    public void recordFailure(String code, String message, boolean retryable) {
+        if (isTerminal()) return;
+        markProcessing();
+        errorCode = code;
+        errorMessage = message;
+        errorRetryable = retryable;
+        if (!retryable) {
+            status = VoiceTrainingJobStatus.FAILED;
+            finishedAt = LocalDateTime.now();
+        }
     }
 }

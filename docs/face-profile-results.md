@@ -71,7 +71,7 @@ POST /internal/clone-training/{cloneId}/personality/complete
 X-Clone-Training-Callback-Secret: <CLONE_TRAINING_CALLBACK_SECRET>
 ```
 
-본문 없는 구버전 요청과 점수 JSON이 있는 신규 요청을 모두 지원한다. 비밀값이 미설정/공백이거나 일치하지 않으면 거부한다. 신규 점수 콜백과 `sourceRevision` 계약은 [클론 완성도 점수](clone-similarity.md)를 참고한다. 기존 음성 프로필 저장 시스템은 status=ACTIVE와 is_active=true를 함께 기록하고 커밋 후 음성 점수 콜백을 호출해야 한다. 음성 학습과 음성 프로필 생성은 기존 워커가 담당한다.
+본문 없는 구버전 요청과 점수 JSON이 있는 신규 요청을 모두 지원한다. 비밀값이 미설정/공백이거나 일치하지 않으면 거부한다. 신규 점수 콜백과 `sourceRevision` 계약은 [클론 완성도 점수](clone-similarity.md)를 참고한다. 음성 결과는 [음성 프로필 결과 처리](voice-profile-results.md)의 SQS 경로로 전환한다. 기존 음성 점수 HTTP 콜백은 구버전 워커와의 전환 기간에만 사용한다.
 
 ## 배포
 

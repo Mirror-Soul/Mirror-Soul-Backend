@@ -68,6 +68,12 @@ face-result:
   wait-time-seconds: 10
   visibility-timeout-seconds: 120
 
+voice-result:
+  enabled: ${VOICE_RESULT_CONSUMER_ENABLED:false}
+  queue-url: ${AWS_SQS_VOICE_TRAINING_RESULT_QUEUE_URL:}
+  wait-time-seconds: 10
+  visibility-timeout-seconds: 120
+
 clone-training:
   callback-secret: ${CLONE_TRAINING_CALLBACK_SECRET:}
 

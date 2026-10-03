@@ -26,6 +26,9 @@ public class TalkLog {
             foreignKey = @ForeignKey(name = "fk_talk_logs_video_call"))
     private VideoCall videoCall;
 
+    @Column(name = "event_id", length = 36, updatable = false)
+    private String eventId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Speaker speaker;

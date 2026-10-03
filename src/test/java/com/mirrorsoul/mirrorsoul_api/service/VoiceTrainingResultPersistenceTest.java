@@ -75,8 +75,10 @@ class VoiceTrainingResultPersistenceTest {
         assertThat(profiles.findAllByCloneIdAndActiveTrue(cloneId)).hasSize(1);
         assertThat(profiles.findAllByCloneIdAndActiveTrue(cloneId).get(0).getIntroAudioObjectKey())
                 .endsWith("job-" + jobId + ".mp3");
-        assertThat(clones.findById(cloneId).orElseThrow().getVoiceSimilarityScore())
-                .isEqualByComparingTo("82.35");
+        Clone clone = clones.findById(cloneId).orElseThrow();
+        assertThat(clone.getVoiceSimilarityScore()).isEqualByComparingTo("82.35");
+        assertThat(clone.getSyncRate()).isEqualByComparingTo("23.5");
+        assertThat(clone.getSimilarityScoreVersion()).isEqualTo(CloneSimilarityCalculator.VERSION);
     }
 
     @Test

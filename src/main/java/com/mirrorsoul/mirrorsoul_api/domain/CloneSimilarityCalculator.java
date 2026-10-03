@@ -17,8 +17,9 @@ public final class CloneSimilarityCalculator {
         validateScore(profile);
         validateScore(reliability);
         validatePenalty(penalty);
-        BigDecimal raw = zero(face).add(zero(voice)).add(zero(profile)).multiply(new BigDecimal("0.30"))
-                .add(zero(reliability).multiply(new BigDecimal("0.10"))).subtract(zero(penalty));
+        BigDecimal weighted = zero(face).add(zero(voice)).add(zero(profile)).multiply(new BigDecimal("0.30"))
+                .add(zero(reliability).multiply(new BigDecimal("0.10")));
+        BigDecimal raw = weighted.subtract(zero(penalty)).max(BigDecimal.ZERO).min(HUNDRED);
         return raw.multiply(new BigDecimal("0.95")).max(BigDecimal.ZERO).min(MAXIMUM)
                 .setScale(1, RoundingMode.HALF_UP);
     }

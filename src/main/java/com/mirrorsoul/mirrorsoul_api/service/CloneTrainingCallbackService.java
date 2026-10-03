@@ -19,6 +19,9 @@ public class CloneTrainingCallbackService {
     @Value("${clone-training.callback-secret:}")
     private String secret;
 
+    @Value("${voice-result.enabled:false}")
+    private boolean voiceResultConsumerEnabled;
+
     public void completePersonality(Long cloneId, String suppliedSecret) {
         completePersonality(cloneId, suppliedSecret, null);
     }
@@ -31,6 +34,9 @@ public class CloneTrainingCallbackService {
 
     public void completeVoice(Long cloneId, String suppliedSecret, CloneVoiceCompleteRequest request) {
         authenticate(suppliedSecret);
+        if (voiceResultConsumerEnabled) {
+            throw new GeneralException(GeneralErrorCode.FORBIDDEN);
+        }
         similarity.completeVoice(cloneId, request);
     }
 

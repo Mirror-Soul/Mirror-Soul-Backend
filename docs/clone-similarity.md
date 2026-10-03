@@ -5,8 +5,8 @@
 ## 계산 및 응답
 
 ```text
-rawScore = faceScore * 0.30 + voiceScore * 0.30 + profileScore * 0.30
-         + dataReliabilityScore * 0.10 - penaltyScore
+rawScore = clamp(faceScore * 0.30 + voiceScore * 0.30 + profileScore * 0.30
+         + dataReliabilityScore * 0.10 - penaltyScore, 0, 100)
 syncRate = roundHalfUp(clamp(rawScore * 0.95, 0, 95), 1)
 ```
 
@@ -38,20 +38,25 @@ V37은 `clones.sync_rate`를 `DECIMAL(4,1)`로 변경한다. 다음 컬럼을 �
 | similarity_profile_revision | BIGINT, nullable | 마지막 반영 RAG revision |
 
 기존 회원의 구성요소와 버전은 NULL로 남기고 기존 종합 점수를 음성 점수로 복사하지 않는다.
-네 구성요소가 모두 준비될 때까지 기존 `sync_rate`를 유지한다. 마지막 구성요소 갱신 트랜잭션에서
-새 점수와 `similarity_score_version=clone-similarity-v1`을 함께 저장한다.
-이후에는 누락 점수를 0으로 계산한다. 신규 가입 클론은 처음부터 v1과 0.0으로 생성한다.
+첫 점수 결과가 도착하면 누락 점수를 0으로 계산해 `sync_rate`와
+`similarity_score_version=clone-similarity-v1`을 같은 트랜잭션에서 저장한다.
+이후 각 결과가 도착할 때마다 해당 점수만 변경하고 종합 점수를 다시 계산한다.
+신규 가입 클론은 처음부터 v1과 0.0으로 생성한다.
 기존 회원의 학습 작업을 자동 일괄 재실행하지 않는다. 필요한 얼굴·음성 재학습과 RAG 재전송은 별도 운영 절차다.
 
 ## 얼굴 결과
 
-기존 `FACE_PROFILE_BUILD_STATUS` COMPLETED 이벤트의 `result`에 선택 필드 `faceScore`를 추가한다.
+`FACE_PROFILE_BUILD_STATUS` COMPLETED 이벤트의 `result.cloneSimilarity`에서 점수를 받는다.
+이전 워커가 보내는 `result.faceScore`도 전환 기간 동안 읽는다.
 
 ```json
 {
   "profileStatus": "READY_FOR_RENDERING",
   "qualityGatePassed": true,
-  "faceScore": 87.25,
+  "cloneSimilarity": {
+    "calculationVersion": "clone-similarity-v1",
+    "faceScore": 87.25
+  },
   "artifacts": {
     "bucket": "configured-bucket",
     "profileKey": "face-results/{userUuid}/job-{jobId}/face-profile.json",
@@ -61,15 +66,18 @@ V37은 `clones.sync_rate`를 `DECIMAL(4,1)`로 변경한다. 다음 컬럼을 �
 }
 ```
 
-품질 통과 결과만 반영한다. 기존 워커가 `faceScore`를 보내지 않으면 NULL로 저장하고 점수를 추정하지 않는다.
+품질 통과 결과만 반영한다. `cloneSimilarity`가 있으면 계산 버전과 점수를 검증한다.
+기존 워커가 점수를 보내지 않으면 NULL로 저장하고 점수를 추정하지 않는다.
 새 활성 프로필의 점수가 없으면 이전 얼굴 구성요소를 NULL로 지워 오래된 렌더링 점수가 남지 않게 한다.
 프로필 저장, 구성요소/종합 점수, 작업 완료, READY 계산은 기존 클론 행 잠금 트랜잭션에서 수행한다.
 종료 작업의 중복 결과는 무시하고, 더 큰 jobId의 활성 프로필이 있으면 오래된 결과는 비활성으로 보관하며 점수를 갱신하지 않는다.
 
 ## 음성 완료
 
-기존 음성 워커가 해당 작업의 프로필을 `status=ACTIVE`, `is_active=true`로 저장하고 커밋한 후 호출한다.
-이 API가 음성 모델이나 음성 프로필을 생성하지는 않는다.
+신규 음성 결과 경로는 [음성 프로필 결과 처리](voice-profile-results.md)의 결과 SQS다. 백엔드가
+`voice_training_jobs`, `ai_voice_profiles`, 음성 점수와 READY 상태를 한 트랜잭션에서 저장한다.
+아래 HTTP API는 AI 워커가 직접 DB에 쓰는 구버전과 전환 기간에만 사용한다. 해당 작업의
+활성 프로필을 워커가 먼저 커밋해야 호출할 수 있다.
 
 ```http
 POST /internal/clone-training/{cloneId}/voice/complete
@@ -124,10 +132,10 @@ revision 없는 최초 콜백끼리는 생성 순서를 알 수 없어 처음 �
 1. 운영 MySQL에서 백업/스테이징 검증 후 Flyway V37을 적용한다. 기존 Flyway 자동 적용 경로를 따른다.
 2. 프론트가 소수점 숫자와 READY 전 null을 처리하도록 반영한다.
 3. AI 요청 스키마가 추가 `sourceRevision`을 수용하도록 변경하고 콜백에 반환한다.
-4. 얼굴 워커의 `faceScore`와 음성 워커의 커밋 후 점수 콜백을 연결한다.
-5. 신규 회원, 기존 회원의 네 구성요소 완료, 중복 및 역순 콜백을 실제 환경에서 확인한다.
+4. 얼굴 워커의 `result.cloneSimilarity`와 음성 워커의 `voiceScore` 결과를 연결한다.
+5. 신규 회원, 기존 회원의 첫 점수 전환, 중복 및 역순 콜백을 실제 환경에서 확인한다.
 
-자동 테스트는 계산 경계·HALF_UP·누락 점수·기존 회원 유지, 콜백 인증/검증/호환성,
+자동 테스트는 계산 경계·HALF_UP·누락 점수·기존 회원의 첫 점수 전환, 콜백 인증/검증/호환성,
 동시 구성요소 갱신, 롤백 후 재시도, 최신 revision 검증, 얼굴·음성 결과 소유 관계와 중복을 확인한다.
 V37 단독 테스트는 H2 MySQL 모드이며 실제 운영 MySQL/AI 연동 검증을 대체하지 않는다.
 
@@ -135,6 +143,4 @@ V37 단독 테스트는 H2 MySQL 모드이며 실제 운영 MySQL/AI 연동 검�
 .\gradlew.bat test --tests '*CloneSimilarity*' --tests '*CloneTrainingControllerTest' --tests '*FaceTrainingResult*' --tests '*EvolveServiceTest' --tests '*RagProfile*'
 ```
 
-2026-09-28 검증 결과: 최종 관련 테스트 77개 통과, `bootJar` 생성 성공.
-전체 테스트 실행은 185개 중 184개 통과이며, 실패 1개는 기존 `contextLoads()`의
-V9 MySQL 복수 ADD COLUMN 구문과 H2 간 호환 오류다. 기존 V9는 변경하지 않았다.
+2026-10-03 검증 결과: 클론 유사도·얼굴·음성 결과·콜백 관련 테스트 58개 통과.

@@ -68,7 +68,8 @@ class FaceTrainingResultPersistenceTest {
         return new FaceTrainingResultDTO("FACE_PROFILE_BUILD_STATUS", jobId, uuid, cloneId, "COMPLETED",
                 new Result("READY_FOR_RENDERING", new Artifacts("test-bucket", prefix + "face-profile.json",
                         prefix + "portrait.jpg", prefix + "preprocess-manifest.json", null), true,
-                        new java.math.BigDecimal("82.35")), null);
+                        null, new CloneSimilarity(CloneSimilarityCalculator.VERSION,
+                                new java.math.BigDecimal("82.35"))), null);
     }
 
     @Test
@@ -86,7 +87,10 @@ class FaceTrainingResultPersistenceTest {
             executor.shutdownNow();
         }
         assertThat(profiles.findAllByCloneIdAndActiveTrue(cloneId)).hasSize(1);
-        assertThat(clones.findById(cloneId).orElseThrow().getFaceSimilarityScore()).isEqualByComparingTo("82.35");
+        Clone clone = clones.findById(cloneId).orElseThrow();
+        assertThat(clone.getFaceSimilarityScore()).isEqualByComparingTo("82.35");
+        assertThat(clone.getSyncRate()).isEqualByComparingTo("23.5");
+        assertThat(clone.getSimilarityScoreVersion()).isEqualTo(CloneSimilarityCalculator.VERSION);
         assertThat(jobs.findById(jobId).orElseThrow().getStatus()).isEqualTo(FaceTrainingJobStatus.COMPLETED);
         readiness.updatePersonalityTraining(cloneId, true);
         assertThat(clones.findById(cloneId).orElseThrow().getStatus()).isEqualTo("PENDING");
@@ -114,14 +118,14 @@ class FaceTrainingResultPersistenceTest {
     }
 
     @Test
-    void lastFaceComponentSwitchesLegacyTotalInTheResultTransaction() {
+    void faceComponentUpdatesAnExistingPartialTotalInTheResultTransaction() {
         new TransactionTemplate(transactions).executeWithoutResult(tx -> {
             Clone clone = clones.findLockedById(cloneId).orElseThrow();
             clone.updateVoiceSimilarity(1L, new java.math.BigDecimal("100"));
             clone.updateProfileSimilarity(null, new java.math.BigDecimal("100"),
                     new java.math.BigDecimal("100"), java.math.BigDecimal.ZERO);
         });
-        assertThat(clones.findById(cloneId).orElseThrow().getSimilarityScoreVersion()).isNull();
+        assertThat(clones.findById(cloneId).orElseThrow().getSyncRate()).isEqualByComparingTo("66.5");
         service.handle(completed());
         Clone clone = clones.findById(cloneId).orElseThrow();
         assertThat(clone.getSyncRate()).isEqualByComparingTo("90.0");

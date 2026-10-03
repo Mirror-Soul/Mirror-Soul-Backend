@@ -1,6 +1,7 @@
 package com.mirrorsoul.mirrorsoul_api.repository;
 
 import com.mirrorsoul.mirrorsoul_api.domain.AiVoiceProfile;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -17,4 +18,10 @@ public interface AiVoiceProfileRepository extends JpaRepository<AiVoiceProfile, 
             Long cloneId,
             String status
     );
+
+    List<AiVoiceProfile> findAllByCloneIdAndActiveTrue(Long cloneId);
+
+    boolean existsByVoiceTrainingJob_Id(Long jobId);
+
+    long countByCloneId(Long cloneId);
 }

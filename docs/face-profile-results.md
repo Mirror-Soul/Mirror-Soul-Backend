@@ -34,7 +34,10 @@
   "result": {
     "profileStatus": "READY_FOR_RENDERING",
     "qualityGatePassed": true,
-    "faceScore": 87.25,
+    "cloneSimilarity": {
+      "calculationVersion": "clone-similarity-v1",
+      "faceScore": 87.25
+    },
     "artifacts": {
       "bucket": "configured-AWS_S3_BUCKET",
       "profileKey": "face-results/00000000-0000-0000-0000-000000000001/job-1/face-profile.json",
@@ -46,7 +49,7 @@
 }
 ```
 
-`faceScore`는 선택인 0~100 점수이며 소수점 두 자리까지 허용한다. 얼굴 렌더링 품질을 뜻한다. 누락 시 NULL로 저장하며 점수를 추정하지 않는다. 활성 결과의 점수는 V37의 클론 완성도 계산에 반영한다. [점수 및 음성 콜백 계약](clone-similarity.md)을 참고한다.
+`cloneSimilarity.faceScore`는 0~100 점수이며 소수점 두 자리까지 허용한다. 얼굴 렌더링 품질을 뜻한다. `cloneSimilarity`를 생략한 이전 워커의 평면 `faceScore`도 읽는다. 어느 점수도 없으면 NULL로 저장하며 점수를 추정하지 않는다. 활성 결과의 점수는 V37의 클론 완성도 계산에 반영한다. [점수 및 음성 콜백 계약](clone-similarity.md)을 참고한다.
 
 previewKey는 선택이다. 다른 필드는 완료 시 필수이며 bucket은 AWS_S3_BUCKET과 일치해야 한다. 키는 위 경로를 정확하게 검증한다. 알려지지 않은 추가 JSON 필드는 호환성을 위해 무시한다. 파일 내용이나 S3 존재 여부를 다시 다운로드/검사하지 않으며 업로드 후 이벤트 발행 계약을 따른다.
 
@@ -71,7 +74,7 @@ POST /internal/clone-training/{cloneId}/personality/complete
 X-Clone-Training-Callback-Secret: <CLONE_TRAINING_CALLBACK_SECRET>
 ```
 
-본문 없는 구버전 요청과 점수 JSON이 있는 신규 요청을 모두 지원한다. 비밀값이 미설정/공백이거나 일치하지 않으면 거부한다. 신규 점수 콜백과 `sourceRevision` 계약은 [클론 완성도 점수](clone-similarity.md)를 참고한다. 기존 음성 프로필 저장 시스템은 status=ACTIVE와 is_active=true를 함께 기록하고 커밋 후 음성 점수 콜백을 호출해야 한다. 음성 학습과 음성 프로필 생성은 기존 워커가 담당한다.
+본문 없는 구버전 요청과 점수 JSON이 있는 신규 요청을 모두 지원한다. 비밀값이 미설정/공백이거나 일치하지 않으면 거부한다. 신규 점수 콜백과 `sourceRevision` 계약은 [클론 완성도 점수](clone-similarity.md)를 참고한다. 음성 결과는 [음성 프로필 결과 처리](voice-profile-results.md)의 SQS 경로로 전환한다. 기존 음성 점수 HTTP 콜백은 구버전 워커와의 전환 기간에만 사용한다.
 
 ## 배포
 

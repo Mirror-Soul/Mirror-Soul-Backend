@@ -20,16 +20,25 @@ class CloneSimilarityTest {
     }
 
     @Test
-    void legacyTotalIsPreservedUntilAllFourComponentsAreKnown() {
+    void firstComponentReplacesLegacyTotalAndMissingComponentsStayAtZero() {
         Clone clone = Clone.builder().syncRate(n("82.0")).build();
         clone.updateFaceSimilarity(1L, n("100"));
-        clone.updateProfileSimilarity(null, n("100"), n("100"), n("0"));
-        assertThat(clone.getSyncRate()).isEqualTo(n("82.0"));
-        assertThat(clone.getSimilarityScoreVersion()).isNull();
+        assertThat(clone.getSyncRate()).isEqualTo(n("28.5"));
+        assertThat(clone.getSimilarityScoreVersion()).isEqualTo(CloneSimilarityCalculator.VERSION);
         assertThat(clone.getVoiceSimilarityScore()).isNull();
+        clone.updateProfileSimilarity(null, n("100"), n("100"), n("0"));
+        assertThat(clone.getSyncRate()).isEqualTo(n("66.5"));
         clone.updateVoiceSimilarity(2L, n("100"));
         assertThat(clone.getSyncRate()).isEqualTo(n("95.0"));
-        assertThat(clone.getSimilarityScoreVersion()).isEqualTo(CloneSimilarityCalculator.VERSION);
+    }
+
+    @Test
+    void missingFaceScoreProducesDocumentedPartialTotal() {
+        Clone clone = Clone.builder().build();
+        clone.updateVoiceSimilarity(1L, n("100"));
+        clone.updateProfileSimilarity(1L, n("43.19"), n("94"), n("0"));
+        assertThat(clone.getFaceSimilarityScore()).isNull();
+        assertThat(clone.getSyncRate()).isEqualTo(n("49.7"));
     }
 
     @Test

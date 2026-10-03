@@ -2,18 +2,23 @@ package com.mirrorsoul.mirrorsoul_api.repository;
 
 import com.mirrorsoul.mirrorsoul_api.domain.VideoCall;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.VideoCallStatus;
-import java.util.List;
+import jakarta.persistence.LockModeType;
+import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Optional;
-import java.util.UUID;
-import java.time.LocalDateTime;
-
 public interface VideoCallRepository extends JpaRepository<VideoCall, Long> {
     Optional<VideoCall> findByRoomId(String roomId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select videoCall from VideoCall videoCall where videoCall.id = :callId")
+    Optional<VideoCall> findByIdForUpdate(@Param("callId") Long callId);
 
     boolean existsByCloneIdAndStatusIn(Long cloneId, Collection<VideoCallStatus> statuses);
 

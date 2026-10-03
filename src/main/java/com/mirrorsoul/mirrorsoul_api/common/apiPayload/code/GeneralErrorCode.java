@@ -91,6 +91,8 @@ public enum GeneralErrorCode implements BaseErrorCode {
     VOICE_PROFILE_NOT_READY(HttpStatus.CONFLICT, "VOICE_4090", "활성 음성 프로필이 준비되지 않았습니다."),
     TALK_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "TALK_LOG_4040", "대화 내역을 찾을 수 없습니다."),
     TALK_LOG_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "TALK_LOG_4030", "수정할 수 없는 대화입니다."),
+    TALK_LOG_INVALID_CALL_STATUS(HttpStatus.CONFLICT, "TALK_LOG_4090", "현재 통화 상태에서는 대화 내역을 저장할 수 없습니다."),
+    TALK_LOG_INVALID_TIME_RANGE(HttpStatus.BAD_REQUEST, "TALK_LOG_4000", "발화 종료 시각은 시작 시각보다 빠를 수 없습니다."),
     // 만남 신청 관련 오류
     MEETING_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "MEETING_4040", "만남 신청을 찾을 수 없습니다."),
     MEETING_REQUEST_ALREADY_PENDING(HttpStatus.CONFLICT, "MEETING_4090", "두 사용자 사이에 대기 중인 만남 신청이 있습니다."),

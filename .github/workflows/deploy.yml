@@ -69,6 +69,7 @@ jobs:
           FIREBASE_ANDROID_CHANNEL_ID: ${{ secrets.FIREBASE_ANDROID_CHANNEL_ID }}
           VALUE_BALANCE_CALLBACK_SECRET: ${{ secrets.VALUE_BALANCE_CALLBACK_SECRET }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          AI_INTERNAL_API_KEY: ${{ secrets.AI_INTERNAL_API_KEY }}
         run: |
           umask 077
           required_vars=(
@@ -83,7 +84,7 @@ jobs:
             GEMINI_API_KEY KAKAO_REST_API_KEY
             FIREBASE_PUSH_ENABLED FIREBASE_PROJECT_ID
             GOOGLE_APPLICATION_CREDENTIALS FIREBASE_ANDROID_CHANNEL_ID
-            VALUE_BALANCE_CALLBACK_SECRET JWT_SECRET
+            VALUE_BALANCE_CALLBACK_SECRET JWT_SECRET AI_INTERNAL_API_KEY
           )
           for name in "${required_vars[@]}"; do
             if [ -z "${!name}" ]; then
@@ -148,6 +149,7 @@ jobs:
             printf 'FIREBASE_ANDROID_CHANNEL_ID=%s\n' "$FIREBASE_ANDROID_CHANNEL_ID"
             printf 'VALUE_BALANCE_CALLBACK_SECRET=%s\n' "$VALUE_BALANCE_CALLBACK_SECRET"
             printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
+            printf 'AI_INTERNAL_API_KEY=%s\n' "$AI_INTERNAL_API_KEY"
           } > .env.new
           # scp-action runs in a separate container, so the staged file must
           # be readable there. deploy.sh changes it back to mode 600 on EC2.

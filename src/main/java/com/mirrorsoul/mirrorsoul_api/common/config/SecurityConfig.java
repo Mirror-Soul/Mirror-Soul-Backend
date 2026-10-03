@@ -2,6 +2,8 @@ package com.mirrorsoul.mirrorsoul_api.common.config;
 
 import com.mirrorsoul.mirrorsoul_api.common.jwt.JwtAuthenticationFilter;
 import com.mirrorsoul.mirrorsoul_api.common.jwt.JwtProperties;
+import com.mirrorsoul.mirrorsoul_api.common.security.AiInternalApiKeyFilter;
+import com.mirrorsoul.mirrorsoul_api.config.AiInternalApiProperties;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -23,10 +25,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @RequiredArgsConstructor
-@EnableConfigurationProperties(JwtProperties.class)
+@EnableConfigurationProperties({JwtProperties.class, AiInternalApiProperties.class})
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final AiInternalApiKeyFilter aiInternalApiKeyFilter;
 
     @Bean
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
@@ -55,8 +58,10 @@ public class SecurityConfig {
                                 , "/internal/clone-training/*/personality/complete"
                                 , "/internal/clone-training/*/voice/complete"
                         ).permitAll()
+                        .requestMatchers("/internal/ai/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(aiInternalApiKeyFilter, JwtAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .cors(Customizer.withDefaults())
                 .build();

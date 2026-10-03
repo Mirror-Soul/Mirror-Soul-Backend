@@ -19,6 +19,8 @@ public class SignalingHandler extends TextWebSocketHandler {
 
     private static final String AI_SERVER_SIGNAL_ID = "ai-server";
 
+    private final SignalingMessageValidator validator = new SignalingMessageValidator();
+
     private final ObjectMapper objectMapper;
     private final WebSocketSessionRegistry sessionRegistry;
 
@@ -29,14 +31,25 @@ public class SignalingHandler extends TextWebSocketHandler {
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        SignalingMessage signalingMessage =
-                objectMapper.readValue(message.getPayload(), SignalingMessage.class);
+        SignalingMessage signalingMessage;
+        try {
+            signalingMessage = objectMapper.readValue(message.getPayload(), SignalingMessage.class);
+            validator.validate(signalingMessage);
+        } catch (Exception exception) {
+            log.warn(
+                    "Invalid signaling message. sessionId={}, detail={}",
+                    session.getId(),
+                    exception.getMessage()
+            );
+            sendProtocolError(session, exception.getMessage());
+            return;
+        }
 
         switch (signalingMessage.getType()) {
             case "JOIN" -> handleJoin(session, signalingMessage);
             case "CALL_INVITE", "CALL_ACCEPT", "CALL_REJECT", "CALL_END",
                  "OFFER", "ANSWER", "ICE" -> relayMessage(session, signalingMessage);
-            case "LEAVE" -> handleLeave(signalingMessage);
+            case "LEAVE" -> handleLeave(session, signalingMessage);
             default -> throw new IllegalArgumentException("Unknown signaling type: " + signalingMessage.getType());
         }
     }
@@ -62,6 +75,16 @@ public class SignalingHandler extends TextWebSocketHandler {
     }
 
     private void relayMessage(WebSocketSession senderSession, SignalingMessage message) throws IOException {
+        if (!isAuthorizedSender(senderSession, message.getFrom())) {
+            log.warn(
+                    "Signaling sender identity mismatch. sessionId={}, claimedFrom={}",
+                    senderSession.getId(),
+                    message.getFrom()
+            );
+            sendProtocolError(senderSession, "from is not registered to this WebSocket session.");
+            return;
+        }
+
         WebSocketSession receiverSession = getReceiverSession(message.getTo());
 
         if (receiverSession == null || !receiverSession.isOpen()) {
@@ -126,6 +149,35 @@ public class SignalingHandler extends TextWebSocketHandler {
         return null;
     }
 
+    private boolean isAuthorizedSender(WebSocketSession session, String signalId) {
+        if (sessionRegistry.isRegisteredAs(signalId, session)) {
+            return true;
+        }
+        return isAiSignalId(signalId)
+                && sessionRegistry.isRegisteredAs(AI_SERVER_SIGNAL_ID, session);
+    }
+
+    private void sendProtocolError(WebSocketSession session, String detail) throws IOException {
+        if (!session.isOpen()) {
+            return;
+        }
+
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("reason", "INVALID_MESSAGE");
+        data.put("detail", detail == null || detail.isBlank()
+                ? "시그널링 메시지 형식이 올바르지 않습니다."
+                : detail);
+
+        SignalingMessage error = new SignalingMessage(
+                "SIGNALING_ERROR",
+                null,
+                "server",
+                null,
+                data
+        );
+        session.sendMessage(new TextMessage(objectMapper.writeValueAsString(error)));
+    }
+
     private WebSocketSession getReceiverSession(String signalId) {
         WebSocketSession receiverSession = sessionRegistry.getSession(signalId);
 
@@ -140,7 +192,11 @@ public class SignalingHandler extends TextWebSocketHandler {
         return signalId != null && signalId.startsWith("signal:") && signalId.endsWith(":ai");
     }
 
-    private void handleLeave(SignalingMessage message) {
+    private void handleLeave(WebSocketSession session, SignalingMessage message) throws IOException {
+        if (!isAuthorizedSender(session, message.getFrom())) {
+            sendProtocolError(session, "from is not registered to this WebSocket session.");
+            return;
+        }
         sessionRegistry.remove(message.getFrom());
 
         log.info("Signaling participant left. signalId={}", message.getFrom());

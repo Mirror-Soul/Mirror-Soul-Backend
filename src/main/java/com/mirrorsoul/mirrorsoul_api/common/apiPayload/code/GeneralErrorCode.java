@@ -19,6 +19,10 @@ public enum GeneralErrorCode implements BaseErrorCode {
     EMAIL_NOT_VERIFIED(HttpStatus.UNAUTHORIZED, "AUTH_4014", "이메일 인증이 완료되지 않았습니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "AUTH_4030", "접근 권한이 없습니다."),
 
+    // 내부 서비스 인증 에러
+    INTERNAL_AUTH_INVALID(HttpStatus.UNAUTHORIZED, "INTERNAL_4010", "내부 서비스 인증 정보가 올바르지 않습니다."),
+    INTERNAL_API_NOT_CONFIGURED(HttpStatus.SERVICE_UNAVAILABLE, "INTERNAL_5030", "내부 서비스 인증이 설정되지 않았습니다."),
+
     // 요청/파라미터 에러
     MISSING_PARAMETER(HttpStatus.BAD_REQUEST, "REQ_4000", "필수 파라미터가 누락되었습니다."),
     INVALID_PARAMETER(HttpStatus.BAD_REQUEST, "REQ_4001", "파라미터 형식이 잘못되었습니다."),
@@ -82,6 +86,9 @@ public enum GeneralErrorCode implements BaseErrorCode {
     CALL_ALREADY_ENDED(HttpStatus.BAD_REQUEST, "CALL_4000", "이미 종료된 통화입니다."),
     INSUFFICIENT_TALK_TIME(HttpStatus.BAD_REQUEST, "CALL_4001", "남은 대화 시간이 부족합니다."),
     CALL_ACCESS_DENIED(HttpStatus.FORBIDDEN, "CALL_4030", "통화 내역에 접근할 권한이 없습니다."),
+    INVALID_CALL_STATUS(HttpStatus.CONFLICT, "CALL_4090", "AI 통화를 시작할 수 없는 상태입니다."),
+    CLONE_NOT_READY(HttpStatus.CONFLICT, "CLONE_4090", "클론 준비가 완료되지 않았습니다."),
+    VOICE_PROFILE_NOT_READY(HttpStatus.CONFLICT, "VOICE_4090", "활성 음성 프로필이 준비되지 않았습니다."),
     TALK_LOG_NOT_FOUND(HttpStatus.NOT_FOUND, "TALK_LOG_4040", "대화 내역을 찾을 수 없습니다."),
     TALK_LOG_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, "TALK_LOG_4030", "수정할 수 없는 대화입니다."),
     // 만남 신청 관련 오류

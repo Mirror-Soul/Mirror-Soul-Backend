@@ -18,6 +18,11 @@ public class WebSocketSessionRegistry {
         return sessions.get(id);
     }
 
+    public boolean isRegisteredAs(String id, WebSocketSession session) {
+        WebSocketSession registered = sessions.get(id);
+        return registered != null && registered.getId().equals(session.getId());
+    }
+
     public void remove(String id) {
         sessions.remove(id);
     }

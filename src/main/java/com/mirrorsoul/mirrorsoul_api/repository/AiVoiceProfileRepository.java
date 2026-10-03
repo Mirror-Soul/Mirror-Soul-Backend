@@ -12,4 +12,9 @@ public interface AiVoiceProfileRepository extends JpaRepository<AiVoiceProfile, 
     boolean existsByCloneIdAndActiveTrueAndStatusAndVoiceTrainingJob_IdGreaterThan(Long cloneId, String status, Long jobId);
 
     Optional<AiVoiceProfile> findFirstByCloneIdAndActiveTrueOrderByCreatedAtDescIdDesc(Long cloneId);
+
+    Optional<AiVoiceProfile> findFirstByCloneIdAndActiveTrueAndStatusOrderByCreatedAtDescIdDesc(
+            Long cloneId,
+            String status
+    );
 }

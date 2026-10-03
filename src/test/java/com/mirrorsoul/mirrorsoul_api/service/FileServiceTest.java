@@ -134,4 +134,66 @@ class FileServiceTest {
                         .isEqualTo(GeneralErrorCode.INVALID_PARAMETER)
         );
     }
+
+    @Test
+    void verifiesUploadedFaceUpdateImage() {
+        UUID userUuid = UUID.randomUUID();
+        String objectKey = "face-images/" + userUuid + "/new-face.jpg";
+        when(s3Client.headObject(any(HeadObjectRequest.class))).thenReturn(
+                HeadObjectResponse.builder().contentType("image/jpeg").contentLength(1024L).build());
+
+        FileService.VerifiedS3Object result =
+                service.verifyFaceUpdateMediaAndBuildFileUrl(userUuid, objectKey);
+
+        assertThat(result.objectKey()).isEqualTo(objectKey);
+    }
+
+    @Test
+    void createsPresignedUrlForFaceUpdateImage() throws Exception {
+        PresignedPutObjectRequest presignedRequest = mock(PresignedPutObjectRequest.class);
+        when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class)))
+                .thenReturn(presignedRequest);
+        when(presignedRequest.url())
+                .thenReturn(URI.create("https://upload.example.com/signed").toURL());
+        UUID userUuid = UUID.randomUUID();
+
+        PresignedUrlResDTO result = service.createPresignedUrl(
+                userUuid, new PresignedUrlReqDTO("new-face.jpg", "image/jpeg", "face-images"));
+
+        assertThat(result.objectKey()).startsWith("face-images/" + userUuid + "/");
+    }
+
+    @Test
+    void acceptsExistingFaceVideoDirectoryForFaceUpdate() {
+        UUID userUuid = UUID.randomUUID();
+        String objectKey = "face-videos/" + userUuid + "/new-face.mp4";
+        when(s3Client.headObject(any(HeadObjectRequest.class))).thenReturn(
+                HeadObjectResponse.builder().contentType("video/mp4").contentLength(1024L).build());
+
+        assertThat(service.verifyFaceUpdateMediaAndBuildFileUrl(userUuid, objectKey).objectKey())
+                .isEqualTo(objectKey);
+    }
+
+    @Test
+    void rejectsFaceUpdateImageFromAnotherUser() {
+        UUID userUuid = UUID.randomUUID();
+        String objectKey = "face-images/" + UUID.randomUUID() + "/new-face.jpg";
+
+        assertThatThrownBy(() -> service.verifyFaceUpdateMediaAndBuildFileUrl(userUuid, objectKey))
+                .isInstanceOfSatisfying(GeneralException.class,
+                        exception -> assertThat(exception.getCode()).isEqualTo(GeneralErrorCode.INVALID_PARAMETER));
+        verifyNoInteractions(s3Client);
+    }
+
+    @Test
+    void rejectsUnsupportedFaceUpdateImageType() {
+        UUID userUuid = UUID.randomUUID();
+        String objectKey = "face-images/" + userUuid + "/new-face.gif";
+        when(s3Client.headObject(any(HeadObjectRequest.class))).thenReturn(
+                HeadObjectResponse.builder().contentType("image/gif").contentLength(1024L).build());
+
+        assertThatThrownBy(() -> service.verifyFaceUpdateMediaAndBuildFileUrl(userUuid, objectKey))
+                .isInstanceOfSatisfying(GeneralException.class,
+                        exception -> assertThat(exception.getCode()).isEqualTo(GeneralErrorCode.INVALID_PARAMETER));
+    }
 }

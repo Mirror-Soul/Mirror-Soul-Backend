@@ -69,6 +69,18 @@ public class EvolveController {
         );
     }
 
+    @Operation(summary = "Submit face update", description = "Creates a face training job from an uploaded face image or video.")
+    @PostMapping("/face")
+    public ApiResponse<EvolveResDTO.faceUpdateJobDTO> completeFaceUpdate(
+            @AuthenticationPrincipal CustomUserDetails currentUser,
+            @Valid @RequestBody EvolveReqDTO.FaceUpdateCompleteDTO request
+    ) {
+        return ApiResponse.onSuccess(
+                "Face update job requested successfully.",
+                evolveService.completeFaceUpdate(currentUser.getUuid(), request)
+        );
+    }
+
     @Operation(summary = "Get a value balance question",
             description = "Returns one random, never-before-answered question in an 8-question set.")
     @GetMapping("/value-balance")

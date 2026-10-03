@@ -3,13 +3,19 @@ package com.mirrorsoul.mirrorsoul_api.service;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
+import com.mirrorsoul.mirrorsoul_api.domain.FaceFile;
+import com.mirrorsoul.mirrorsoul_api.domain.FaceTrainingJob;
 import com.mirrorsoul.mirrorsoul_api.domain.VoiceTrainingJob;
 import com.mirrorsoul.mirrorsoul_api.domain.VoiceTrainingSentence;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.VoiceTrainingJobSource;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.FaceTrainingJobSource;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.evolve.EvolveReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.evolve.EvolveResDTO;
 import com.mirrorsoul.mirrorsoul_api.event.VoiceTrainingJobRequestedEvent;
+import com.mirrorsoul.mirrorsoul_api.event.FaceTrainingJobRequestedEvent;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.FaceFileRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.VoiceTrainingJobRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.VoiceTrainingSentenceRepository;
@@ -34,6 +40,8 @@ public class EvolveService {
     private final VoiceTrainingJobRepository voiceTrainingJobRepository;
     private final FileService fileService;
     private final VoiceTrainingJobService voiceTrainingJobService;
+    private final FaceFileRepository faceFileRepository;
+    private final FaceTrainingJobService faceTrainingJobService;
     private final ApplicationEventPublisher eventPublisher;
 
     public EvolveResDTO.twinSyncDTO twinSync(UUID uuid) {
@@ -121,6 +129,40 @@ public class EvolveService {
         return EvolveResDTO.voiceUpdateJobDTO.builder()
                 .jobId(voiceTrainingJob.getId())
                 .status(voiceTrainingJob.getStatus().name())
+                .build();
+    }
+
+    @Transactional
+    public EvolveResDTO.faceUpdateJobDTO completeFaceUpdate(
+            UUID uuid,
+            EvolveReqDTO.FaceUpdateCompleteDTO request
+    ) {
+        User user = userRepository.findByUuid(uuid)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND, "User not found."));
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new GeneralException(GeneralErrorCode.FORBIDDEN,
+                    "Only active users can submit face updates.");
+        }
+        cloneRepository.findByUserUuid(uuid)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.CLONE_NOT_FOUND));
+
+        FileService.VerifiedS3Object uploadedFace = fileService.verifyFaceUpdateMediaAndBuildFileUrl(
+                uuid, request.objectKey());
+        FaceFile faceFile = faceFileRepository.findByUser_Id(user.getId())
+                .map(existing -> {
+                    existing.updateFile(uploadedFace.fileUrl(), uploadedFace.objectKey());
+                    return existing;
+                })
+                .orElseGet(() -> faceFileRepository.save(
+                        FaceFile.create(user, uploadedFace.fileUrl(), uploadedFace.objectKey())));
+
+        FaceTrainingJob job = faceTrainingJobService.createPendingJob(
+                user, faceFile, FaceTrainingJobSource.FACE_UPDATE);
+        eventPublisher.publishEvent(new FaceTrainingJobRequestedEvent(job.getId()));
+
+        return EvolveResDTO.faceUpdateJobDTO.builder()
+                .jobId(job.getId())
+                .status(job.getStatus().name())
                 .build();
     }
 

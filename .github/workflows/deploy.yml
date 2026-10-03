@@ -47,6 +47,8 @@ jobs:
           AWS_SQS_FACE_TRAINING_QUEUE_URL: ${{ secrets.AWS_SQS_FACE_TRAINING_QUEUE_URL }}
           AWS_SQS_FACE_TRAINING_RESULT_QUEUE_URL: ${{ secrets.AWS_SQS_FACE_TRAINING_RESULT_QUEUE_URL }}
           FACE_RESULT_CONSUMER_ENABLED: ${{ vars.FACE_RESULT_CONSUMER_ENABLED || 'false' }}
+          AWS_SQS_VOICE_TRAINING_RESULT_QUEUE_URL: ${{ secrets.AWS_SQS_VOICE_TRAINING_RESULT_QUEUE_URL }}
+          VOICE_RESULT_CONSUMER_ENABLED: ${{ vars.VOICE_RESULT_CONSUMER_ENABLED || 'false' }}
           CLONE_TRAINING_CALLBACK_SECRET: ${{ secrets.CLONE_TRAINING_CALLBACK_SECRET }}
           RAG_PROFILE_ENABLED: ${{ vars.RAG_PROFILE_ENABLED || 'false' }}
           AI_SERVER_BASE_URL: ${{ secrets.AI_SERVER_BASE_URL }}
@@ -105,6 +107,10 @@ jobs:
               fi
             done
           fi
+          if [ "$VOICE_RESULT_CONSUMER_ENABLED" = "true" ] && [ -z "$AWS_SQS_VOICE_TRAINING_RESULT_QUEUE_URL" ]; then
+            echo "Required voice result queue URL is missing or empty" >&2
+            exit 1
+          fi
           {
             printf 'DB_HOST=%s\n' "$DB_HOST"
             printf 'DB_PORT=%s\n' "$DB_PORT"
@@ -120,6 +126,8 @@ jobs:
             printf 'AWS_SQS_FACE_TRAINING_QUEUE_URL=%s\n' "$AWS_SQS_FACE_TRAINING_QUEUE_URL"
             printf 'AWS_SQS_FACE_TRAINING_RESULT_QUEUE_URL=%s\n' "$AWS_SQS_FACE_TRAINING_RESULT_QUEUE_URL"
             printf 'FACE_RESULT_CONSUMER_ENABLED=%s\n' "$FACE_RESULT_CONSUMER_ENABLED"
+            printf 'AWS_SQS_VOICE_TRAINING_RESULT_QUEUE_URL=%s\n' "$AWS_SQS_VOICE_TRAINING_RESULT_QUEUE_URL"
+            printf 'VOICE_RESULT_CONSUMER_ENABLED=%s\n' "$VOICE_RESULT_CONSUMER_ENABLED"
             printf 'CLONE_TRAINING_CALLBACK_SECRET=%s\n' "$CLONE_TRAINING_CALLBACK_SECRET"
             printf 'RAG_PROFILE_ENABLED=%s\n' "$RAG_PROFILE_ENABLED"
             printf 'AI_SERVER_BASE_URL=%s\n' "$AI_SERVER_BASE_URL"

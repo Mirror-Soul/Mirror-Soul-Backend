@@ -30,7 +30,7 @@ public class AiVoiceProfile extends BaseTimeEntity {
     private Clone clone;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "voice_training_job_id", nullable = false,
+    @JoinColumn(name = "voice_training_job_id", nullable = false, unique = true,
             foreignKey = @ForeignKey(name = "fk_ai_voice_profiles_voice_training_job"))
     private VoiceTrainingJob voiceTrainingJob;
 
@@ -80,5 +80,18 @@ public class AiVoiceProfile extends BaseTimeEntity {
             boolean active
     ) {
         return new AiVoiceProfile(clone, voiceTrainingJob, elevenlabsVoiceId, status, active);
+    }
+
+    public void deactivate() {
+        this.active = false;
+    }
+
+    public void setIntroAudio(String bucket, String objectKey, String contentType,
+            Long sizeBytes, Integer durationMs) {
+        this.introAudioBucket = bucket;
+        this.introAudioObjectKey = objectKey;
+        this.introAudioContentType = contentType;
+        this.introAudioSizeBytes = sizeBytes;
+        this.introAudioDurationMs = durationMs;
     }
 }

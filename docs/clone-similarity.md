@@ -68,8 +68,10 @@ V37은 `clones.sync_rate`를 `DECIMAL(4,1)`로 변경한다. 다음 컬럼을 �
 
 ## 음성 완료
 
-기존 음성 워커가 해당 작업의 프로필을 `status=ACTIVE`, `is_active=true`로 저장하고 커밋한 후 호출한다.
-이 API가 음성 모델이나 음성 프로필을 생성하지는 않는다.
+신규 음성 결과 경로는 [음성 프로필 결과 처리](voice-profile-results.md)의 결과 SQS다. 백엔드가
+`voice_training_jobs`, `ai_voice_profiles`, 음성 점수와 READY 상태를 한 트랜잭션에서 저장한다.
+아래 HTTP API는 AI 워커가 직접 DB에 쓰는 구버전과 전환 기간에만 사용한다. 해당 작업의
+활성 프로필을 워커가 먼저 커밋해야 호출할 수 있다.
 
 ```http
 POST /internal/clone-training/{cloneId}/voice/complete

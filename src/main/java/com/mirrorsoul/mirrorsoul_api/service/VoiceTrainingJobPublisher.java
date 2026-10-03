@@ -33,8 +33,10 @@ public class VoiceTrainingJobPublisher {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void publish(Long voiceTrainingJobId) {
-        VoiceTrainingJob job = voiceTrainingJobRepository.findById(voiceTrainingJobId)
+        VoiceTrainingJob job = voiceTrainingJobRepository.findLockedById(voiceTrainingJobId)
                 .orElseThrow(() -> new IllegalArgumentException("VoiceTrainingJob not found: " + voiceTrainingJobId));
+
+        if (job.isTerminal() || job.getSqsMessageId() != null) return;
 
         List<String> objectKeys = job.getFiles().stream()
                 .map(VoiceTrainingJobFile::getObjectKey)

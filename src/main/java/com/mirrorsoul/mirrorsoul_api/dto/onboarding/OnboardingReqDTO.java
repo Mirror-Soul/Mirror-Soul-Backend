@@ -29,6 +29,8 @@ public class OnboardingReqDTO {
         private String jobDescription;
 
         private String jobCertificationObjectKey;
+
+        private String profileImageObjectKey;
     }
 
     @Getter

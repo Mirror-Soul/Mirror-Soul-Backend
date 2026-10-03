@@ -51,7 +51,10 @@ public class OnboardingController {
     private final VisualService visualService;
 
     @SecurityRequirement(name = "bearerAuth")
-    @Operation(summary = "온보딩 프로필 입력", description = "닉네임, 위치, 직업 정보를 저장하고 ONBOARD_B 상태로 변경합니다.")
+    @Operation(
+            summary = "온보딩 프로필 입력",
+            description = "닉네임, 위치, 직업 정보와 선택적으로 프로필 이미지를 저장하고 ONBOARD_B 상태로 변경합니다. 프로필 이미지는 Presigned URL로 profile-images 경로에 업로드한 objectKey를 전달합니다."
+    )
     @PostMapping("/profile")
     public ApiResponse<Void> postProfile(@Valid @RequestBody OnboardingReqDTO.personaReqDTO req,
                                          @RequestParam Job job,

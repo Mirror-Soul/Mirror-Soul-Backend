@@ -36,6 +36,7 @@ public class OnboardingService {
     private final RegionRepository regionRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final CloneProfileRefreshRequestService cloneProfileRefreshRequestService;
+    private final FileService fileService;
 
     public void postProfile(OnboardingReqDTO.personaReqDTO req, UUID userUuid, Job job) {
 
@@ -62,6 +63,15 @@ public class OnboardingService {
         user.setJob(job);
         user.setJobDescription(req.getJobDescription());
         user.setJobCertificationObjectKey(req.getJobCertificationObjectKey());
+
+        if (req.getProfileImageObjectKey() != null && !req.getProfileImageObjectKey().isBlank()) {
+            FileService.VerifiedS3Object image = fileService.verifyProfileImageAndBuildFileUrl(
+                    userUuid,
+                    req.getProfileImageObjectKey()
+            );
+            user.updateProfileImage(image.fileUrl(), image.objectKey());
+        }
+
         user.setStatus(ONBOARD_B);
         userRepository.save(user);
         eventPublisher.publishEvent(

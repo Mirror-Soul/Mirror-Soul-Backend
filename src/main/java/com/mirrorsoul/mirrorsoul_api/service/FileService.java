@@ -97,6 +97,14 @@ public class FileService {
         return verifyUploadedObjectAndBuildFileUrl(userUuid, objectKey, UploadFileType.FACE_VIDEO);
     }
 
+    public VerifiedS3Object verifyFaceUpdateMediaAndBuildFileUrl(UUID userUuid, String objectKey) {
+        String normalizedObjectKey = normalizeObjectKey(objectKey);
+        UploadFileType type = normalizedObjectKey.startsWith(UploadFileType.FACE_IMAGE.requiredPrefix(userUuid))
+                ? UploadFileType.FACE_IMAGE
+                : UploadFileType.FACE_VIDEO;
+        return verifyUploadedObjectAndBuildFileUrl(userUuid, normalizedObjectKey, type);
+    }
+
     public VerifiedS3Object verifyProfileImageAndBuildFileUrl(UUID userUuid, String objectKey) {
         return verifyUploadedObjectAndBuildFileUrl(userUuid, objectKey, UploadFileType.PROFILE_IMAGE);
     }
@@ -193,6 +201,7 @@ public class FileService {
         INTERVIEWS("interviews"),
         VOICE_UPDATES("voice-updates"),
         FACE_VIDEOS("face-videos"),
+        FACE_IMAGES("face-images"),
         JOB_CERTIFICATIONS("job-certifications"),
         PROFILE_IMAGES("profile-images");
 
@@ -207,7 +216,7 @@ public class FileService {
         }
 
         public void validateContentType(String contentType) {
-            if (this != PROFILE_IMAGES) {
+            if (this != PROFILE_IMAGES && this != FACE_IMAGES) {
                 return;
             }
 
@@ -217,7 +226,7 @@ public class FileService {
             if (!supportedType) {
                 throw new GeneralException(
                         GeneralErrorCode.INVALID_PARAMETER,
-                        "Profile image contentType must be one of: image/jpeg, image/png, image/webp."
+                        "Image contentType must be one of: image/jpeg, image/png, image/webp."
                 );
             }
         }
@@ -239,7 +248,7 @@ public class FileService {
         private static GeneralException invalidDirectory() {
             return new GeneralException(
                     GeneralErrorCode.INVALID_PARAMETER,
-                    "directory must be one of: interviews, voice-updates, face-videos, "
+                    "directory must be one of: interviews, voice-updates, face-videos, face-images, "
                             + "job-certifications, profile-images"
             );
         }
@@ -249,6 +258,7 @@ public class FileService {
         INTERVIEW_AUDIO("interviews"),
         VOICE_UPDATE_AUDIO("voice-updates"),
         FACE_VIDEO("face-videos"),
+        FACE_IMAGE("face-images"),
         PROFILE_IMAGE("profile-images");
 
         private static final long MAX_FACE_VIDEO_SIZE_BYTES = 100L * 1024 * 1024;
@@ -267,8 +277,8 @@ public class FileService {
         public void validateMetadata(HeadObjectResponse metadata) {
             if (this == FACE_VIDEO) {
                 validateFaceVideo(metadata);
-            } else if (this == PROFILE_IMAGE) {
-                validateProfileImage(metadata);
+            } else if (this == PROFILE_IMAGE || this == FACE_IMAGE) {
+                validateImage(metadata);
             }
         }
 
@@ -294,7 +304,8 @@ public class FileService {
             }
         }
 
-        private void validateProfileImage(HeadObjectResponse metadata) {
+        private void validateImage(HeadObjectResponse metadata) {
+            String imageType = this == FACE_IMAGE ? "Face image" : "Profile image";
             String contentType = metadata.contentType();
             boolean supportedType = "image/jpeg".equalsIgnoreCase(contentType)
                     || "image/png".equalsIgnoreCase(contentType)
@@ -302,7 +313,7 @@ public class FileService {
             if (!supportedType) {
                 throw new GeneralException(
                         GeneralErrorCode.INVALID_PARAMETER,
-                        "Profile image contentType must be one of: image/jpeg, image/png, image/webp."
+                        imageType + " contentType must be one of: image/jpeg, image/png, image/webp."
                 );
             }
 
@@ -311,7 +322,7 @@ public class FileService {
                     || metadata.contentLength() > MAX_PROFILE_IMAGE_SIZE_BYTES) {
                 throw new GeneralException(
                         GeneralErrorCode.INVALID_PARAMETER,
-                        "Profile image size must be greater than 0 and at most 5 MB."
+                        imageType + " size must be greater than 0 and at most 5 MB."
                 );
             }
         }

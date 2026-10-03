@@ -39,6 +39,15 @@ public class EvolveResDTO {
         String status;
     }
 
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class faceUpdateJobDTO {
+        Long jobId;
+        String status;
+    }
+
     public record valueBalanceQuestionDTO(
             Long questionId,
             ValueBalanceAxis axis,

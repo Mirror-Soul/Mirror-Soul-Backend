@@ -16,7 +16,7 @@ public record PresignedUrlReqDTO(
                 description = "업로드 저장 디렉터리",
                 example = "profile-images",
                 allowableValues = {
-                        "interviews", "voice-updates", "face-videos",
+                        "interviews", "voice-updates", "face-videos", "face-images",
                         "job-certifications", "profile-images"
                 }
         )

@@ -17,6 +17,12 @@ public class EvolveReqDTO {
     ) {
     }
 
+    public record FaceUpdateCompleteDTO(
+            @NotBlank(message = "objectKey is required.")
+            String objectKey
+    ) {
+    }
+
     public record ValueBalanceAnswerDTO(
             @NotNull(message = "chosenSide is required.")
             ValueBalanceChosenSide chosenSide

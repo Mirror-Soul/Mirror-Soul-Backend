@@ -2,11 +2,20 @@
 
 ## 처리 흐름
 
-1. 기존 VisualService가 S3 업로드를 검증하고 PENDING 작업을 생성한다. 커밋 후 FACE_PROFILE_BUILD 요청을 발행한다.
+1. 온보딩 VisualService 또는 성장 EvolveService가 S3 업로드를 검증하고 PENDING 작업을 생성한다. 커밋 후 FACE_PROFILE_BUILD 요청을 같은 얼굴 학습 큐에 발행한다.
    요청 발행 중에도 작업 행을 잠가 빠른 결과 응답과의 상태 덮어쓰기를 방지하고, 이미 전송했거나 종료한 작업은 다시 발행하지 않는다.
 2. GPU 워커가 결과 파일 업로드 후 FACE_PROFILE_BUILD_STATUS JSON을 결과 SQS에 발행한다.
 3. FaceTrainingResultConsumer가 메시지를 하나씩 long polling한다. FaceTrainingResultService의 트랜잭션이 커밋된 뒤에만 메시지를 삭제한다.
 4. 클론과 작업 행을 순서대로 잠그고 작업·클론·회원의 소유 관계를 검증한다. 프로필 저장, 기존 프로필 비활성화, 작업 완료, 클론 상태 계산을 하나의 트랜잭션에서 수행한다.
+
+## 성장 탭 얼굴 업데이트
+
+1. `POST /files/presigned-url`에 `directory: "face-images"`와 JPEG/PNG/WebP Content-Type을 보내고 받은 URL로 사진을 PUT 업로드한다. 영상이라면 기존 `face-videos` 디렉터리를 사용할 수 있다.
+2. 업로드가 끝나면 `POST /evolve/face`에 `{ "objectKey": "face-images/{userUuid}/..." }`를 보낸다. ACTIVE 사용자만 요청할 수 있다. 응답의 `jobId`와 `status`는 생성 직후 `PENDING` 작업을 나타낸다.
+3. 백엔드는 소유자별 S3 경로, Content-Type, 크기를 확인하고 `source: "FACE_UPDATE"`인 새 작업을 생성한다. 트랜잭션 커밋 후 기존 `AWS_SQS_FACE_TRAINING_QUEUE_URL`에 `FACE_PROFILE_BUILD` 메시지를 보낸다. 새 큐는 필요 없다.
+4. GPU 워커는 `FACE_UPDATE`와 `face-images/` 입력을 처리할 수 있어야 한다. 이 저장소에는 GPU 워커 코드가 없으므로 사진 학습 지원은 별도로 확인해야 한다. 기존 워커가 영상만 지원하면 `face-videos/` 입력으로 연동한다.
+
+새 작업이 실패하거나 품질 검사를 통과하지 못하면 기존 활성 얼굴 프로필은 유지된다. 새 결과가 성공하면 이전 프로필을 비활성화하고 새 프로필을 활성화한다. 현재 계약은 새 얼굴 프로필을 만드는 방식이며, 기존 모델에 대한 증분 학습 여부는 GPU 워커 구현에 달려 있다.
 
 | 수신 상태 | DB 처리 |
 | --- | --- |

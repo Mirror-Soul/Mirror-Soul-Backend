@@ -70,6 +70,7 @@ jobs:
           VALUE_BALANCE_CALLBACK_SECRET: ${{ secrets.VALUE_BALANCE_CALLBACK_SECRET }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           AI_INTERNAL_API_KEY: ${{ secrets.AI_INTERNAL_API_KEY }}
+          CHAT_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS: https://api.mirrorsoul64.com,http://localhost:*
         run: |
           umask 077
           required_vars=(
@@ -150,6 +151,7 @@ jobs:
             printf 'VALUE_BALANCE_CALLBACK_SECRET=%s\n' "$VALUE_BALANCE_CALLBACK_SECRET"
             printf 'JWT_SECRET=%s\n' "$JWT_SECRET"
             printf 'AI_INTERNAL_API_KEY=%s\n' "$AI_INTERNAL_API_KEY"
+            printf 'CHAT_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS=%s\n' "$CHAT_WEBSOCKET_ALLOWED_ORIGIN_PATTERNS"
           } > .env.new
           # scp-action runs in a separate container, so the staged file must
           # be readable there. deploy.sh changes it back to mode 600 on EC2.

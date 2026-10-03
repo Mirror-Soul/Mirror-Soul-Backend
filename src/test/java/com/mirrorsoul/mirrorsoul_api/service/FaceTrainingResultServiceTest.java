@@ -3,6 +3,7 @@ package com.mirrorsoul.mirrorsoul_api.service;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mirrorsoul.mirrorsoul_api.config.AwsS3Properties;
 import com.mirrorsoul.mirrorsoul_api.domain.*;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.*;
@@ -151,6 +152,34 @@ class FaceTrainingResultServiceTest {
         var saved = ArgumentCaptor.forClass(AiFaceProfile.class);
         verify(profiles).saveAndFlush(saved.capture());
         assertThat(saved.getValue().getQualityScore()).isEqualTo(82.35);
+    }
+
+    @Test
+    void documentedNestedScoreIsDeserializedAndUsed() throws Exception {
+        String prefix = "face-results/" + uuid + "/job-3/";
+        String json = """
+                {"eventType":"FACE_PROFILE_BUILD_STATUS","jobId":3,"userUuid":"%s",
+                 "cloneId":2,"status":"COMPLETED","result":{
+                   "profileStatus":"READY_FOR_RENDERING","qualityGatePassed":true,
+                   "artifacts":{"bucket":"test-bucket","profileKey":"%sface-profile.json",
+                     "portraitKey":"%sportrait.jpg","manifestKey":"%spreprocess-manifest.json"},
+                   "cloneSimilarity":{"calculationVersion":"clone-similarity-v1","faceScore":86.5}}}
+                """.formatted(uuid, prefix, prefix, prefix);
+        var event = new ObjectMapper().readValue(json, FaceTrainingResultDTO.class);
+        service.handle(event);
+        assertThat(clone.getFaceSimilarityScore()).isEqualByComparingTo("86.5");
+        assertThat(clone.getSyncRate()).isEqualByComparingTo("24.7");
+        assertThat(clone.getSimilarityScoreVersion()).isEqualTo(CloneSimilarityCalculator.VERSION);
+    }
+
+    @Test
+    void unsupportedNestedCalculationVersionDoesNotCompleteTheJob() {
+        var result = new Result("READY_FOR_RENDERING", result(true).artifacts(), true,
+                null, new CloneSimilarity("unknown-version", new java.math.BigDecimal("86.5")));
+        assertThatThrownBy(() -> service.handle(message("COMPLETED", result, null)))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThat(job.getStatus()).isEqualTo(FaceTrainingJobStatus.PENDING);
+        verifyNoInteractions(profiles, readiness);
     }
 
     @Test

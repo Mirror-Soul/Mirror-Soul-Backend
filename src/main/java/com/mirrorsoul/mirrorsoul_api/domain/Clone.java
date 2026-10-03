@@ -135,10 +135,8 @@ public class Clone extends BaseTimeEntity {
     }
 
     private void recalculateSimilarity() {
-        // A null version identifies a pre-migration member. Preserve their old total until ready.
-        boolean complete = faceSimilarityScore != null && voiceSimilarityScore != null
-                && profileSimilarityScore != null && dataReliabilityScore != null;
-        if (similarityScoreVersion == null && !complete) return;
+        // Recalculate on every accepted result. Missing components contribute zero,
+        // including for members whose previous total used the legacy calculation.
         syncRate = CloneSimilarityCalculator.calculate(faceSimilarityScore, voiceSimilarityScore,
                 profileSimilarityScore, dataReliabilityScore, similarityPenalty);
         similarityScoreVersion = CloneSimilarityCalculator.VERSION;

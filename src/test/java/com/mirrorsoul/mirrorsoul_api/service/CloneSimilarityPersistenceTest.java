@@ -67,7 +67,7 @@ class CloneSimilarityPersistenceTest {
     }
 
     @Test
-    void concurrentComponentsKeepBothUpdatesAndSwitchLegacyVersionAtomically() throws Exception {
+    void concurrentComponentsKeepBothUpdatesAndPersistTotalAtomically() throws Exception {
         var executor = Executors.newFixedThreadPool(2);
         var start = new CountDownLatch(1);
         try {
@@ -111,7 +111,7 @@ class CloneSimilarityPersistenceTest {
         service.completeVoice(cloneId, new CloneVoiceCompleteRequest(voiceJobId, new BigDecimal("82.35")));
         service.completeVoice(cloneId, new CloneVoiceCompleteRequest(voiceJobId, BigDecimal.ZERO));
         assertThat(clones.findById(cloneId).orElseThrow().getVoiceSimilarityScore()).isEqualByComparingTo("82.35");
-        assertThat(clones.findById(cloneId).orElseThrow().getSyncRate()).isEqualByComparingTo("82.0");
+        assertThat(clones.findById(cloneId).orElseThrow().getSyncRate()).isEqualByComparingTo("52.0");
     }
 
     @Test

@@ -34,7 +34,10 @@
   "result": {
     "profileStatus": "READY_FOR_RENDERING",
     "qualityGatePassed": true,
-    "faceScore": 87.25,
+    "cloneSimilarity": {
+      "calculationVersion": "clone-similarity-v1",
+      "faceScore": 87.25
+    },
     "artifacts": {
       "bucket": "configured-AWS_S3_BUCKET",
       "profileKey": "face-results/00000000-0000-0000-0000-000000000001/job-1/face-profile.json",
@@ -46,7 +49,7 @@
 }
 ```
 
-`faceScore`는 선택인 0~100 점수이며 소수점 두 자리까지 허용한다. 얼굴 렌더링 품질을 뜻한다. 누락 시 NULL로 저장하며 점수를 추정하지 않는다. 활성 결과의 점수는 V37의 클론 완성도 계산에 반영한다. [점수 및 음성 콜백 계약](clone-similarity.md)을 참고한다.
+`cloneSimilarity.faceScore`는 0~100 점수이며 소수점 두 자리까지 허용한다. 얼굴 렌더링 품질을 뜻한다. `cloneSimilarity`를 생략한 이전 워커의 평면 `faceScore`도 읽는다. 어느 점수도 없으면 NULL로 저장하며 점수를 추정하지 않는다. 활성 결과의 점수는 V37의 클론 완성도 계산에 반영한다. [점수 및 음성 콜백 계약](clone-similarity.md)을 참고한다.
 
 previewKey는 선택이다. 다른 필드는 완료 시 필수이며 bucket은 AWS_S3_BUCKET과 일치해야 한다. 키는 위 경로를 정확하게 검증한다. 알려지지 않은 추가 JSON 필드는 호환성을 위해 무시한다. 파일 내용이나 S3 존재 여부를 다시 다운로드/검사하지 않으며 업로드 후 이벤트 발행 계약을 따른다.
 

@@ -61,8 +61,8 @@ public class SecurityConfig {
                         .requestMatchers("/internal/ai/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(aiInternalApiKeyFilter, JwtAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(aiInternalApiKeyFilter, JwtAuthenticationFilter.class)
                 .cors(Customizer.withDefaults())
                 .build();
     }

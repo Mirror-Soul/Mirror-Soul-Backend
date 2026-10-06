@@ -23,6 +23,9 @@ public interface CloneRepository extends JpaRepository<Clone, Long> {
     @Query("select c.id from Clone c where c.id > :afterId order by c.id")
     List<Long> findIdsAfter(@Param("afterId") Long afterId, Pageable pageable);
 
+    @Query("select c.id from Clone c where c.status = 'PENDING' and c.id > :afterId order by c.id")
+    List<Long> findPendingIdsAfter(@Param("afterId") Long afterId, Pageable pageable);
+
     @Query("select c.syncRate from Clone c where c.user.uuid = :userUuid")
     Optional<BigDecimal> findSyncRateByUserUuid(@Param("userUuid") UUID userUuid);
 

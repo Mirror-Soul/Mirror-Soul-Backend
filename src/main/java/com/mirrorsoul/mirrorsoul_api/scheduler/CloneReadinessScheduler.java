@@ -15,13 +15,13 @@ public class CloneReadinessScheduler {
     private final CloneRepository clones;
     private final CloneReadinessService readiness;
 
-    // Covers voice profiles committed after the face event, including external writers.
+    // Covers pending clones whose component profiles were committed by callbacks or external writers.
     @Scheduled(fixedDelayString = "${clone-training.readiness-refresh-ms:60000}",
             initialDelayString = "${clone-training.readiness-refresh-ms:60000}")
     public void refresh() {
         long afterId = 0;
         while (true) {
-            var ids = clones.findIdsAfter(afterId, PageRequest.of(0, 100));
+            var ids = clones.findPendingIdsAfter(afterId, PageRequest.of(0, 100));
             if (ids.isEmpty()) return;
             for (Long id : ids) {
                 try {

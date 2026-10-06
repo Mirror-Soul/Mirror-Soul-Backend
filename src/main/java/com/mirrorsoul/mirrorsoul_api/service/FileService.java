@@ -66,9 +66,10 @@ public class FileService {
     }
 
     public String createPresignedDownloadUrl(String bucket, String objectKey) {
+        String normalizedObjectKey = normalizeObjectKey(objectKey);
         GetObjectRequest getObjectRequest = GetObjectRequest.builder()
                 .bucket(bucket)
-                .key(objectKey)
+                .key(normalizedObjectKey)
                 .build();
         GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
                 .signatureDuration(Duration.ofMinutes(awsS3Properties.getPresignedUrlExpirationMinutes()))
@@ -83,6 +84,13 @@ public class FileService {
                     "Failed to generate download URL."
             );
         }
+    }
+
+    public String createPresignedDownloadUrlOrFallback(String objectKey, String fallbackUrl) {
+        if (objectKey == null || objectKey.isBlank()) {
+            return fallbackUrl;
+        }
+        return createPresignedDownloadUrl(awsS3Properties.getBucket(), objectKey);
     }
 
     public VerifiedS3Object verifyInterviewAudioAndBuildFileUrl(UUID userUuid, String objectKey) {

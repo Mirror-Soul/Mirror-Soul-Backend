@@ -24,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class CallService {
 
     private static final String SIGNALING_URL = "/ws/signaling";
+    private static final String READY_CLONE_STATUS = "READY";
 
     private final VideoCallRepository videoCallRepository;
     private final UserRepository userRepository;
@@ -48,6 +49,9 @@ public class CallService {
                         || !Boolean.TRUE.equals(cloneOwner.getMatchingEnabled())
                         || userBlockRepository.existsBetween(caller.getId(), cloneOwner.getId()))) {
             throw new GeneralException(GeneralErrorCode.CLONE_NOT_FOUND);
+        }
+        if (!callingOwnClone && !READY_CLONE_STATUS.equals(clone.getStatus())) {
+            throw new GeneralException(GeneralErrorCode.CLONE_NOT_READY);
         }
 
         CallMediaType mediaType = request.mediaType() == null

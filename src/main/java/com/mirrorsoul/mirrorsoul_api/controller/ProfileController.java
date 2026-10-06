@@ -4,6 +4,7 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.ApiResponse;
 import com.mirrorsoul.mirrorsoul_api.common.security.CustomUserDetails;
 import com.mirrorsoul.mirrorsoul_api.dto.profile.ProfileReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.profile.ProfileResDTO;
+import com.mirrorsoul.mirrorsoul_api.service.CloneStatusService;
 import com.mirrorsoul.mirrorsoul_api.service.MyProfileDetailService;
 import com.mirrorsoul.mirrorsoul_api.service.ProfileService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -23,6 +24,7 @@ public class ProfileController {
 
     private final ProfileService profileService;
     private final MyProfileDetailService myProfileDetailService;
+    private final CloneStatusService cloneStatusService;
 
     @Operation(summary = "마이페이지 진입 api", description = "마이페이지에 필요한 이름, 이메일, 프로필 사진 URL을 조회합니다.")
     @GetMapping
@@ -46,6 +48,20 @@ public class ProfileController {
         return ApiResponse.onSuccess(
                 "내 프로필 상세 조회에 성공했습니다.",
                 myProfileDetailService.getDetail(currentUser.getUuid())
+        );
+    }
+
+    @Operation(
+            summary = "내 클론 학습 상태 조회 api",
+            description = "로그인 사용자의 클론 준비 상태와 음성, 얼굴, 성격, 프로필 요약 컴포넌트별 상태를 조회합니다."
+    )
+    @GetMapping("/clone-status")
+    public ApiResponse<ProfileResDTO.CloneStatusDTO> getCloneStatus(
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        return ApiResponse.onSuccess(
+                "클론 상태 조회에 성공했습니다.",
+                cloneStatusService.getStatus(currentUser.getUuid())
         );
     }
 

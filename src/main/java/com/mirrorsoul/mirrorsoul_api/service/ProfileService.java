@@ -27,7 +27,7 @@ public class ProfileService {
         return ProfileResDTO.myProfileDTO.builder()
                 .name(user.getName())
                 .email(user.getEmail())
-                .profileImageUrl(user.getProfileImageUrl())
+                .profileImageUrl(profileImageUrl(user))
                 .build();
     }
 
@@ -118,7 +118,9 @@ public class ProfileService {
                 request.getObjectKey()
         );
         user.updateProfileImage(image.fileUrl(), image.objectKey());
-        return new ProfileResDTO.ProfileImageDTO(image.fileUrl());
+        return new ProfileResDTO.ProfileImageDTO(
+                fileService.createPresignedDownloadUrlOrFallback(image.objectKey(), image.fileUrl())
+        );
     }
 
     @Transactional
@@ -136,6 +138,13 @@ public class ProfileService {
     private User getUser(UUID userUuid) {
         return userRepository.findByUuid(userUuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
+    }
+
+    private String profileImageUrl(User user) {
+        return fileService.createPresignedDownloadUrlOrFallback(
+                user.getProfileImageObjectKey(),
+                user.getProfileImageUrl()
+        );
     }
 
     private ProfileResDTO.timeStatusDTO toTimeStatus(Integer remainingTalkTime) {

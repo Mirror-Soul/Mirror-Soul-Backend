@@ -12,4 +12,6 @@ public interface FaceTrainingJobRepository extends JpaRepository<FaceTrainingJob
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select j from FaceTrainingJob j where j.id = :id")
     Optional<FaceTrainingJob> findLockedById(@Param("id") Long id);
+
+    Optional<FaceTrainingJob> findFirstByUser_IdOrderByCreatedAtDescIdDesc(Long userId);
 }

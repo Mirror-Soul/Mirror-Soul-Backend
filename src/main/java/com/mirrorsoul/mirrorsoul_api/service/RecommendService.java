@@ -48,6 +48,7 @@ public class RecommendService {
     private final MbtiProfileRepository mbtiProfileRepository;
     private final ClonePersonalityTagRepository clonePersonalityTagRepository;
     private final RecommendationExposureRepository recommendationExposureRepository;
+    private final FileService fileService;
 
     @Transactional
     public RecommendResDTO.RecommendationSliceDTO getRecommendations(
@@ -119,7 +120,7 @@ public class RecommendService {
                             candidate.getSelfIntroduction(),
                             mbtiByUserId.get(candidate.getId()),
                             personalityTagsByUserId.getOrDefault(candidate.getId(), List.of()),
-                            candidate.getProfileImageUrl(),
+                            profileImageUrl(candidate),
                             score
                     );
                 })
@@ -237,6 +238,13 @@ public class RecommendService {
     private boolean hasSubmittedJobCertification(User user) {
         return user.getJobCertificationObjectKey() != null
                 && !user.getJobCertificationObjectKey().isBlank();
+    }
+
+    private String profileImageUrl(User user) {
+        return fileService.createPresignedDownloadUrlOrFallback(
+                user.getProfileImageObjectKey(),
+                user.getProfileImageUrl()
+        );
     }
 
     private RecommendResDTO.ResidenceDTO toResidence(Region region) {

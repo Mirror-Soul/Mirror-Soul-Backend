@@ -47,6 +47,7 @@ class RecommendServiceTest {
                 mock(ClonePersonalityTagRepository.class);
         RecommendationExposureRepository exposureRepository =
                 mock(RecommendationExposureRepository.class);
+        FileService fileService = mock(FileService.class);
         RecommendService service = new RecommendService(
                 userRepository,
                 preferredRegionRepository,
@@ -55,7 +56,8 @@ class RecommendServiceTest {
                 embeddingRepositoryProvider,
                 mbtiProfileRepository,
                 personalityTagRepository,
-                exposureRepository
+                exposureRepository,
+                fileService
         );
 
         UUID requesterUuid = UUID.randomUUID();

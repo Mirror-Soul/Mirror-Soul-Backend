@@ -37,6 +37,27 @@ class ProfileServiceTest {
     }
 
     @Test
+    void getMyProfileReturnsPresignedProfileImageUrlWhenObjectKeyExists() {
+        UUID userUuid = UUID.randomUUID();
+        User user = mock(User.class);
+        String objectKey = "profile-images/" + userUuid + "/profile.png";
+        String storedUrl = "https://bucket.s3.ap-northeast-2.amazonaws.com/" + objectKey;
+        String presignedUrl = storedUrl + "?X-Amz-Signature=test";
+
+        when(userRepository.findByUuid(userUuid)).thenReturn(Optional.of(user));
+        when(user.getName()).thenReturn("서연");
+        when(user.getEmail()).thenReturn("me@example.com");
+        when(user.getProfileImageObjectKey()).thenReturn(objectKey);
+        when(user.getProfileImageUrl()).thenReturn(storedUrl);
+        when(fileService.createPresignedDownloadUrlOrFallback(objectKey, storedUrl))
+                .thenReturn(presignedUrl);
+
+        ProfileResDTO.myProfileDTO result = service.getMyProfile(userUuid);
+
+        assertThat(result.getProfileImageUrl()).isEqualTo(presignedUrl);
+    }
+
+    @Test
     void modifyProfileImageRegistersOrReplacesVerifiedImage() {
         UUID userUuid = UUID.randomUUID();
         User user = mock(User.class);
@@ -49,10 +70,12 @@ class ProfileServiceTest {
         when(userRepository.findByUuid(userUuid)).thenReturn(Optional.of(user));
         when(fileService.verifyProfileImageAndBuildFileUrl(userUuid, objectKey))
                 .thenReturn(new FileService.VerifiedS3Object(fileUrl, objectKey));
+        when(fileService.createPresignedDownloadUrlOrFallback(objectKey, fileUrl))
+                .thenReturn(fileUrl + "?X-Amz-Signature=test");
 
         ProfileResDTO.ProfileImageDTO result = service.modifyProfileImage(userUuid, request);
 
-        assertThat(result.profileImageUrl()).isEqualTo(fileUrl);
+        assertThat(result.profileImageUrl()).isEqualTo(fileUrl + "?X-Amz-Signature=test");
         verify(user).updateProfileImage(fileUrl, objectKey);
     }
 

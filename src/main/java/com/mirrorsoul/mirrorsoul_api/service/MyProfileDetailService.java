@@ -45,7 +45,7 @@ public class MyProfileDetailService {
                 user.getEmail(),
                 user.getName(),
                 calculateAge(user.getBirthDate()),
-                user.getProfileImageUrl(),
+                profileImageUrl(user),
                 clone == null ? null : clone.getVisibleSyncRate(),
                 toRegion(user.getResidenceRegion()),
                 user.getJob(),
@@ -68,6 +68,13 @@ public class MyProfileDetailService {
                 .findAllByCloneIdOrderByDisplayOrderAsc(clone.getId()).stream()
                 .map(ClonePersonalityTag::getContent)
                 .toList();
+    }
+
+    private String profileImageUrl(User user) {
+        return fileService.createPresignedDownloadUrlOrFallback(
+                user.getProfileImageObjectKey(),
+                user.getProfileImageUrl()
+        );
     }
 
     private ProfileResDTO.VoicePreviewDTO findVoicePreview(Clone clone) {

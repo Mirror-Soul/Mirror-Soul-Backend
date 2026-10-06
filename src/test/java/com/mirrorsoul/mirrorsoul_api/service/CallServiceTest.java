@@ -11,6 +11,8 @@ import static org.mockito.Mockito.when;
 import com.mirrorsoul.mirrorsoul_api.domain.Clone;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.VideoCall;
+import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
+import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.CallMediaType;
 import com.mirrorsoul.mirrorsoul_api.dto.call.CallReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.call.CallResDTO;
@@ -93,5 +95,31 @@ class CallServiceTest {
         assertThat(result.mediaType()).isEqualTo(CallMediaType.VOICE);
         verify(videoCallRepository).save(any(VideoCall.class));
         verify(userBlockRepository, never()).existsBetween(any(), any());
+    }
+
+    @Test
+    void startCloneCallRejectsOtherUsersPendingClone() {
+        UUID callerUuid = UUID.randomUUID();
+        UUID ownerUuid = UUID.randomUUID();
+        User caller = mock(User.class);
+        User owner = User.builder().id(2L).uuid(ownerUuid)
+                .status(com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE)
+                .matchingEnabled(true).build();
+        Clone clone = mock(Clone.class);
+        when(caller.getId()).thenReturn(1L);
+        when(caller.hasTalkTime()).thenReturn(true);
+        when(clone.getUser()).thenReturn(owner);
+        when(clone.getStatus()).thenReturn("PENDING");
+        when(userRepository.findByUuid(callerUuid)).thenReturn(Optional.of(caller));
+        when(cloneRepository.findByUserUuid(ownerUuid)).thenReturn(Optional.of(clone));
+
+        assertThatThrownBy(() -> callService.startCloneCall(
+                ownerUuid,
+                new CallReqDTO.StartCallDTO(CallMediaType.VOICE),
+                callerUuid
+        ))
+                .isInstanceOfSatisfying(GeneralException.class, exception ->
+                        assertThat(exception.getCode()).isEqualTo(GeneralErrorCode.CLONE_NOT_READY));
+        verify(videoCallRepository, never()).save(any(VideoCall.class));
     }
 }

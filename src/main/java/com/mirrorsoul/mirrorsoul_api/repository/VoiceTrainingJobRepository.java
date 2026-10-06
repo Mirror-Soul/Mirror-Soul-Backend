@@ -25,6 +25,8 @@ public interface VoiceTrainingJobRepository extends JpaRepository<VoiceTrainingJ
             VoiceTrainingJobSource source
     );
 
+    Optional<VoiceTrainingJob> findFirstByUser_IdOrderByCreatedAtDescIdDesc(Long userId);
+
     boolean existsByUser_IdAndSourceAndCreatedAtAfter(
             Long userId,
             VoiceTrainingJobSource source,

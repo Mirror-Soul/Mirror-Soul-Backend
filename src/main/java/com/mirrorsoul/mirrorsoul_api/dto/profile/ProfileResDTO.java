@@ -1,6 +1,7 @@
 package com.mirrorsoul.mirrorsoul_api.dto.profile;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.Job;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.MbtiType;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.SpeechSpeed;
@@ -51,6 +52,28 @@ public class ProfileResDTO {
             String audioUrl,
             String contentType,
             Integer durationMs
+    ) {
+    }
+
+    public record CloneStatusDTO(
+            String cloneStatus,
+            CloneStatusComponentsDTO components,
+            BigDecimal syncRate
+    ) {
+    }
+
+    public record CloneStatusComponentsDTO(
+            CloneStatusComponentDTO voice,
+            CloneStatusComponentDTO face,
+            CloneStatusComponentDTO personality,
+            CloneStatusComponentDTO profileSummary
+    ) {
+    }
+
+    public record CloneStatusComponentDTO(
+            String status,
+            LocalDateTime updatedAt,
+            String errorCode
     ) {
     }
 

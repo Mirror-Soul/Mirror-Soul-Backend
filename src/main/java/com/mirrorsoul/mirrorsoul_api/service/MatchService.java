@@ -26,6 +26,7 @@ public class MatchService {
 
     private final VideoCallRepository videoCallRepository;
     private final UserRepository userRepository;
+    private final ProfileImageUrlService profileImageUrlService;
 
     public MatchResDTO.MatchingStatusDTO getMatchingStatus(UUID userUuid) {
         User user = getUser(userUuid);
@@ -80,7 +81,7 @@ public class MatchService {
                 .cloneUserUuid(twinOwner.getUuid())
                 .name(twinOwner.getName())
                 .age(calculateAge(twinOwner.getBirthDate()))
-                .profileImageUrl(twinOwner.getProfileImageUrl())
+                .profileImageUrl(profileImageUrlService.resolve(twinOwner))
                 .twinAvatarImageUrl(twin.getAvatarImageUrl())
                 .twinSyncRate(twin.getVisibleSyncRate())
                 .twinSummary(twin.getSummary())

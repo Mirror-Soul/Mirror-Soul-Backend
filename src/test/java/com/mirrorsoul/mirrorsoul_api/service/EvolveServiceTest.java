@@ -142,6 +142,32 @@ class EvolveServiceTest {
     }
 
     @Test
+    void twinSyncDetailReturnsComponentScores() {
+        UUID userUuid = UUID.randomUUID();
+        var clone = com.mirrorsoul.mirrorsoul_api.domain.Clone.builder()
+                .status("READY")
+                .syncRate(new java.math.BigDecimal("74.0"))
+                .faceSimilarityScore(new java.math.BigDecimal("90.00"))
+                .voiceSimilarityScore(new java.math.BigDecimal("80.00"))
+                .profileSimilarityScore(new java.math.BigDecimal("64.25"))
+                .dataReliabilityScore(new java.math.BigDecimal("91.50"))
+                .similarityPenalty(new java.math.BigDecimal("1.50"))
+                .similarityScoreVersion("clone-similarity-v1")
+                .build();
+        when(cloneRepository.findByUserUuid(userUuid)).thenReturn(Optional.of(clone));
+
+        EvolveResDTO.twinSyncDetailDTO result = service.twinSyncDetail(userUuid);
+
+        assertThat(result.getSyncRate()).isEqualByComparingTo("74.0");
+        assertThat(result.getFaceSimilarityScore()).isEqualByComparingTo("90.00");
+        assertThat(result.getVoiceSimilarityScore()).isEqualByComparingTo("80.00");
+        assertThat(result.getProfileSimilarityScore()).isEqualByComparingTo("64.25");
+        assertThat(result.getDataReliabilityScore()).isEqualByComparingTo("91.50");
+        assertThat(result.getSimilarityPenalty()).isEqualByComparingTo("1.50");
+        assertThat(result.getCalculationVersion()).isEqualTo("clone-similarity-v1");
+    }
+
+    @Test
     void faceUpdateCreatesJobAndRequestsQueuePublication() {
         UUID uuid = UUID.randomUUID();
         User user = User.builder().id(1L).uuid(uuid).status(UserStatus.ACTIVE).build();

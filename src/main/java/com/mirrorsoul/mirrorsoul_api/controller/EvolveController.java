@@ -44,6 +44,20 @@ public class EvolveController {
     }
 
     @Operation(
+            summary = "Twin sync rate detail",
+            description = "Returns component similarity scores used to calculate the current twin sync rate."
+    )
+    @GetMapping("/sync-detail")
+    public ApiResponse<EvolveResDTO.twinSyncDetailDTO> getTwinSyncDetail(
+            @AuthenticationPrincipal CustomUserDetails currentUser
+    ) {
+        return ApiResponse.onSuccess(
+                "Twin sync rate detail fetched successfully.",
+                evolveService.twinSyncDetail(currentUser.getUuid())
+        );
+    }
+
+    @Operation(
             summary = "Voice update recording line",
             description = "Returns a random active line, excluding up to five recently submitted lines when possible."
     )

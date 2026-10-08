@@ -25,6 +25,20 @@ public class EvolveResDTO {
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
+    public static class twinSyncDetailDTO {
+        BigDecimal syncRate;
+        BigDecimal faceSimilarityScore;
+        BigDecimal voiceSimilarityScore;
+        BigDecimal profileSimilarityScore;
+        BigDecimal dataReliabilityScore;
+        BigDecimal similarityPenalty;
+        String calculationVersion;
+    }
+
+    @Builder
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class speechLineDTO {
         Long sentenceId;
         String speechLine;

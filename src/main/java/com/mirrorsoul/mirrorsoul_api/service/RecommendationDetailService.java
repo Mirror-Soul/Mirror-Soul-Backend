@@ -40,6 +40,7 @@ public class RecommendationDetailService {
     private final RecommendationExposureRepository recommendationExposureRepository;
     private final AiVoiceProfileRepository aiVoiceProfileRepository;
     private final FileService fileService;
+    private final ProfileImageUrlService profileImageUrlService;
 
     public HomeResDTO.RecommendationDetailDTO getDetail(UUID currentUserUuid, UUID targetUserUuid) {
         User currentUser = userRepository.findByUuid(currentUserUuid)
@@ -70,7 +71,7 @@ public class RecommendationDetailService {
                 target.getUuid(),
                 target.getName(),
                 calculateAge(target.getBirthDate()),
-                target.getProfileImageUrl(),
+                profileImageUrlService.resolve(target),
                 clone.getVisibleSyncRate(),
                 toRegion(target.getResidenceRegion()),
                 target.getJob(),

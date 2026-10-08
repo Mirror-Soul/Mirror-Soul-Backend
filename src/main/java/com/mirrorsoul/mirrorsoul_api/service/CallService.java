@@ -3,15 +3,18 @@ package com.mirrorsoul.mirrorsoul_api.service;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
 import com.mirrorsoul.mirrorsoul_api.domain.Clone;
+import com.mirrorsoul.mirrorsoul_api.domain.TalkTimeTransaction;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.VideoCall;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.CallMediaType;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.VideoCallStatus;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.TalkTimeTransactionReason;
 import com.mirrorsoul.mirrorsoul_api.dto.call.CallReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.call.CallResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.VideoCallRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.TalkTimeTransactionRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserBlockRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,7 @@ public class CallService {
     private final UserRepository userRepository;
     private final CloneRepository cloneRepository;
     private final UserBlockRepository userBlockRepository;
+    private final TalkTimeTransactionRepository talkTimeTransactionRepository;
 
     @Transactional
     public CallResDTO.StartCallDTO startCloneCall(UUID cloneUserUuid, CallReqDTO.StartCallDTO request, UUID userUUID) {
@@ -101,7 +105,8 @@ public class CallService {
 
     @Transactional
     public CallResDTO.EndCallDTO endCall(Long callId, CallReqDTO.EndCallDTO request, UUID userUuid) {
-        VideoCall call = getCall(callId);
+        VideoCall call = videoCallRepository.findByIdForUpdate(callId)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.CALL_NOT_FOUND));
 
         if (!call.getUser().getUuid().equals(userUuid)) {
             throw new GeneralException(GeneralErrorCode.FORBIDDEN);
@@ -117,19 +122,25 @@ public class CallService {
             call.updateRecordingUrl(request.recordingUrl());
         }
 
+        User caller = userRepository.findByIdForUpdate(call.getUser().getId())
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
         call.complete();
-        call.getUser().useTalkTime(call.getDurationSec());
+        int balanceBefore = caller.getRemainingTalkTime();
+        caller.useTalkTime(call.getDurationSec());
+        talkTimeTransactionRepository.save(TalkTimeTransaction.record(
+                caller, call, TalkTimeTransactionReason.CALL_USAGE,
+                caller.getRemainingTalkTime() - balanceBefore));
 
         return CallResDTO.EndCallDTO.builder()
                 .callId(call.getId())
                 .status(call.getStatus())
                 .durationSec(call.getDurationSec())
-                .remainingTalkTime(call.getUser().getRemainingTalkTime())
+                .remainingTalkTime(caller.getRemainingTalkTime())
                 .build();
     }
 
     private VideoCall getCall(Long callId) {
-        return videoCallRepository.findById(callId)
+        return videoCallRepository.findByIdForUpdate(callId)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.CALL_NOT_FOUND));
     }
 

@@ -10,20 +10,26 @@ import static org.mockito.Mockito.when;
 
 import com.mirrorsoul.mirrorsoul_api.domain.Clone;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
+import com.mirrorsoul.mirrorsoul_api.domain.TalkTimeTransaction;
 import com.mirrorsoul.mirrorsoul_api.domain.VideoCall;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.CallMediaType;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.TalkTimeTransactionReason;
 import com.mirrorsoul.mirrorsoul_api.dto.call.CallReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.call.CallResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserBlockRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.TalkTimeTransactionRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.VideoCallRepository;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class CallServiceTest {
 
@@ -57,6 +63,7 @@ class CallServiceTest {
     private UserRepository userRepository;
     private CloneRepository cloneRepository;
     private UserBlockRepository userBlockRepository;
+    private TalkTimeTransactionRepository talkTimeTransactionRepository;
     private CallService callService;
 
     @BeforeEach
@@ -65,11 +72,13 @@ class CallServiceTest {
         userRepository = mock(UserRepository.class);
         cloneRepository = mock(CloneRepository.class);
         userBlockRepository = mock(UserBlockRepository.class);
+        talkTimeTransactionRepository = mock(TalkTimeTransactionRepository.class);
         callService = new CallService(
                 videoCallRepository,
                 userRepository,
                 cloneRepository,
-                userBlockRepository
+                userBlockRepository,
+                talkTimeTransactionRepository
         );
     }
 
@@ -122,5 +131,29 @@ class CallServiceTest {
                 .isInstanceOfSatisfying(GeneralException.class, exception ->
                         assertThat(exception.getCode()).isEqualTo(GeneralErrorCode.CLONE_NOT_READY));
         verify(videoCallRepository, never()).save(any(VideoCall.class));
+    }
+
+    @Test
+    void endCallRecordsActualDeductionWhenBalanceReachesZero() {
+        UUID userUuid = UUID.randomUUID();
+        User caller = User.builder().id(1L).uuid(userUuid).remainingTalkTime(60).build();
+        Clone clone = Clone.builder().user(caller).build();
+        VideoCall call = VideoCall.builder().user(caller).clone(clone)
+                .roomId("call-test").mediaType(CallMediaType.VOICE).build();
+        ReflectionTestUtils.setField(call, "startedAt", LocalDateTime.now().minusSeconds(120));
+        when(videoCallRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(call));
+        when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(caller));
+
+        CallResDTO.EndCallDTO result = callService.endCall(10L, null, userUuid);
+
+        assertThat(result.remainingTalkTime()).isZero();
+        ArgumentCaptor<TalkTimeTransaction> transactionCaptor =
+                ArgumentCaptor.forClass(TalkTimeTransaction.class);
+        verify(talkTimeTransactionRepository).save(transactionCaptor.capture());
+        TalkTimeTransaction transaction = transactionCaptor.getValue();
+        assertThat(transaction.getReason()).isEqualTo(TalkTimeTransactionReason.CALL_USAGE);
+        assertThat(transaction.getVideoCall()).isSameAs(call);
+        assertThat(transaction.getDeltaSeconds()).isEqualTo(-60);
+        assertThat(transaction.getBalanceAfterSeconds()).isZero();
     }
 }

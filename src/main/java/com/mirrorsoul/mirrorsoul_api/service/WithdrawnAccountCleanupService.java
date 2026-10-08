@@ -19,6 +19,7 @@ public class WithdrawnAccountCleanupService {
 
     private final UserRepository userRepository;
     private final PushDeviceRepository pushDeviceRepository;
+    private final JobVerificationEvidenceCleanupService jobVerificationEvidenceCleanupService;
 
     @Transactional
     public int anonymizeExpiredAccounts(LocalDateTime now) {
@@ -32,6 +33,9 @@ public class WithdrawnAccountCleanupService {
 
         List<UUID> userUuids = expiredUsers.stream().map(User::getUuid).toList();
         pushDeviceRepository.deleteAllByUserUuidIn(userUuids);
+        jobVerificationEvidenceCleanupService.deleteForUsers(
+                expiredUsers.stream().map(User::getId).toList()
+        );
         expiredUsers.forEach(user -> user.anonymize(now));
         return expiredUsers.size();
     }

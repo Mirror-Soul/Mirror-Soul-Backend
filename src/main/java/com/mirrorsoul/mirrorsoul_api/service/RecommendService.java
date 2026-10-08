@@ -49,6 +49,7 @@ public class RecommendService {
     private final ClonePersonalityTagRepository clonePersonalityTagRepository;
     private final RecommendationExposureRepository recommendationExposureRepository;
     private final FileService fileService;
+    private final JobVerificationDisplayService jobVerificationDisplayService;
 
     @Transactional
     public RecommendResDTO.RecommendationSliceDTO getRecommendations(
@@ -99,6 +100,8 @@ public class RecommendService {
         );
         Map<Long, MbtiType> mbtiByUserId = loadMbtiByUserId(candidates);
         Map<Long, List<String>> personalityTagsByUserId = loadPersonalityTagsByUserId(candidates);
+        Map<Long, Boolean> documentReviewByUserId =
+                jobVerificationDisplayService.documentReviewCompletedFor(candidates);
 
         Region requesterResidence = requester.getResidenceRegion();
         List<RecommendResDTO.RecommendationDTO> rankedCandidates = candidates.stream()
@@ -115,7 +118,8 @@ public class RecommendService {
                             candidate.getName(),
                             calculateAge(candidate.getBirthDate(), today),
                             candidate.getJob(),
-                            hasSubmittedJobCertification(candidate),
+                            false,
+                            documentReviewByUserId.getOrDefault(candidate.getId(), false),
                             toResidence(candidate.getResidenceRegion()),
                             candidate.getSelfIntroduction(),
                             mbtiByUserId.get(candidate.getId()),
@@ -233,11 +237,6 @@ public class RecommendService {
 
     private Integer calculateAge(LocalDate birthDate, LocalDate today) {
         return birthDate == null ? null : Period.between(birthDate, today).getYears();
-    }
-
-    private boolean hasSubmittedJobCertification(User user) {
-        return user.getJobCertificationObjectKey() != null
-                && !user.getJobCertificationObjectKey().isBlank();
     }
 
     private String profileImageUrl(User user) {

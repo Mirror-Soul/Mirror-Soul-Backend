@@ -38,6 +38,11 @@ public class User extends BaseTimeEntity {
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
 
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_role", nullable = false, length = 20)
+    private UserRole role = UserRole.USER;
+
     @Setter
     @Column(length = 50)
     private String name;

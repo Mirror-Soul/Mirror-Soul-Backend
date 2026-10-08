@@ -25,6 +25,7 @@ public class ProfileResDTO {
             Job job,
             String jobDescription,
             boolean jobCertificationSubmitted,
+            boolean jobDocumentReviewCompleted,
             String selfIntroduction,
             MbtiType mbti,
             MbtiAxisScoresDTO mbtiAxisScores,

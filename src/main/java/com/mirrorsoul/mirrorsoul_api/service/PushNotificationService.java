@@ -13,6 +13,8 @@ import com.google.firebase.messaging.Notification;
 import com.google.firebase.messaging.SendResponse;
 import com.mirrorsoul.mirrorsoul_api.domain.PushDevice;
 import com.mirrorsoul.mirrorsoul_api.event.ChatPushRequestedEvent;
+import com.mirrorsoul.mirrorsoul_api.event.JobVerificationReviewedEvent;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.JobVerificationRequestStatus;
 import com.mirrorsoul.mirrorsoul_api.repository.ChatRoomMemberRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.PushDeviceRepository;
 import java.util.ArrayList;
@@ -62,6 +64,51 @@ public class PushNotificationService {
         for (int start = 0; start < devices.size(); start += MAX_MULTICAST_SIZE) {
             int end = Math.min(start + MAX_MULTICAST_SIZE, devices.size());
             sendBatch(event, devices.subList(start, end));
+        }
+    }
+
+    @Transactional
+    public void sendJobVerificationResult(JobVerificationReviewedEvent event) {
+        List<PushDevice> devices = pushDeviceRepository
+                .findAllByUserUuidInAndEnabledTrue(List.of(event.userUuid()));
+        for (int start = 0; start < devices.size(); start += MAX_MULTICAST_SIZE) {
+            int end = Math.min(start + MAX_MULTICAST_SIZE, devices.size());
+            sendJobVerificationBatch(event, devices.subList(start, end));
+        }
+    }
+
+    private void sendJobVerificationBatch(JobVerificationReviewedEvent event, List<PushDevice> devices) {
+        if (devices.isEmpty()) {
+            return;
+        }
+        boolean approved = event.status() == JobVerificationRequestStatus.APPROVED;
+        MulticastMessage message = MulticastMessage.builder()
+                .setNotification(Notification.builder()
+                        .setTitle("직업 서류 심사 결과")
+                        .setBody(approved
+                                ? "서류 심사가 완료되었습니다. 최종 인증에는 PASS 본인확인이 필요합니다."
+                                : "서류 심사가 거부되었습니다. 사유를 확인하고 다시 제출해 주세요.")
+                        .build())
+                .putData("type", "JOB_VERIFICATION_REVIEWED")
+                .putData("requestId", event.requestId().toString())
+                .putData("status", event.status().name())
+                .putData("route", "/job-verifications")
+                .setAndroidConfig(AndroidConfig.builder()
+                        .setNotification(AndroidNotification.builder()
+                                .setChannelId(androidChannelId)
+                                .setSound("default")
+                                .build())
+                        .build())
+                .setApnsConfig(ApnsConfig.builder()
+                        .setAps(Aps.builder().setSound("default").build())
+                        .build())
+                .addAllTokens(devices.stream().map(PushDevice::getPushToken).toList())
+                .build();
+        try {
+            BatchResponse response = firebaseMessaging.sendEachForMulticast(message);
+            disableUnregisteredDevices(devices, response.getResponses());
+        } catch (FirebaseMessagingException exception) {
+            throw new IllegalStateException("Firebase job verification result send failed", exception);
         }
     }
 

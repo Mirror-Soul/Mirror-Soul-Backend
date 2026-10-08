@@ -33,6 +33,7 @@ public class MyProfileDetailService {
     private final ClonePersonalityTagRepository clonePersonalityTagRepository;
     private final AiVoiceProfileRepository aiVoiceProfileRepository;
     private final FileService fileService;
+    private final JobVerificationDisplayService jobVerificationDisplayService;
 
     public ProfileResDTO.MyProfileDetailDTO getDetail(UUID userUuid) {
         User user = userRepository.findByUuid(userUuid)
@@ -50,7 +51,8 @@ public class MyProfileDetailService {
                 toRegion(user.getResidenceRegion()),
                 user.getJob(),
                 user.getJobDescription(),
-                hasSubmittedJobCertification(user),
+                jobVerificationDisplayService.hasCurrentSubmission(user),
+                jobVerificationDisplayService.documentReviewCompleted(user),
                 user.getSelfIntroduction(),
                 mbtiProfile == null ? null : mbtiProfile.getMbti(),
                 toMbtiAxisScores(mbtiProfile),
@@ -105,11 +107,6 @@ public class MyProfileDetailService {
             return null;
         }
         return new ProfileResDTO.RegionDTO(region.getSidoName(), region.getSigunguName());
-    }
-
-    private boolean hasSubmittedJobCertification(User user) {
-        return user.getJobCertificationObjectKey() != null
-                && !user.getJobCertificationObjectKey().isBlank();
     }
 
     private ProfileResDTO.MbtiAxisScoresDTO toMbtiAxisScores(MbtiProfile profile) {

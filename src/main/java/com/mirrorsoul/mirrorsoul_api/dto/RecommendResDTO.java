@@ -24,6 +24,7 @@ public final class RecommendResDTO {
             Integer age,
             Job job,
             boolean jobCertificationSubmitted,
+            boolean jobDocumentReviewCompleted,
             ResidenceDTO residence,
             String selfIntroduction,
             MbtiType mbti,

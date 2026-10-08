@@ -17,6 +17,8 @@ import com.mirrorsoul.mirrorsoul_api.domain.PushDevice;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.PushDevicePlatform;
 import com.mirrorsoul.mirrorsoul_api.event.ChatPushRequestedEvent;
+import com.mirrorsoul.mirrorsoul_api.event.JobVerificationReviewedEvent;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.JobVerificationRequestStatus;
 import com.mirrorsoul.mirrorsoul_api.repository.ChatRoomMemberRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.PushDeviceRepository;
 import java.time.LocalDateTime;
@@ -105,6 +107,22 @@ class PushNotificationServiceTest {
         pushNotificationService.sendChatMessage(event);
 
         assertThat(device.isEnabled()).isFalse();
+    }
+
+    @Test
+    void sendsJobVerificationResultToApplicantsRegisteredDevices() throws Exception {
+        UUID userUuid = UUID.randomUUID();
+        PushDevice device = device(10L, userUuid, "recipient-token");
+        BatchResponse response = mock(BatchResponse.class);
+        when(pushDeviceRepository.findAllByUserUuidInAndEnabledTrue(List.of(userUuid)))
+                .thenReturn(List.of(device));
+        when(firebaseMessaging.sendEachForMulticast(any())).thenReturn(response);
+        when(response.getResponses()).thenReturn(List.of());
+
+        pushNotificationService.sendJobVerificationResult(
+                new JobVerificationReviewedEvent(42L, userUuid, JobVerificationRequestStatus.REJECTED));
+
+        verify(firebaseMessaging).sendEachForMulticast(any(MulticastMessage.class));
     }
 
     private PushDevice device(Long id, UUID userUuid, String token) {

@@ -78,6 +78,7 @@ public final class HomeResDTO {
             RegionDTO region,
             Job job,
             boolean jobCertificationSubmitted,
+            boolean jobDocumentReviewCompleted,
             String selfIntroduction,
             MbtiType mbti,
             MbtiAxisScoresDTO mbtiAxisScores,

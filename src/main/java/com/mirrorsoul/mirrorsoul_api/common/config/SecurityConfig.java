@@ -59,6 +59,7 @@ public class SecurityConfig {
                                 , "/internal/clone-training/*/voice/complete"
                         ).permitAll()
                         .requestMatchers("/internal/ai/**").permitAll()
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

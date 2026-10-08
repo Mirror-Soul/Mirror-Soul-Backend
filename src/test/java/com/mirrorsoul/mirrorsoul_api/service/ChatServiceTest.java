@@ -48,7 +48,8 @@ class ChatServiceTest {
                 chatRoomMemberRepository,
                 chatMessageRepository,
                 callMatchAnalysisRepository,
-                eventPublisher
+                eventPublisher,
+                mock(ProfileImageUrlService.class)
         );
     }
 

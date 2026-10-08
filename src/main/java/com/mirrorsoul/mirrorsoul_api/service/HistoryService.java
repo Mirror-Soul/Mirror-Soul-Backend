@@ -44,6 +44,7 @@ public class HistoryService {
     private final CloneRepository cloneRepository;
     private final TalkLogRepository talkLogRepository;
     private final UserBlockRepository userBlockRepository;
+    private final ProfileImageUrlService profileImageUrlService;
 
     public HistoryResDTO.CallHistoryListDTO getCallHistory(
             UUID currentUserUuid,
@@ -194,7 +195,7 @@ public class HistoryService {
                         .userUuid(partner.getUuid())
                         .name(partner.getName())
                         .age(calculateAge(partner.getBirthDate(), LocalDate.now()))
-                        .profileImageUrl(partner.getProfileImageUrl())
+                        .profileImageUrl(profileImageUrlService.resolve(partner))
                         .twinSyncRate(partnerClone == null ? null : partnerClone.getVisibleSyncRate())
                         .build())
                 .description(isSent(call, currentUserUuid)
@@ -330,7 +331,7 @@ public class HistoryService {
                         .userUuid(partner.getUuid())
                         .name(partner.getName())
                         .age(calculateAge(partner.getBirthDate(), today))
-                        .profileImageUrl(partner.getProfileImageUrl())
+                        .profileImageUrl(profileImageUrlService.resolve(partner))
                         .twinSyncRate(partnerClone == null ? null : partnerClone.getVisibleSyncRate())
                         .build())
                 .description(sent ? "내가 시작한 통화" : partner.getName() + "의 Twin과 통화")

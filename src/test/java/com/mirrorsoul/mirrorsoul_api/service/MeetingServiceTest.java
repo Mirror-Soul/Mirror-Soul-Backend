@@ -46,7 +46,8 @@ class MeetingServiceTest {
                 chatMessageRepository,
                 userRepository,
                 videoCallRepository,
-                mock(UserBlockRepository.class)
+                mock(UserBlockRepository.class),
+                mock(ProfileImageUrlService.class)
         );
     }
 

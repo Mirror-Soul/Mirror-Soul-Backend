@@ -64,6 +64,21 @@ public class EvolveService {
                 .build();
     }
 
+    public EvolveResDTO.twinSyncDetailDTO twinSyncDetail(UUID uuid) {
+        var clone = cloneRepository.findByUserUuid(uuid)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.CLONE_NOT_FOUND));
+
+        return EvolveResDTO.twinSyncDetailDTO.builder()
+                .syncRate(clone.getVisibleSyncRate())
+                .faceSimilarityScore(clone.getFaceSimilarityScore())
+                .voiceSimilarityScore(clone.getVoiceSimilarityScore())
+                .profileSimilarityScore(clone.getProfileSimilarityScore())
+                .dataReliabilityScore(clone.getDataReliabilityScore())
+                .similarityPenalty(clone.getSimilarityPenalty())
+                .calculationVersion(clone.getSimilarityScoreVersion())
+                .build();
+    }
+
     public EvolveResDTO.speechLineDTO speechLine(UUID uuid) {
         List<Long> recentlyUsedSentenceIds = voiceTrainingJobRepository
                 .findTop5ByUser_UuidAndSourceAndVoiceTrainingSentenceIsNotNullOrderByCreatedAtDescIdDesc(

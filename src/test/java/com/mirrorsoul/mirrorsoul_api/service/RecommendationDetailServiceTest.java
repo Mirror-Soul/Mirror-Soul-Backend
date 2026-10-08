@@ -42,6 +42,7 @@ class RecommendationDetailServiceTest {
     private RecommendationExposureRepository recommendationExposureRepository;
     private AiVoiceProfileRepository aiVoiceProfileRepository;
     private FileService fileService;
+    private ProfileImageUrlService profileImageUrlService;
     private RecommendationDetailService service;
 
     @BeforeEach
@@ -54,6 +55,7 @@ class RecommendationDetailServiceTest {
         recommendationExposureRepository = mock(RecommendationExposureRepository.class);
         aiVoiceProfileRepository = mock(AiVoiceProfileRepository.class);
         fileService = mock(FileService.class);
+        profileImageUrlService = mock(ProfileImageUrlService.class);
         service = new RecommendationDetailService(
                 userRepository,
                 userBlockRepository,
@@ -62,7 +64,8 @@ class RecommendationDetailServiceTest {
                 clonePersonalityTagRepository,
                 recommendationExposureRepository,
                 aiVoiceProfileRepository,
-                fileService
+                fileService,
+                profileImageUrlService
         );
     }
 
@@ -89,6 +92,7 @@ class RecommendationDetailServiceTest {
         when(target.getName()).thenReturn("서연");
         when(target.getBirthDate()).thenReturn(LocalDate.now().minusYears(28));
         when(target.getProfileImageUrl()).thenReturn("https://example.com/profile.jpg");
+        when(profileImageUrlService.resolve(target)).thenReturn("https://example.com/signed-profile.jpg");
         when(target.getResidenceRegion()).thenReturn(region);
         when(target.getSelfIntroduction()).thenReturn("책과 음악을 좋아합니다.");
         when(recommendationExposureRepository
@@ -124,6 +128,7 @@ class RecommendationDetailServiceTest {
 
         assertThat(result.name()).isEqualTo("서연");
         assertThat(result.age()).isEqualTo(28);
+        assertThat(result.profileImageUrl()).isEqualTo("https://example.com/signed-profile.jpg");
         assertThat(result.syncRate()).isEqualByComparingTo("94");
         assertThat(result.region().sidoName()).isEqualTo("서울특별시");
         assertThat(result.region().sigunguName()).isEqualTo("강남구");

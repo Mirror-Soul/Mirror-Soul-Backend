@@ -44,6 +44,7 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final CallMatchAnalysisRepository callMatchAnalysisRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final ProfileImageUrlService profileImageUrlService;
 
     public ChatResDTO.RoomListDTO getRooms(UUID currentUserUuid) {
         List<ChatRoomMember> myMemberships = chatRoomMemberRepository.findAllActiveByUserUuid(currentUserUuid);
@@ -227,7 +228,7 @@ public class ChatService {
                 .partner(ChatResDTO.PartnerDTO.builder()
                         .userUuid(partner.getUuid())
                         .name(partner.getName())
-                        .profileImageUrl(partner.getProfileImageUrl())
+                        .profileImageUrl(profileImageUrlService.resolve(partner))
                         .age(calculateAge(partner.getBirthDate()))
                         .twinSimilarity(similaritiesByCallId.get(callId))
                         .lastActiveAt(partner.getLastActiveAt())

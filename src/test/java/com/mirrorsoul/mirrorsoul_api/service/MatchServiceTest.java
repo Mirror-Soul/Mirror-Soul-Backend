@@ -27,12 +27,14 @@ class MatchServiceTest {
     private VideoCallRepository videoCallRepository;
     private MatchService matchService;
     private UserRepository userRepository;
+    private ProfileImageUrlService profileImageUrlService;
 
     @BeforeEach
     void setUp() {
         videoCallRepository = mock(VideoCallRepository.class);
         userRepository = mock(UserRepository.class);
-        matchService = new MatchService(videoCallRepository, userRepository);
+        profileImageUrlService = mock(ProfileImageUrlService.class);
+        matchService = new MatchService(videoCallRepository, userRepository, profileImageUrlService);
     }
 
     @Test
@@ -69,6 +71,7 @@ class MatchServiceTest {
         when(firstTwinOwner.getUuid()).thenReturn(firstTwinUserUuid);
         when(firstTwinOwner.getName()).thenReturn("Jessica");
         when(firstTwinOwner.getProfileImageUrl()).thenReturn("https://example.com/jessica.png");
+        when(profileImageUrlService.resolve(firstTwinOwner)).thenReturn("https://example.com/signed-jessica.png");
 
         User secondTwinOwner = mock(User.class);
         when(secondTwinOwner.getUuid()).thenReturn(secondTwinUserUuid);
@@ -116,6 +119,7 @@ class MatchServiceTest {
 
         MatchResDTO.TwinDTO firstTwinResult = result.twins().get(0);
         assertThat(firstTwinResult.name()).isEqualTo("Jessica");
+        assertThat(firstTwinResult.profileImageUrl()).isEqualTo("https://example.com/signed-jessica.png");
         assertThat(firstTwinResult.latestCallId()).isEqualTo(30L);
         assertThat(firstTwinResult.lastCalledAt()).isEqualTo(firstTwinLastCalledAt);
         assertThat(firstTwinResult.totalCallCount()).isEqualTo(2);

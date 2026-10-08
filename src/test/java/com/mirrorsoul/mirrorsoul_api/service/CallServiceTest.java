@@ -44,7 +44,8 @@ class CallServiceTest {
         when(userRepository.findByUuid(ownerUuid)).thenReturn(Optional.of(owner));
         when(cloneRepository.findByUserUuid(ownerUuid)).thenReturn(Optional.of(clone));
 
-        new MatchService(videoCallRepository, userRepository).updateMatchingStatus(ownerUuid, false);
+        new MatchService(videoCallRepository, userRepository, mock(ProfileImageUrlService.class))
+                .updateMatchingStatus(ownerUuid, false);
 
         assertThatThrownBy(() -> callService.startCloneCall(
                 ownerUuid, new CallReqDTO.StartCallDTO(mediaType), callerUuid))

@@ -53,7 +53,8 @@ class HistoryServiceTest {
                 callMatchAnalysisRepository,
                 cloneRepository,
                 talkLogRepository,
-                mock(UserBlockRepository.class)
+                mock(UserBlockRepository.class),
+                mock(ProfileImageUrlService.class)
         );
     }
 

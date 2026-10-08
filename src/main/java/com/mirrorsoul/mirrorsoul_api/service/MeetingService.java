@@ -30,6 +30,7 @@ public class MeetingService {
     private final UserRepository userRepository;
     private final VideoCallRepository videoCallRepository;
     private final UserBlockRepository userBlockRepository;
+    private final ProfileImageUrlService profileImageUrlService;
 
     public MeetingResDTO.RequestListDTO getReceivedRequests(UUID currentUserUuid) {
         List<MeetingRequest> requests = meetingRequestRepository.findAllReceivedByStatus(
@@ -197,7 +198,7 @@ public class MeetingService {
                 .senderUserUuid(sender.getUuid())
                 .name(sender.getName())
                 .age(calculateAge(sender.getBirthDate()))
-                .profileImageUrl(sender.getProfileImageUrl())
+                .profileImageUrl(profileImageUrlService.resolve(sender))
                 .lastActiveAt(sender.getLastActiveAt())
                 .twinSimilarity(analysis == null ? null : analysis.getTwinSimilarity())
                 .message(request.getMessage())

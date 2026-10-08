@@ -23,6 +23,7 @@ public class CloneProfileWriter {
     private final CloneProfileGenerationJobRepository jobRepository;
     private final CloneProfileSourceLoader sourceLoader;
     private final CloneProfileSourceHasher sourceHasher;
+    private final CloneProfileVersionRepository versionRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -47,6 +48,8 @@ public class CloneProfileWriter {
             tagRepository.save(ClonePersonalityTag.create(
                     clone, generated.personalityTags().get(index), (byte) index));
         }
+        int nextVersion = versionRepository.findLatestVersionNumber(clone.getId()) + 1;
+        versionRepository.save(CloneProfileVersion.record(clone, job, nextVersion, generated));
         job.complete(LocalDateTime.now());
         eventPublisher.publishEvent(
                 new UserEmbeddingRefreshRequestedEvent(userUuid, EmbeddingType.CLONE_SUMMARY));

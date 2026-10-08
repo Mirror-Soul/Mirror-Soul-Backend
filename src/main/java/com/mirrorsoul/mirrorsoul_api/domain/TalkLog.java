@@ -48,9 +48,13 @@ public class TalkLog {
     @Column(name = "edited_at")
     private LocalDateTime editedAt;
 
+    @Column(name = "revision_number", nullable = false)
+    private int revisionNumber;
+
     public void updateMessage(String message) {
         this.message = message;
         this.edited = true;
         this.editedAt = LocalDateTime.now();
+        this.revisionNumber++;
     }
 }

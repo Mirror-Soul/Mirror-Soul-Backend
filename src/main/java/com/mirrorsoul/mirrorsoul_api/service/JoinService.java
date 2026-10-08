@@ -6,12 +6,15 @@ import com.mirrorsoul.mirrorsoul_api.common.jwt.TokenProvider;
 import com.mirrorsoul.mirrorsoul_api.common.mail.EmailAuthConst;
 import com.mirrorsoul.mirrorsoul_api.domain.Clone;
 import com.mirrorsoul.mirrorsoul_api.domain.CloneSimilarityCalculator;
+import com.mirrorsoul.mirrorsoul_api.domain.TalkTimeTransaction;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.TalkTimeTransactionReason;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.join.JoinReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.join.JoinResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.TalkTimeTransactionRepository;
 import jakarta.servlet.http.HttpSession;
 import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +32,7 @@ public class JoinService {
     private final PasswordEncoder passwordEncoder;
     private final CloneRepository cloneRepository;
     private final TokenProvider tokenProvider;
+    private final TalkTimeTransactionRepository talkTimeTransactionRepository;
 
     public JoinResDTO.basicProfileResDTO basicProfile(JoinReqDTO.basicProfileReqDTO req, HttpSession session){
 
@@ -83,6 +87,9 @@ public class JoinService {
                 .build();
 
         cloneRepository.save(clone);
+        talkTimeTransactionRepository.save(TalkTimeTransaction.record(
+                user, null, TalkTimeTransactionReason.SIGNUP_GRANT,
+                user.getRemainingTalkTime()));
 
         String accessToken = tokenProvider.createAccessToken(user);
         String refreshToken = tokenProvider.createRefreshToken(user);

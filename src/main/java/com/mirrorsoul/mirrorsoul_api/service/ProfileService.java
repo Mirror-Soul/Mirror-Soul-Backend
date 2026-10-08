@@ -3,10 +3,13 @@ package com.mirrorsoul.mirrorsoul_api.service;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
+import com.mirrorsoul.mirrorsoul_api.domain.TalkTimeTransaction;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.TalkTimeTransactionReason;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.profile.ProfileReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.profile.ProfileResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.TalkTimeTransactionRepository;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,7 @@ public class ProfileService {
 
     private final UserRepository userRepository;
     private final FileService fileService;
+    private final TalkTimeTransactionRepository talkTimeTransactionRepository;
 
     public ProfileResDTO.myProfileDTO getMyProfile(UUID userUuid) {
         User user = getUser(userUuid);
@@ -38,8 +42,11 @@ public class ProfileService {
 
     @Transactional
     public ProfileResDTO.timeStatusDTO buyTime(UUID userUuid, ProfileReqDTO.buyTimeReqDTO request) {
-        User user = getUser(userUuid);
+        User user = userRepository.findByUuidForUpdate(userUuid)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
         user.addTalkTime(request.getBuyTime());
+        talkTimeTransactionRepository.save(TalkTimeTransaction.record(
+                user, null, TalkTimeTransactionReason.TOP_UP, request.getBuyTime()));
 
         return toTimeStatus(user.getRemainingTalkTime());
     }

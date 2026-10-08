@@ -13,12 +13,16 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralExceptio
 import com.mirrorsoul.mirrorsoul_api.common.jwt.TokenProvider;
 import com.mirrorsoul.mirrorsoul_api.common.mail.EmailAuthConst;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
+import com.mirrorsoul.mirrorsoul_api.domain.TalkTimeTransaction;
+import com.mirrorsoul.mirrorsoul_api.domain.enums.TalkTimeTransactionReason;
 import com.mirrorsoul.mirrorsoul_api.dto.join.JoinReqDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.TalkTimeTransactionRepository;
 import jakarta.servlet.http.HttpSession;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -26,6 +30,7 @@ class JoinServiceTest {
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
     private CloneRepository cloneRepository;
+    private TalkTimeTransactionRepository talkTimeTransactionRepository;
     private JoinService joinService;
 
     @BeforeEach
@@ -33,12 +38,33 @@ class JoinServiceTest {
         userRepository = mock(UserRepository.class);
         passwordEncoder = mock(PasswordEncoder.class);
         cloneRepository = mock(CloneRepository.class);
+        talkTimeTransactionRepository = mock(TalkTimeTransactionRepository.class);
         joinService = new JoinService(
                 userRepository,
                 passwordEncoder,
                 cloneRepository,
-                mock(TokenProvider.class)
+                mock(TokenProvider.class),
+                talkTimeTransactionRepository
         );
+    }
+
+    @Test
+    void basicProfileRecordsInitialTalkTimeGrant() {
+        JoinReqDTO.basicProfileReqDTO request = request("new@example.com");
+        HttpSession session = verifiedSession(request.getEmail());
+        when(passwordEncoder.encode(request.getPassword())).thenReturn("encoded");
+        when(userRepository.saveAndFlush(any(User.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        joinService.basicProfile(request, session);
+
+        ArgumentCaptor<TalkTimeTransaction> transactionCaptor =
+                ArgumentCaptor.forClass(TalkTimeTransaction.class);
+        verify(talkTimeTransactionRepository).save(transactionCaptor.capture());
+        TalkTimeTransaction transaction = transactionCaptor.getValue();
+        assertThat(transaction.getReason()).isEqualTo(TalkTimeTransactionReason.SIGNUP_GRANT);
+        assertThat(transaction.getDeltaSeconds()).isEqualTo(1800);
+        assertThat(transaction.getBalanceAfterSeconds()).isEqualTo(1800);
     }
 
     @Test

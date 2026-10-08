@@ -5,6 +5,7 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralExceptio
 import com.mirrorsoul.mirrorsoul_api.domain.CallMatchAnalysis;
 import com.mirrorsoul.mirrorsoul_api.domain.Clone;
 import com.mirrorsoul.mirrorsoul_api.domain.TalkLog;
+import com.mirrorsoul.mirrorsoul_api.domain.TalkLogRevision;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.VideoCall;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.CallMatchAnalysisStatus;
@@ -15,6 +16,7 @@ import com.mirrorsoul.mirrorsoul_api.dto.history.HistoryResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.CallMatchAnalysisRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.TalkLogRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.TalkLogRevisionRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.VideoCallRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserBlockRepository;
 import java.time.DayOfWeek;
@@ -43,6 +45,7 @@ public class HistoryService {
     private final CallMatchAnalysisRepository callMatchAnalysisRepository;
     private final CloneRepository cloneRepository;
     private final TalkLogRepository talkLogRepository;
+    private final TalkLogRevisionRepository talkLogRevisionRepository;
     private final UserBlockRepository userBlockRepository;
     private final ProfileImageUrlService profileImageUrlService;
 
@@ -221,7 +224,13 @@ public class HistoryService {
         }
 
         String correctedMessage = request.message().trim();
+        if (correctedMessage.equals(talkLog.getMessage())) {
+            return toTalkLogDTO(call, talkLog, currentUserUuid);
+        }
+        String previousMessage = talkLog.getMessage();
         talkLog.updateMessage(correctedMessage);
+        talkLogRevisionRepository.save(TalkLogRevision.record(
+                talkLog, call.getClone().getUser(), previousMessage));
         TalkLog savedTalkLog = talkLogRepository.saveAndFlush(talkLog);
 
         return toTalkLogDTO(call, savedTalkLog, currentUserUuid);

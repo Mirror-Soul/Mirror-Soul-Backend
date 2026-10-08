@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -13,6 +15,7 @@ import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralExceptio
 import com.mirrorsoul.mirrorsoul_api.domain.CallMatchAnalysis;
 import com.mirrorsoul.mirrorsoul_api.domain.Clone;
 import com.mirrorsoul.mirrorsoul_api.domain.TalkLog;
+import com.mirrorsoul.mirrorsoul_api.domain.TalkLogRevision;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.VideoCall;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.CallMatchAnalysisStatus;
@@ -24,6 +27,7 @@ import com.mirrorsoul.mirrorsoul_api.dto.history.HistoryResDTO;
 import com.mirrorsoul.mirrorsoul_api.repository.CallMatchAnalysisRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.CloneRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.TalkLogRepository;
+import com.mirrorsoul.mirrorsoul_api.repository.TalkLogRevisionRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.VideoCallRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserBlockRepository;
 import java.time.LocalDate;
@@ -33,6 +37,7 @@ import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 class HistoryServiceTest {
 
@@ -40,6 +45,7 @@ class HistoryServiceTest {
     private CallMatchAnalysisRepository callMatchAnalysisRepository;
     private CloneRepository cloneRepository;
     private TalkLogRepository talkLogRepository;
+    private TalkLogRevisionRepository talkLogRevisionRepository;
     private HistoryService historyService;
 
     @BeforeEach
@@ -48,11 +54,13 @@ class HistoryServiceTest {
         callMatchAnalysisRepository = mock(CallMatchAnalysisRepository.class);
         cloneRepository = mock(CloneRepository.class);
         talkLogRepository = mock(TalkLogRepository.class);
+        talkLogRevisionRepository = mock(TalkLogRevisionRepository.class);
         historyService = new HistoryService(
                 videoCallRepository,
                 callMatchAnalysisRepository,
                 cloneRepository,
                 talkLogRepository,
+                talkLogRevisionRepository,
                 mock(UserBlockRepository.class),
                 mock(ProfileImageUrlService.class)
         );
@@ -267,7 +275,7 @@ class HistoryServiceTest {
     }
 
     @Test
-    void updateTalkLogChangesMessageDirectly() {
+    void updateTalkLogRecordsEachPreviousMessage() {
         LocalDate today = LocalDate.now();
         UUID currentUserUuid = UUID.randomUUID();
         User currentUser = user(currentUserUuid, "나", today.minusYears(26));
@@ -295,7 +303,29 @@ class HistoryServiceTest {
         assertThat(twinLog.getMessage()).isEqualTo("수정된 답변");
         assertThat(twinLog.isEdited()).isTrue();
         assertThat(twinLog.getEditedAt()).isNotNull();
-        verify(talkLogRepository).saveAndFlush(twinLog);
+        assertThat(twinLog.getRevisionNumber()).isEqualTo(1);
+
+        historyService.updateTalkLog(currentUserUuid, 20L, 102L,
+                new HistoryReqDTO.UpdateTalkLogDTO("다시 수정한 답변"));
+        historyService.updateTalkLog(currentUserUuid, 20L, 102L,
+                new HistoryReqDTO.UpdateTalkLogDTO("다시 수정한 답변"));
+
+        assertThat(twinLog.getRevisionNumber()).isEqualTo(2);
+        ArgumentCaptor<TalkLogRevision> revisionCaptor = ArgumentCaptor.forClass(TalkLogRevision.class);
+        verify(talkLogRevisionRepository, times(2)).save(revisionCaptor.capture());
+        List<TalkLogRevision> revisions = revisionCaptor.getAllValues();
+        assertThat(revisions).extracting(TalkLogRevision::getRevisionNumber)
+                .containsExactly(1, 2);
+        assertThat(revisions).extracting(TalkLogRevision::getPreviousMessage)
+                .containsExactly("원본 답변", "수정된 답변");
+        assertThat(revisions).extracting(TalkLogRevision::getNewMessage)
+                .containsExactly("수정된 답변", "다시 수정한 답변");
+        assertThat(revisions).allSatisfy(revision -> {
+            assertThat(revision.getTalkLog()).isSameAs(twinLog);
+            assertThat(revision.getEditor()).isSameAs(currentUser);
+            assertThat(revision.getEditedAt()).isNotNull();
+        });
+        verify(talkLogRepository, times(2)).saveAndFlush(twinLog);
     }
 
     @Test
@@ -324,6 +354,7 @@ class HistoryServiceTest {
                 exception -> assertThat(exception.getCode())
                         .isEqualTo(GeneralErrorCode.TALK_LOG_UPDATE_FORBIDDEN)
         );
+        verify(talkLogRevisionRepository, never()).save(any());
     }
 
     private User user(UUID uuid, String name, LocalDate birthDate) {

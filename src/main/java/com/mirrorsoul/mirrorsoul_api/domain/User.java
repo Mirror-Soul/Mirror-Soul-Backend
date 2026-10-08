@@ -172,7 +172,7 @@ public class User extends BaseTimeEntity {
     }
 
     public void addTalkTime(int seconds) {
-        this.remainingTalkTime = getSafeRemainingTalkTime() + seconds;
+        this.remainingTalkTime = Math.addExact(getSafeRemainingTalkTime(), seconds);
     }
 
     public void useTalkTime(int seconds) {

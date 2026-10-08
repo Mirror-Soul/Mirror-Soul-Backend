@@ -66,8 +66,10 @@ class AccountWithdrawalLifecycleTest {
     void cleanupAnonymizesExpiredAccountAndDeletesPushDevices() {
         UserRepository userRepository = mock(UserRepository.class);
         PushDeviceRepository pushDeviceRepository = mock(PushDeviceRepository.class);
+        JobVerificationEvidenceCleanupService evidenceCleanup =
+                mock(JobVerificationEvidenceCleanupService.class);
         WithdrawnAccountCleanupService service =
-                new WithdrawnAccountCleanupService(userRepository, pushDeviceRepository);
+                new WithdrawnAccountCleanupService(userRepository, pushDeviceRepository, evidenceCleanup);
         User user = activeUser();
         LocalDateTime now = LocalDateTime.of(2026, 8, 20, 3, 0);
         user.deactivate(now.minusDays(30));
@@ -82,10 +84,12 @@ class AccountWithdrawalLifecycleTest {
         assertThat(user.getDeletedAt()).isEqualTo(now);
         assertThat(user.getMatchingEnabled()).isFalse();
         verify(pushDeviceRepository).deleteAllByUserUuidIn(List.of(user.getUuid()));
+        verify(evidenceCleanup).deleteForUsers(List.of(user.getId()));
     }
 
     private User activeUser() {
         return User.builder()
+                .id(1L)
                 .uuid(UUID.randomUUID())
                 .email("user@example.com")
                 .passwordHash("encoded-password")

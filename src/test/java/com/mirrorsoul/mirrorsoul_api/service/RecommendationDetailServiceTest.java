@@ -43,6 +43,7 @@ class RecommendationDetailServiceTest {
     private AiVoiceProfileRepository aiVoiceProfileRepository;
     private FileService fileService;
     private ProfileImageUrlService profileImageUrlService;
+    private JobVerificationDisplayService jobVerificationDisplayService;
     private RecommendationDetailService service;
 
     @BeforeEach
@@ -56,6 +57,7 @@ class RecommendationDetailServiceTest {
         aiVoiceProfileRepository = mock(AiVoiceProfileRepository.class);
         fileService = mock(FileService.class);
         profileImageUrlService = mock(ProfileImageUrlService.class);
+        jobVerificationDisplayService = mock(JobVerificationDisplayService.class);
         service = new RecommendationDetailService(
                 userRepository,
                 userBlockRepository,
@@ -65,7 +67,8 @@ class RecommendationDetailServiceTest {
                 recommendationExposureRepository,
                 aiVoiceProfileRepository,
                 fileService,
-                profileImageUrlService
+                profileImageUrlService,
+                jobVerificationDisplayService
         );
     }
 
@@ -95,6 +98,7 @@ class RecommendationDetailServiceTest {
         when(profileImageUrlService.resolve(target)).thenReturn("https://example.com/signed-profile.jpg");
         when(target.getResidenceRegion()).thenReturn(region);
         when(target.getSelfIntroduction()).thenReturn("책과 음악을 좋아합니다.");
+        when(jobVerificationDisplayService.documentReviewCompleted(target)).thenReturn(true);
         when(recommendationExposureRepository
                 .existsByRequesterIdAndTargetIdAndLastExposedAtGreaterThanEqual(
                         org.mockito.ArgumentMatchers.eq(99L),
@@ -133,6 +137,8 @@ class RecommendationDetailServiceTest {
         assertThat(result.region().sidoName()).isEqualTo("서울특별시");
         assertThat(result.region().sigunguName()).isEqualTo("강남구");
         assertThat(result.selfIntroduction()).isEqualTo("책과 음악을 좋아합니다.");
+        assertThat(result.jobCertificationSubmitted()).isFalse();
+        assertThat(result.jobDocumentReviewCompleted()).isTrue();
         assertThat(result.mbti()).isEqualTo(MbtiType.INFJ);
         assertThat(result.personalityTags()).containsExactly("사고가 깊은", "차분한 말투");
         assertThat(result.voicePreview().audioUrl())

@@ -24,6 +24,7 @@ import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -48,6 +49,10 @@ class RecommendServiceTest {
         RecommendationExposureRepository exposureRepository =
                 mock(RecommendationExposureRepository.class);
         FileService fileService = mock(FileService.class);
+        JobVerificationDisplayService jobVerificationDisplayService =
+                mock(JobVerificationDisplayService.class);
+        when(jobVerificationDisplayService.documentReviewCompletedFor(List.of()))
+                .thenReturn(Map.of());
         RecommendService service = new RecommendService(
                 userRepository,
                 preferredRegionRepository,
@@ -57,7 +62,8 @@ class RecommendServiceTest {
                 mbtiProfileRepository,
                 personalityTagRepository,
                 exposureRepository,
-                fileService
+                fileService,
+                jobVerificationDisplayService
         );
 
         UUID requesterUuid = UUID.randomUUID();

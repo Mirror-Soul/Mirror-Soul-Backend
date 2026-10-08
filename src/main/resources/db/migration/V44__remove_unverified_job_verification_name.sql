@@ -1,0 +1,1 @@
+ALTER TABLE job_verification_requests DROP COLUMN submitted_legal_name;

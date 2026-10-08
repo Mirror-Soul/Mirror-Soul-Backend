@@ -6,7 +6,11 @@ import com.mirrorsoul.mirrorsoul_api.config.AwsS3Properties;
 import com.mirrorsoul.mirrorsoul_api.dto.file.PresignedUrlReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.file.PresignedUrlResDTO;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +21,7 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
@@ -115,6 +120,141 @@ public class FileService {
 
     public VerifiedS3Object verifyProfileImageAndBuildFileUrl(UUID userUuid, String objectKey) {
         return verifyUploadedObjectAndBuildFileUrl(userUuid, objectKey, UploadFileType.PROFILE_IMAGE);
+    }
+
+    public JobVerificationReviewAccess createJobVerificationReviewAccess(
+            UUID ownerUuid, String bucket, String objectKey, String versionId, String etag
+    ) {
+        String normalizedObjectKey = normalizeObjectKey(objectKey);
+        if (!awsS3Properties.getBucket().equals(bucket)
+                || !normalizedObjectKey.startsWith("job-certifications/" + ownerUuid + "/")
+                || ((versionId == null || versionId.isBlank()) && (etag == null || etag.isBlank()))) {
+            throw new GeneralException(GeneralErrorCode.INVALID_PARAMETER,
+                    "Invalid job verification image snapshot.");
+        }
+
+        GetObjectRequest.Builder getRequest = GetObjectRequest.builder()
+                .bucket(bucket)
+                .key(normalizedObjectKey);
+        if (versionId != null && !versionId.isBlank()) {
+            getRequest.versionId(versionId);
+        } else {
+            getRequest.ifMatch(etag);
+        }
+        try {
+            var presigned = s3Presigner.presignGetObject(GetObjectPresignRequest.builder()
+                    .signatureDuration(Duration.ofMinutes(5))
+                    .getObjectRequest(getRequest.build())
+                    .build());
+            Map<String, List<String>> requiredHeaders = presigned.signedHeaders().entrySet().stream()
+                    .filter(entry -> !entry.getKey().equalsIgnoreCase("host"))
+                    .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+            return new JobVerificationReviewAccess(presigned.url().toString(), requiredHeaders);
+        } catch (AwsServiceException | SdkClientException e) {
+            throw new GeneralException(GeneralErrorCode.S3_CONNECTION_FAILED,
+                    "Failed to generate review URL.");
+        }
+    }
+
+    public record JobVerificationReviewAccess(String url, Map<String, List<String>> signedHeaders) {
+    }
+
+    public VerifiedJobCertificationImage verifyJobCertificationImage(UUID userUuid, String objectKey) {
+        String normalizedObjectKey = normalizeObjectKey(objectKey);
+        String requiredPrefix = UploadFileType.JOB_CERTIFICATION_IMAGE.requiredPrefix(userUuid);
+        if (!normalizedObjectKey.startsWith(requiredPrefix)) {
+            throw new GeneralException(GeneralErrorCode.INVALID_PARAMETER, "Invalid job certification objectKey.");
+        }
+
+        HeadObjectResponse metadata;
+        try {
+            metadata = s3Client.headObject(HeadObjectRequest.builder()
+                    .bucket(awsS3Properties.getBucket())
+                    .key(normalizedObjectKey)
+                    .build());
+        } catch (AwsServiceException e) {
+            if (isNotFound(e)) {
+                throw new GeneralException(GeneralErrorCode.INVALID_PARAMETER, "Uploaded S3 object was not found.");
+            }
+            throw new GeneralException(GeneralErrorCode.S3_CONNECTION_FAILED, "Failed to verify uploaded S3 object.");
+        } catch (SdkClientException e) {
+            throw new GeneralException(GeneralErrorCode.S3_CONNECTION_FAILED, "Failed to verify uploaded S3 object.");
+        }
+
+        UploadFileType.JOB_CERTIFICATION_IMAGE.validateMetadata(metadata);
+        if ((metadata.versionId() == null || metadata.versionId().isBlank())
+                && (metadata.eTag() == null || metadata.eTag().isBlank())) {
+            throw new GeneralException(GeneralErrorCode.S3_CONNECTION_FAILED,
+                    "S3 image snapshot metadata is missing.");
+        }
+        String contentType = metadata.contentType().toLowerCase(Locale.ROOT);
+        GetObjectRequest.Builder getRequest = GetObjectRequest.builder()
+                .bucket(awsS3Properties.getBucket())
+                .key(normalizedObjectKey)
+                .range("bytes=0-11");
+        if (metadata.versionId() != null && !metadata.versionId().isBlank()) {
+            getRequest.versionId(metadata.versionId());
+        } else if (metadata.eTag() != null && !metadata.eTag().isBlank()) {
+            getRequest.ifMatch(metadata.eTag());
+        }
+
+        try {
+            byte[] signature = s3Client.getObjectAsBytes(getRequest.build()).asByteArray();
+            if (!matchesImageSignature(contentType, signature)) {
+                throw new GeneralException(GeneralErrorCode.UNSUPPORTED_FILE_TYPE,
+                        "Uploaded file contents do not match its image Content-Type.");
+            }
+        } catch (AwsServiceException | SdkClientException e) {
+            throw new GeneralException(GeneralErrorCode.S3_CONNECTION_FAILED, "Failed to inspect uploaded image.");
+        }
+
+        return new VerifiedJobCertificationImage(
+                awsS3Properties.getBucket(),
+                normalizedObjectKey,
+                metadata.versionId(),
+                metadata.eTag()
+        );
+    }
+
+    public void deleteJobCertificationImage(UUID userUuid, VerifiedJobCertificationImage image) {
+        if (!awsS3Properties.getBucket().equals(image.bucket())
+                || !normalizeObjectKey(image.objectKey())
+                        .startsWith(UploadFileType.JOB_CERTIFICATION_IMAGE.requiredPrefix(userUuid))) {
+            throw new GeneralException(GeneralErrorCode.INVALID_PARAMETER,
+                    "Invalid job certification image for deletion.");
+        }
+        try {
+            if (image.objectVersionId() != null && !image.objectVersionId().isBlank()) {
+                s3Client.deleteObject(DeleteObjectRequest.builder()
+                        .bucket(image.bucket())
+                        .key(image.objectKey())
+                        .versionId(image.objectVersionId())
+                        .build());
+            }
+            s3Client.deleteObject(DeleteObjectRequest.builder()
+                    .bucket(image.bucket())
+                    .key(image.objectKey())
+                    .build());
+        } catch (AwsServiceException | SdkClientException e) {
+            throw new GeneralException(GeneralErrorCode.S3_DELETE_FAILED,
+                    "Failed to delete job certification image.");
+        }
+    }
+
+    private boolean matchesImageSignature(String contentType, byte[] bytes) {
+        return switch (contentType) {
+            case "image/jpeg" -> bytes.length >= 3
+                    && (bytes[0] & 0xff) == 0xff && (bytes[1] & 0xff) == 0xd8
+                    && (bytes[2] & 0xff) == 0xff;
+            case "image/png" -> bytes.length >= 8 && Arrays.equals(
+                    Arrays.copyOf(bytes, 8),
+                    new byte[]{(byte) 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a}
+            );
+            case "image/webp" -> bytes.length >= 12
+                    && new String(bytes, 0, 4, java.nio.charset.StandardCharsets.US_ASCII).equals("RIFF")
+                    && new String(bytes, 8, 4, java.nio.charset.StandardCharsets.US_ASCII).equals("WEBP");
+            default -> false;
+        };
     }
 
     private VerifiedS3Object verifyUploadedObjectAndBuildFileUrl(
@@ -224,7 +364,7 @@ public class FileService {
         }
 
         public void validateContentType(String contentType) {
-            if (this != PROFILE_IMAGES && this != FACE_IMAGES) {
+            if (this != PROFILE_IMAGES && this != FACE_IMAGES && this != JOB_CERTIFICATIONS) {
                 return;
             }
 
@@ -267,6 +407,7 @@ public class FileService {
         VOICE_UPDATE_AUDIO("voice-updates"),
         FACE_VIDEO("face-videos"),
         FACE_IMAGE("face-images"),
+        JOB_CERTIFICATION_IMAGE("job-certifications"),
         PROFILE_IMAGE("profile-images");
 
         private static final long MAX_FACE_VIDEO_SIZE_BYTES = 100L * 1024 * 1024;
@@ -285,7 +426,7 @@ public class FileService {
         public void validateMetadata(HeadObjectResponse metadata) {
             if (this == FACE_VIDEO) {
                 validateFaceVideo(metadata);
-            } else if (this == PROFILE_IMAGE || this == FACE_IMAGE) {
+            } else if (this == PROFILE_IMAGE || this == FACE_IMAGE || this == JOB_CERTIFICATION_IMAGE) {
                 validateImage(metadata);
             }
         }
@@ -313,7 +454,11 @@ public class FileService {
         }
 
         private void validateImage(HeadObjectResponse metadata) {
-            String imageType = this == FACE_IMAGE ? "Face image" : "Profile image";
+            String imageType = switch (this) {
+                case FACE_IMAGE -> "Face image";
+                case JOB_CERTIFICATION_IMAGE -> "Job certification image";
+                default -> "Profile image";
+            };
             String contentType = metadata.contentType();
             boolean supportedType = "image/jpeg".equalsIgnoreCase(contentType)
                     || "image/png".equalsIgnoreCase(contentType)
@@ -337,5 +482,13 @@ public class FileService {
     }
 
     public record VerifiedS3Object(String fileUrl, String objectKey) {
+    }
+
+    public record VerifiedJobCertificationImage(
+            String bucket,
+            String objectKey,
+            String objectVersionId,
+            String objectEtag
+    ) {
     }
 }

@@ -41,6 +41,7 @@ public class RecommendationDetailService {
     private final AiVoiceProfileRepository aiVoiceProfileRepository;
     private final FileService fileService;
     private final ProfileImageUrlService profileImageUrlService;
+    private final JobVerificationDisplayService jobVerificationDisplayService;
 
     public HomeResDTO.RecommendationDetailDTO getDetail(UUID currentUserUuid, UUID targetUserUuid) {
         User currentUser = userRepository.findByUuid(currentUserUuid)
@@ -75,7 +76,8 @@ public class RecommendationDetailService {
                 clone.getVisibleSyncRate(),
                 toRegion(target.getResidenceRegion()),
                 target.getJob(),
-                hasSubmittedJobCertification(target),
+                false,
+                jobVerificationDisplayService.documentReviewCompleted(target),
                 target.getSelfIntroduction(),
                 mbtiProfile == null ? null : mbtiProfile.getMbti(),
                 toMbtiAxisScores(mbtiProfile),
@@ -112,11 +114,6 @@ public class RecommendationDetailService {
             return null;
         }
         return new HomeResDTO.RegionDTO(region.getSidoName(), region.getSigunguName());
-    }
-
-    private boolean hasSubmittedJobCertification(User user) {
-        return user.getJobCertificationObjectKey() != null
-                && !user.getJobCertificationObjectKey().isBlank();
     }
 
     private HomeResDTO.MbtiAxisScoresDTO toMbtiAxisScores(MbtiProfile profile) {

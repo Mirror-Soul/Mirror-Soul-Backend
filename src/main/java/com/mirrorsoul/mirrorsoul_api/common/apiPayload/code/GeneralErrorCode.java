@@ -52,6 +52,13 @@ public enum GeneralErrorCode implements BaseErrorCode {
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "USER_4090", "이미 사용 중인 이메일입니다."),
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "USER_4091", "이미 사용 중인 닉네임입니다."),
 
+    JOB_VERIFICATION_ALREADY_PENDING(HttpStatus.CONFLICT, "JOB_VERIFICATION_4090",
+            "이미 심사 대기 중인 직업 인증 요청이 있습니다."),
+    JOB_VERIFICATION_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "JOB_VERIFICATION_4040",
+            "직업 인증 요청을 찾을 수 없습니다."),
+    JOB_VERIFICATION_ALREADY_REVIEWED(HttpStatus.CONFLICT, "JOB_VERIFICATION_4091",
+            "이미 처리된 직업 인증 요청입니다."),
+
     // 사용자 차단 관련 에러
     BLOCK_SELF_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "BLOCK_4000", "자기 자신을 차단할 수 없습니다."),
     BLOCK_TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "BLOCK_4040", "차단할 사용자를 찾을 수 없습니다."),

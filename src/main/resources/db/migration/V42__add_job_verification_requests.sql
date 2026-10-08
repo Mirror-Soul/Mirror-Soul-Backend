@@ -19,7 +19,7 @@ CREATE TABLE job_verification_requests (
         CHECK (status IN ('PENDING', 'APPROVED', 'REJECTED')),
     CONSTRAINT chk_job_verification_requests_review
         CHECK (
-            (status = 'PENDING' AND reviewed_at IS NULL AND reviewer_user_id IS NULL AND rejection_reason IS NULL)
+            (status = 'PENDING' AND reviewed_at IS NULL AND rejection_reason IS NULL)
             OR (status = 'APPROVED' AND reviewed_at IS NOT NULL AND rejection_reason IS NULL)
             OR (status = 'REJECTED' AND reviewed_at IS NOT NULL AND rejection_reason IS NOT NULL
                 AND CHAR_LENGTH(TRIM(rejection_reason)) > 0)

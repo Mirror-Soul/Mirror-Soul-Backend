@@ -214,3 +214,8 @@ quality:
   dispatch-recovery-ms: ${TRAINING_DISPATCH_RECOVERY_MS:30000}
   training-stall-seconds: ${TRAINING_STALL_SECONDS:900}
   monitor-ms: ${QUALITY_MONITOR_INTERVAL_MS:60000}
+
+admin:
+  overview:
+    query-timeout-seconds: ${ADMIN_OVERVIEW_QUERY_TIMEOUT_SECONDS:3}
+    slow-query-ms: ${ADMIN_OVERVIEW_SLOW_QUERY_MS:1000}

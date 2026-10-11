@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum GeneralErrorCode implements BaseErrorCode {
 
+    OVERVIEW_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "OVERVIEW_5030", "운영 집계를 조회할 수 없습니다."),
+
     QUALITY_INVALID(HttpStatus.BAD_REQUEST, "QUALITY_4000", "품질 이벤트 또는 조회 범위를 확인해 주세요."),
     QUALITY_CONFLICT(HttpStatus.CONFLICT, "QUALITY_4090", "작업 상태 또는 이벤트 내용이 일치하지 않습니다."),
     QUALITY_NOT_FOUND(HttpStatus.NOT_FOUND, "QUALITY_4040", "학습 작업 또는 통화 정보를 찾을 수 없습니다."),

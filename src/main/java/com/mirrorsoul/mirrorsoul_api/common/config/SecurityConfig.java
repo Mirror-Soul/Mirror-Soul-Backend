@@ -68,7 +68,7 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers("/internal/ai/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/payments/notifications/apple", "/payments/notifications/google").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/admin/clone-training-jobs", "/admin/calls/**")
+                        .requestMatchers(HttpMethod.GET, "/admin/overview", "/admin/clone-training-jobs", "/admin/calls/**")
                             .hasAnyRole("ADMIN", "ADMIN_VIEWER", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/payments", "/admin/payments/**")
                             .hasAnyRole("ADMIN", "ADMIN_VIEWER", "SUPER_ADMIN")

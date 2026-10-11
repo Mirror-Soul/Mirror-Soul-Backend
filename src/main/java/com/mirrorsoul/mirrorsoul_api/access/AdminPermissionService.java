@@ -29,7 +29,7 @@ public class AdminPermissionService {
  public void require(Long id,AdminPermission permission) {if(!permissions(id).contains(permission)) AccessSupport.denied();}
  public AdminPermission route(String method,String path) {
   boolean read="GET".equals(method);
-  if(path.equals("/admin/me")) return null;
+  if(path.equals("/admin/me")||read&&path.equals("/admin/overview")) return null;
   if(path.equals("/admin/reauth")) return AdminPermission.staff_manage;
   if(path.startsWith("/admin/staff")) return read?AdminPermission.staff_read:AdminPermission.staff_manage;
   if(path.startsWith("/admin/audit-events")) return AdminPermission.audit_read;

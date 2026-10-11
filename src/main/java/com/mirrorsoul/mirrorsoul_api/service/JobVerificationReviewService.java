@@ -38,11 +38,16 @@ public class JobVerificationReviewService {
 
     @Transactional(readOnly = true)
     public Page<JobVerificationReviewSummary> pending(int page, int size) {
+        return pending(page, size, com.mirrorsoul.mirrorsoul_api.common.query.AdminListWindow.all());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<JobVerificationReviewSummary> pending(int page, int size, com.mirrorsoul.mirrorsoul_api.common.query.AdminListWindow window) {
         if (page < 0 || size < 1 || size > 100) {
             throw new GeneralException(GeneralErrorCode.INVALID_PARAMETER,
                     "page must be nonnegative and size must be between 1 and 100.");
         }
-        return requestRepository.findByStatus(JobVerificationRequestStatus.PENDING,
+        return requestRepository.findAll(com.mirrorsoul.mirrorsoul_api.common.query.AdminQueueFilters.pendingDocuments(window),
                 PageRequest.of(page, size, Sort.by("createdAt").ascending().and(Sort.by("id").ascending())))
                 .map(request -> new JobVerificationReviewSummary(
                         request.getId(), request.getUser().getUuid(),

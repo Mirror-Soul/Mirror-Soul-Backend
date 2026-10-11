@@ -91,14 +91,20 @@ public class SafetyReportService {
         return ReportView.from(r);
     }
     public Page<ReportView> list(Long actorId,Priority priority,ReportState state,Long assigneeId,int page,int size) {
+        return list(actorId,priority,state,assigneeId,page,size,
+                com.mirrorsoul.mirrorsoul_api.common.query.AdminListWindow.all(),false);
+    }
+    public Page<ReportView> list(Long actorId,Priority priority,ReportState state,Long assigneeId,int page,int size,
+            com.mirrorsoul.mirrorsoul_api.common.query.AdminListWindow window,boolean unresolvedOnly) {
         SafetySupport.reader(user(actorId));
-        var result=reports.findAll((root,query,cb) -> {
+        var filters=com.mirrorsoul.mirrorsoul_api.common.query.AdminQueueFilters.reports(window,unresolvedOnly).and((root,query,cb) -> {
             List<Predicate> predicates=new ArrayList<>();
             if(priority!=null) predicates.add(cb.equal(root.get("priority"),priority));
             if(state!=null) predicates.add(cb.equal(root.get("state"),state));
             if(assigneeId!=null) predicates.add(cb.equal(root.get("assigneeId"),assigneeId));
             return cb.and(predicates.toArray(Predicate[]::new));
-        },AdminMemberService.pageable(page,size)).map(ReportView::from);
+        });
+        var result=reports.findAll(filters,AdminMemberService.pageable(page,size)).map(ReportView::from);
         log.info("Admin reports viewed actorId={}",actorId);
         return result;
     }

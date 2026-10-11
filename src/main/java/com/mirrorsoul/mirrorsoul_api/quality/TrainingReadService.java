@@ -10,6 +10,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import static com.mirrorsoul.mirrorsoul_api.quality.TrainingDtos.*;
+import com.mirrorsoul.mirrorsoul_api.common.query.AdminListWindow;
 
 @Service @RequiredArgsConstructor @Transactional(readOnly=true)
 public class TrainingReadService {
@@ -56,26 +57,42 @@ public class TrainingReadService {
         FROM rag_profile_jobs j JOIN clones c ON c.id=j.clone_id
         """;
     public long countStalled(LocalDateTime cutoff) {
-        return jdbc.queryForObject("SELECT COUNT(*) FROM ("+SOURCES+") jobs WHERE status IN ('PENDING','PROCESSING')"
-                +" AND COALESCE((SELECT MAX(e.created_at) FROM training_lifecycle_events e WHERE e.training_job_id=jobs.training_job_id AND e.accepted=TRUE),updated_at,created_at)<:cutoff",
-                Map.of("cutoff",cutoff),Long.class);
+        return count(new TrainingJobFilter(null,null,null,AdminListWindow.all(),false,cutoff));
     }
     public long countUnresolvedFailures() {
-        return jdbc.queryForObject("SELECT COUNT(*) FROM ("+SOURCES+") jobs WHERE status='FAILED'"
-                +" AND NOT EXISTS(SELECT 1 FROM training_retry_commands r WHERE r.source_job_id=jobs.training_job_id)",
-                Map.of(),Long.class);
+        return count(new TrainingJobFilter(null,null,"FAILED",AdminListWindow.all(),true,null));
     }
     public Page<Job> list(TrainingId.Kind kind,Long memberId,String status,int page,int size) {
-        if (page<0||size<1||size>100||status!=null&&!Set.of("PENDING","PROCESSING","COMPLETED","FAILED","STALE").contains(status))
-            throw QualitySupport.invalid();
+        return list(new TrainingJobFilter(kind,memberId,status,AdminListWindow.all(),false,null),page,size);
+    }
+    private record QueryFilter(String where,Map<String,Object> args) {}
+    private QueryFilter filter(TrainingJobFilter f) {
         String filter=" WHERE 1=1"; Map<String,Object> args=new HashMap<>();
-        if(kind!=null){filter+=" AND kind=:kind";args.put("kind",kind.name());}
-        if(memberId!=null){filter+=" AND user_id=:member";args.put("member",memberId);}
-        if(status!=null){filter+=" AND status=:status";args.put("status",status);}
-        Long total=jdbc.queryForObject("SELECT COUNT(*) FROM ("+SOURCES+") jobs"+filter,args,Long.class);
+        if(f.kind()!=null){filter+=" AND kind=:kind";args.put("kind",f.kind().name());}
+        if(f.memberId()!=null){filter+=" AND user_id=:member";args.put("member",f.memberId());}
+        if(f.status()!=null){filter+=" AND status=:status";args.put("status",f.status());}
+        if(f.window().from()!=null){filter+=" AND created_at>=:from";args.put("from",AdminListWindow.local(f.window().from()));}
+        if(f.window().to()!=null){filter+=" AND created_at<:to";args.put("to",AdminListWindow.local(f.window().to()));}
+        if(f.unresolvedOnly())filter+=" AND NOT EXISTS(SELECT 1 FROM training_retry_commands r WHERE r.source_job_id=jobs.training_job_id)";
+        if(f.stalledBefore()!=null){
+            filter+=" AND status IN ('PENDING','PROCESSING') AND GREATEST(COALESCE("
+                    +"(SELECT MAX(e.created_at) FROM training_lifecycle_events e WHERE e.training_job_id=jobs.training_job_id AND e.accepted=TRUE),updated_at,created_at),"
+                    +"COALESCE(updated_at,created_at))<:cutoff";
+            args.put("cutoff",f.stalledBefore());
+        }
+        return new QueryFilter(filter,args);
+    }
+    public long count(TrainingJobFilter f) {
+        var query=filter(f);
+        return Objects.requireNonNull(jdbc.queryForObject("SELECT COUNT(*) FROM ("+SOURCES+") jobs"+query.where(),query.args(),Long.class));
+    }
+    public Page<Job> list(TrainingJobFilter f,int page,int size) {
+        if(page<0||size<1||size>100)throw QualitySupport.invalid();
+        var query=filter(f);var args=query.args();
+        long total=count(f);
         args.put("limit",size);args.put("offset",Math.multiplyExact((long)page,size));
-        var rows=jdbc.query("SELECT * FROM ("+SOURCES+") jobs"+filter+" ORDER BY created_at DESC,training_job_id DESC LIMIT :limit OFFSET :offset",args,this::map);
-        return new PageImpl<>(rows,PageRequest.of(page,size),total==null?0:total);
+        var rows=jdbc.query("SELECT * FROM ("+SOURCES+") jobs"+query.where()+" ORDER BY created_at DESC,training_job_id DESC LIMIT :limit OFFSET :offset",args,this::map);
+        return new PageImpl<>(rows,PageRequest.of(page,size),total);
     }
     public Job get(String id) {
         TrainingId.parse(id);

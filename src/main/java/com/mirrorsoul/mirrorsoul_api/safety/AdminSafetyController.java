@@ -18,8 +18,11 @@ public class AdminSafetyController {
     @GetMapping
     public ApiResponse<Page<ReportView>> list(@AuthenticationPrincipal CustomUserDetails actor,
             @RequestParam(required=false) Priority priority,@RequestParam(required=false) ReportState state,
-            @RequestParam(required=false) Long assigneeId,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size) {
-        return ApiResponse.onSuccess("신고 목록입니다.",reports.list(actor.getId(),priority,state,assigneeId,page,size));
+            @RequestParam(required=false) Long assigneeId,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size,
+            @RequestParam(required=false) java.time.OffsetDateTime from,@RequestParam(required=false) java.time.OffsetDateTime to,
+            @RequestParam(defaultValue="false") boolean unresolvedOnly) {
+        return ApiResponse.onSuccess("신고 목록입니다.",reports.list(actor.getId(),priority,state,assigneeId,page,size,
+                new com.mirrorsoul.mirrorsoul_api.common.query.AdminListWindow(from,to),unresolvedOnly));
     }
     @GetMapping("/{id}")
     public ApiResponse<Detail> detail(@AuthenticationPrincipal CustomUserDetails actor,@PathVariable Long id) {

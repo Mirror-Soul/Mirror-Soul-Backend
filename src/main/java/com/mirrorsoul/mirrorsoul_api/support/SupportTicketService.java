@@ -35,12 +35,17 @@ public class SupportTicketService {
   return view(t);
  }
  @Transactional(readOnly=true) public Page<TicketView> list(Long actor,boolean admin,Status status,Category category,Channel channel,Long assignee,Long member,int page,int size) {
+  return list(actor,admin,status,category,channel,assignee,member,page,size,
+   com.mirrorsoul.mirrorsoul_api.common.query.AdminListWindow.all(),false);
+ }
+ @Transactional(readOnly=true) public Page<TicketView> list(Long actor,boolean admin,Status status,Category category,Channel channel,Long assignee,Long member,int page,int size,
+  com.mirrorsoul.mirrorsoul_api.common.query.AdminListWindow window,boolean awaitingReply) {
   if(admin) access.reader(actor);
-  Specification<SupportTicket> spec=(root,q,b)-> {var conditions=new ArrayList<jakarta.persistence.criteria.Predicate>();
+  Specification<SupportTicket> spec=com.mirrorsoul.mirrorsoul_api.common.query.AdminQueueFilters.support(window,awaitingReply).and((root,q,b)-> {var conditions=new ArrayList<jakarta.persistence.criteria.Predicate>();
    if(!admin||member!=null) conditions.add(b.equal(root.get("memberId"),admin?member:actor));
    if(status!=null) conditions.add(b.equal(root.get("status"),status));if(category!=null) conditions.add(b.equal(root.get("category"),category));
    if(channel!=null) conditions.add(b.equal(root.get("channel"),channel));if(assignee!=null) conditions.add(b.equal(root.get("assigneeId"),assignee));
-   return b.and(conditions.toArray(jakarta.persistence.criteria.Predicate[]::new));};
+   return b.and(conditions.toArray(jakarta.persistence.criteria.Predicate[]::new));});
   return tickets.findAll(spec,SupportAccess.page(page,size)).map(this::view);
  }
  @Transactional(readOnly=true) public MemberDetail member(Long actor,Long id) {

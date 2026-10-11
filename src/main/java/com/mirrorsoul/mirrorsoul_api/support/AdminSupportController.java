@@ -15,7 +15,10 @@ public class AdminSupportController {
  @PostMapping("/email-intake") public ApiResponse<TicketView> email(@AuthenticationPrincipal CustomUserDetails u,@Valid @RequestBody EmailIntake c) {return ApiResponse.onSuccess("이메일 문의를 접수했습니다.",tickets.email(u.getId(),c));}
  @GetMapping public ApiResponse<Page<TicketView>> list(@AuthenticationPrincipal CustomUserDetails u,
  @RequestParam(required=false) Status status,@RequestParam(required=false) Category category,@RequestParam(required=false) Channel channel,
- @RequestParam(required=false) Long assigneeId,@RequestParam(required=false) Long memberId,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size) {return ApiResponse.onSuccess("고객문의 목록입니다.",tickets.list(u.getId(),true,status,category,channel,assigneeId,memberId,page,size));}
+ @RequestParam(required=false) Long assigneeId,@RequestParam(required=false) Long memberId,@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size,
+ @RequestParam(required=false) java.time.OffsetDateTime from,@RequestParam(required=false) java.time.OffsetDateTime to,
+ @RequestParam(defaultValue="false") boolean awaitingReply) {return ApiResponse.onSuccess("고객문의 목록입니다.",tickets.list(u.getId(),true,status,category,channel,assigneeId,memberId,page,size,
+  new com.mirrorsoul.mirrorsoul_api.common.query.AdminListWindow(from,to),awaitingReply));}
  @GetMapping("/{id}") public ApiResponse<AdminDetail> detail(@AuthenticationPrincipal CustomUserDetails u,@PathVariable Long id) {return ApiResponse.onSuccess("고객문의 상세입니다.",tickets.admin(u.getId(),id));}
  @PatchMapping("/{id}/assignee") public ApiResponse<TicketView> assign(@AuthenticationPrincipal CustomUserDetails u,@PathVariable Long id,@Valid @RequestBody Assign c) {return ApiResponse.onSuccess("담당자를 지정했습니다.",tickets.assign(u.getId(),id,c));}
  @PatchMapping("/{id}/status") public ApiResponse<TicketView> status(@AuthenticationPrincipal CustomUserDetails u,@PathVariable Long id,@Valid @RequestBody Update c) {return ApiResponse.onSuccess("문의 상태를 변경했습니다.",tickets.status(u.getId(),id,c));}

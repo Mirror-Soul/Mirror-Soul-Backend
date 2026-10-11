@@ -17,8 +17,12 @@ public class AdminQualityController {
     @GetMapping("/clone-training-jobs")
     public ApiResponse<Page<TrainingDtos.Job>> jobs(@RequestParam(required=false) TrainingId.Kind kind,
             @RequestParam(required=false) Long memberId,@RequestParam(required=false) String status,
-            @RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size) {
-        return ApiResponse.onSuccess("트윈 학습 작업입니다.",training.list(kind,memberId,status,page,size));
+            @RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size,
+            @RequestParam(required=false) OffsetDateTime from,@RequestParam(required=false) OffsetDateTime to,
+            @RequestParam(defaultValue="false") boolean unresolvedOnly,@RequestParam(required=false) OffsetDateTime stalledBefore) {
+        var window=new com.mirrorsoul.mirrorsoul_api.common.query.AdminListWindow(from,to);
+        return ApiResponse.onSuccess("트윈 학습 작업입니다.",training.list(new TrainingJobFilter(kind,memberId,status,window,
+                unresolvedOnly,com.mirrorsoul.mirrorsoul_api.common.query.AdminListWindow.local(stalledBefore)),page,size));
     }
     @PostMapping("/clone-training-jobs/{id}/retry")
     public ApiResponse<TrainingDtos.RetryResult> retry(@AuthenticationPrincipal CustomUserDetails actor,

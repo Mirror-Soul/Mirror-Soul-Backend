@@ -38,8 +38,9 @@ public class CallController {
 
     @Operation(summary = "통화 연결 완료 처리")
     @PatchMapping("/{call-id}/in-progress")
-    public ApiResponse<Void> markInProgress(@PathVariable("call-id") Long callId) {
-        callService.markInProgress(callId);
+    public ApiResponse<Void> markInProgress(@PathVariable("call-id") Long callId,
+            @AuthenticationPrincipal CustomUserDetails user) {
+        callService.markInProgress(callId,user.getUuid());
         return ApiResponse.onSuccess("통화 연결 상태로 변경했습니다.", null);
     }
 

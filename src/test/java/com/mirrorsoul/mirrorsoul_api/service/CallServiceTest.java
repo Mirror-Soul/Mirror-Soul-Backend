@@ -39,6 +39,7 @@ class CallServiceTest {
         UUID callerUuid = UUID.randomUUID();
         UUID ownerUuid = UUID.randomUUID();
         User caller = mock(User.class);
+        when(caller.isAiWorkAllowed(org.mockito.ArgumentMatchers.any())).thenReturn(true);
         User owner = User.builder().id(2L).uuid(ownerUuid)
                 .status(com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE)
                 .matchingEnabled(true).build();
@@ -86,6 +87,7 @@ class CallServiceTest {
     void startCloneCallAllowsCallingOwnClone() {
         UUID userUuid = UUID.randomUUID();
         User caller = mock(User.class);
+        when(caller.isAiWorkAllowed(org.mockito.ArgumentMatchers.any())).thenReturn(true);
         Clone ownClone = mock(Clone.class);
         when(caller.getId()).thenReturn(1L);
         when(caller.hasTalkTime()).thenReturn(true);
@@ -112,6 +114,7 @@ class CallServiceTest {
         UUID callerUuid = UUID.randomUUID();
         UUID ownerUuid = UUID.randomUUID();
         User caller = mock(User.class);
+        when(caller.isAiWorkAllowed(org.mockito.ArgumentMatchers.any())).thenReturn(true);
         User owner = User.builder().id(2L).uuid(ownerUuid)
                 .status(com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE)
                 .matchingEnabled(true).build();

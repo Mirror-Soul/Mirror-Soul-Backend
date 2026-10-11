@@ -51,6 +51,7 @@ public class ValueBalanceService {
             UUID userUuid, Long questionId, EvolveReqDTO.ValueBalanceAnswerDTO request) {
         User user = userRepository.findByUuidForUpdate(userUuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
+        if (!user.isAiWorkAllowed(LocalDateTime.now())) throw new GeneralException(GeneralErrorCode.SAFETY_RESTRICTED);
         long totalAnswers = answerRepository.countByUserId(user.getId());
         Progress before = progress(user.getId(), totalAnswers, now());
         if (before.completed()) throw new GeneralException(GeneralErrorCode.VALUE_BALANCE_COMPLETED);

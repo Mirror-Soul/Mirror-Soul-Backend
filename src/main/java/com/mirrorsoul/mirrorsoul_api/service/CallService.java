@@ -40,6 +40,9 @@ public class CallService {
         User caller = userRepository.findByUuid(userUUID)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
 
+        if (!caller.isAiWorkAllowed(java.time.LocalDateTime.now())) {
+            throw new GeneralException(GeneralErrorCode.SAFETY_RESTRICTED);
+        }
         if (!caller.hasTalkTime()) {
             throw new GeneralException(GeneralErrorCode.INSUFFICIENT_TALK_TIME);
         }
@@ -47,6 +50,9 @@ public class CallService {
         Clone clone = cloneRepository.findByUserUuid(cloneUserUuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.CLONE_NOT_FOUND));
         User cloneOwner = clone.getUser();
+        if (!cloneOwner.isAiWorkAllowed(java.time.LocalDateTime.now())) {
+            throw new GeneralException(GeneralErrorCode.SAFETY_RESTRICTED);
+        }
         boolean callingOwnClone = caller.getId().equals(cloneOwner.getId());
         if (!callingOwnClone && (
                 cloneOwner.getStatus() != com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE
@@ -86,9 +92,20 @@ public class CallService {
     }
 
     @Transactional
+    public void markInProgress(Long callId, UUID callerUuid) {
+        VideoCall call=getCall(callId);
+        if (!call.getUser().getUuid().equals(callerUuid)) throw new GeneralException(GeneralErrorCode.FORBIDDEN);
+        markInProgress(callId);
+    }
+
+    @Transactional
     public void markInProgress(Long callId) {
         VideoCall call = getCall(callId);
 
+        if (!call.getUser().isAiWorkAllowed(java.time.LocalDateTime.now())
+                || !call.getClone().getUser().isAiWorkAllowed(java.time.LocalDateTime.now())) {
+            throw new GeneralException(GeneralErrorCode.SAFETY_RESTRICTED);
+        }
         if (userBlockRepository.existsBetween(
                 call.getUser().getId(), call.getClone().getUser().getId())) {
             throw new GeneralException(GeneralErrorCode.CALL_NOT_FOUND);

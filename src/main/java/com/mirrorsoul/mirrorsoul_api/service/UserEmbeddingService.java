@@ -51,6 +51,10 @@ public class UserEmbeddingService {
             return;
         }
 
+        if (!user.isAiWorkAllowed(java.time.LocalDateTime.now())) {
+            log.info("Embedding skipped by safety policy userUuid={}",userUuid);
+            return;
+        }
         Optional<String> input = buildInput(user, type);
         if (input.isEmpty()) {
             log.warn("Embedding source is incomplete. userUuid={}, type={}", userUuid, type);

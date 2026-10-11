@@ -48,6 +48,11 @@ public class AiCallContextService {
         }
 
         User cloneOwner = clone.getUser();
+        if (!call.getUser().isAiWorkAllowed(java.time.LocalDateTime.now())
+                || !call.getClone().getUser().isAiWorkAllowed(java.time.LocalDateTime.now())) {
+            throw new GeneralException(GeneralErrorCode.SAFETY_RESTRICTED);
+        }
+
         MbtiType mbti = mbtiProfileRepository.findByUser_Id(cloneOwner.getId())
                 .map(MbtiProfile::getMbti)
                 .orElse(null);

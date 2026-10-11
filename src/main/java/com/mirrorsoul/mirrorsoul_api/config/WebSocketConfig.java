@@ -18,6 +18,7 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 public class WebSocketConfig implements WebSocketConfigurer {
 
     private final SignalingHandler signalingHandler;
+    private final com.mirrorsoul.mirrorsoul_api.safety.SafetySignalingHandshakeInterceptor signalingHandshake;
     private final ChatWebSocketHandler chatWebSocketHandler;
     private final ChatWebSocketHandshakeInterceptor chatHandshakeInterceptor;
 
@@ -27,6 +28,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(signalingHandler, "/ws/signaling")
+                .addInterceptors(signalingHandshake)
                 .setAllowedOrigins("*");
 
         registry.addHandler(chatWebSocketHandler, "/ws/chat")

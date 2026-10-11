@@ -17,6 +17,10 @@ public class FaceTrainingJobService {
     private final AwsS3Properties awsS3Properties;
 
     public FaceTrainingJob createPendingJob(User user, FaceFile faceFile, FaceTrainingJobSource source) {
+        if (!user.isAiWorkAllowed(java.time.LocalDateTime.now())) {
+            throw new com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException(
+                com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode.SAFETY_RESTRICTED);
+        }
         FaceTrainingJob job = FaceTrainingJob.create(user, source);
         job.addFile(faceFile, awsS3Properties.getBucket(), faceFile.getObjectKey());
         return faceTrainingJobRepository.save(job);

@@ -22,8 +22,8 @@ spring:
     port: 8080
 
   mail:
-    host: smtp.gmail.com
-    port: 587
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
     username: ${SMTP_USERNAME}
     password: ${SMTP_PASSWORD}
     properties:
@@ -31,6 +31,8 @@ spring:
         smtp:
           auth: true
           timeout: 5000
+          connectiontimeout: 5000
+          writetimeout: 5000
           starttls:
             enable: true
 
@@ -151,3 +153,14 @@ monitoring:
     step: ${CLOUDWATCH_METRICS_STEP:60s}
     environment: ${APP_ENV:local}
     instance: ${METRICS_INSTANCE_ID:api-1}
+
+# SMTP credentials use the existing SMTP_USERNAME / SMTP_PASSWORD environment variables.
+support:
+  mail:
+    enabled: ${SUPPORT_MAIL_ENABLED:false}
+    from: ${SUPPORT_MAIL_FROM:}
+    interval-ms: ${SUPPORT_MAIL_INTERVAL_MS:30000}
+  attachments:
+    bucket: ${AWS_SUPPORT_BUCKET:}
+    retention-days: ${SUPPORT_ATTACHMENT_RETENTION_DAYS:30}
+    cleanup-interval-ms: ${SUPPORT_ATTACHMENT_CLEANUP_INTERVAL_MS:3600000}

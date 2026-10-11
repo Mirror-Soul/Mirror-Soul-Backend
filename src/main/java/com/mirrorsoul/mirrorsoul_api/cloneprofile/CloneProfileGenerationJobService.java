@@ -24,6 +24,10 @@ public class CloneProfileGenerationJobService {
                 || (job.getNextAttemptAt() != null && job.getNextAttemptAt().isAfter(now))) {
             return Optional.empty();
         }
+        if (!job.getClone().getUser().isAiWorkAllowed(now)) {
+            job.markStale(now);
+            return Optional.empty();
+        }
         if (job.getSourceHash().equals(job.getClone().getProfileSourceHash())) {
             job.complete(now);
             return Optional.empty();

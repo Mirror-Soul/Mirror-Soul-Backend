@@ -51,6 +51,8 @@ public interface UserRepository extends JpaRepository<User, Long>, org.springfra
           and candidate.status =
               com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE
 
+          and (candidate.safetyRestrictedUntil is null or candidate.safetyRestrictedUntil <= CURRENT_TIMESTAMP)
+
           and candidate.matchingEnabled = true
 
           and candidate.gender <> :currentUserGender

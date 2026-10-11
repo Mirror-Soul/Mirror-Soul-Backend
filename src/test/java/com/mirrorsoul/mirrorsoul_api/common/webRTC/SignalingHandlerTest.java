@@ -24,7 +24,9 @@ class SignalingHandlerTest {
     void setUp() {
         objectMapper = new ObjectMapper();
         registry = new WebSocketSessionRegistry();
-        handler = new SignalingHandler(objectMapper, registry);
+        var safety=mock(com.mirrorsoul.mirrorsoul_api.safety.SafetySignalingGuard.class);
+        when(safety.allowed(org.mockito.ArgumentMatchers.any(),org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        handler = new SignalingHandler(objectMapper, registry,safety);
     }
 
     @Test

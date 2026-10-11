@@ -121,7 +121,13 @@ public class ChatService {
     @Transactional
     public ChatResDTO.MessageDTO sendMessage(
             UUID currentUserUuid, Long roomId, ChatReqDTO.SendMessageDTO request) {
+        User sender=chatRoomMemberRepository.findUserForCommunication(currentUserUuid)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
+        if (!sender.isAiWorkAllowed(java.time.LocalDateTime.now())) throw new GeneralException(GeneralErrorCode.SAFETY_RESTRICTED);
         ChatRoomMember senderMember = requireActiveMemberForUpdate(roomId, currentUserUuid);
+        if (!senderMember.getUser().isAiWorkAllowed(java.time.LocalDateTime.now())) {
+            throw new GeneralException(GeneralErrorCode.SAFETY_RESTRICTED);
+        }
 
         Optional<ChatMessage> duplicate = chatMessageRepository
                 .findByChatRoomIdAndSenderUuidAndClientMessageId(

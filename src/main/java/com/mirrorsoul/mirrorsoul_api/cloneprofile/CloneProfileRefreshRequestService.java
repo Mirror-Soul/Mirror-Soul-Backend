@@ -28,6 +28,7 @@ public class CloneProfileRefreshRequestService {
 
         Clone clone = cloneRepository.findByUserUuidForUpdate(userUuid)
                 .orElseThrow(() -> new CloneProfileSourceException("Clone was not found"));
+        if (!clone.getUser().isAiWorkAllowed(java.time.LocalDateTime.now())) return Optional.empty();
         String promptVersion = generationProperties.getPromptVersion();
         CloneProfileGenerationInput source = sourceLoader.load(userUuid, promptVersion);
         String sourceHash = sourceHasher.hash(source);

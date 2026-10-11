@@ -149,6 +149,21 @@ public class User extends BaseTimeEntity {
     @Column(name = "status_before_suspension", length = 20)
     private UserStatus statusBeforeSuspension;
 
+    @Column(name="safety_restricted_until")
+    private LocalDateTime safetyRestrictedUntil;
+
+    public boolean isSafetyRestricted(LocalDateTime now) {
+        return safetyRestrictedUntil!=null && now.isBefore(safetyRestrictedUntil);
+    }
+
+    public boolean isAiWorkAllowed(LocalDateTime now) {
+        return isAccessAllowed() && !isSafetyRestricted(now);
+    }
+
+    public void updateSafetyRestriction(LocalDateTime until) {
+        safetyRestrictedUntil=until;
+    }
+
     public boolean isAccessAllowed() {
         return status != UserStatus.INACTIVE && status != UserStatus.DELETED
                 && status != UserStatus.SUSPENDED && status != UserStatus.WITHDRAWAL_CONFIRMED;

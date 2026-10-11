@@ -53,6 +53,8 @@ class AiCallContextServiceTest {
         VideoCall call = mock(VideoCall.class);
         Clone clone = mock(Clone.class);
         User owner = mock(User.class);
+        when(owner.isAiWorkAllowed(org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        when(call.getUser()).thenReturn(User.builder().status(com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE).build());
         MbtiProfile mbtiProfile = mock(MbtiProfile.class);
         AiVoiceProfile voiceProfile = mock(AiVoiceProfile.class);
         VoiceTrainingJob voiceJob = mock(VoiceTrainingJob.class);
@@ -136,6 +138,8 @@ class AiCallContextServiceTest {
         VideoCall call = mock(VideoCall.class);
         Clone clone = mock(Clone.class);
         User owner = mock(User.class);
+        when(owner.isAiWorkAllowed(org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        when(call.getUser()).thenReturn(User.builder().status(com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE).build());
         when(videoCallRepository.findByIdWithParticipants(1L)).thenReturn(Optional.of(call));
         when(call.getStatus()).thenReturn(VideoCallStatus.READY);
         when(call.getClone()).thenReturn(clone);

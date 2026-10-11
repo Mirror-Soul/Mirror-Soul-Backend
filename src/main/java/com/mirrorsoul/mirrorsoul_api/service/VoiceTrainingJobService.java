@@ -26,6 +26,7 @@ public class VoiceTrainingJobService {
     private final AwsS3Properties awsS3Properties;
 
     public VoiceTrainingJob createPendingJob(User user) {
+        assertSafetyAllowed(user);
         List<InterviewRecord> records = interviewRecordRepository.findAllByUser_IdOrderByInterview_IdAsc(user.getId());
 
         VoiceTrainingJob job = VoiceTrainingJob.create(user);
@@ -55,7 +56,12 @@ public class VoiceTrainingJobService {
         return voiceTrainingJobRepository.save(job);
     }
 
+    private void assertSafetyAllowed(User user) {
+        if (!user.isAiWorkAllowed(LocalDateTime.now())) throw new GeneralException(GeneralErrorCode.SAFETY_RESTRICTED);
+    }
+
     public void assertVoiceUpdateSubmissionAllowed(User user) {
+        assertSafetyAllowed(user);
         boolean submittedRecently = voiceTrainingJobRepository.existsByUser_IdAndSourceAndCreatedAtAfter(
                 user.getId(),
                 VoiceTrainingJobSource.VOICE_UPDATE,

@@ -38,6 +38,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Long userId = tokenProvider.getUserIdFromToken(token);
                 CustomUserDetails userDetails = customUserDetailsService.loadUserById(userId);
 
+                if (!userDetails.isEnabled() || !java.util.Objects.equals(
+                        userDetails.getSessionVersion(), tokenProvider.getSessionVersion(token))) {
+                    SecurityContextHolder.clearContext();
+                    filterChain.doFilter(request, response);
+                    return;
+                }
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails,

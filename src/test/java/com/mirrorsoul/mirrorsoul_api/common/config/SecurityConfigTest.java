@@ -69,6 +69,23 @@ class SecurityConfigTest {
         }
     }
 
+    @Test
+    void memberViewerCanReadButCannotAct() throws Exception {
+        AuthorizationFilter authorization = (AuthorizationFilter) securityFilterChain.getFilters()
+                .stream().filter(AuthorizationFilter.class::isInstance).findFirst().orElseThrow();
+        try {
+            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("viewer",null,
+                    List.of(new SimpleGrantedAuthority("ROLE_ADMIN_VIEWER"))));
+            MockHttpServletRequest read=new MockHttpServletRequest("GET","/admin/members/1");
+            read.setServletPath("/admin/members/1");
+            authorization.doFilter(read,new MockHttpServletResponse(),new MockFilterChain());
+            MockHttpServletRequest write=new MockHttpServletRequest("POST","/admin/members/1/actions");
+            write.setServletPath("/admin/members/1/actions");
+            assertThatThrownBy(() -> authorization.doFilter(write,new MockHttpServletResponse(),new MockFilterChain()))
+                    .isInstanceOf(AccessDeniedException.class);
+        } finally { SecurityContextHolder.clearContext(); }
+    }
+
     private int indexOf(List<?> filters, Class<?> filterClass) {
         for (int index = 0; index < filters.size(); index++) {
             if (filterClass.isInstance(filters.get(index))) {

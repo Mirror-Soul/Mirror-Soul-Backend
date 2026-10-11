@@ -8,6 +8,16 @@ import org.junit.jupiter.api.Test;
 
 class JwtTokenProviderTest {
 
+    @Test
+    void tokensFromBeforeSuspensionRemainInvalidAfterUnsuspension() {
+        JwtTokenProvider provider=new JwtTokenProvider(new JwtProperties(SECRET,3600L,1209600L));
+        User user=User.builder().id(1L).email("user@example.com").passwordHash("hash").status(UserStatus.ACTIVE).build();
+        String old=provider.createAccessToken(user);
+        user.suspend();user.unsuspend();
+        assertThat(provider.getSessionVersion(old)).isNotEqualTo(user.getSessionVersion());
+        assertThat(provider.getSessionVersion(provider.createAccessToken(user))).isEqualTo(user.getSessionVersion());
+    }
+
     private static final String SECRET = "01234567890123456789012345678901";
 
     @Test

@@ -63,28 +63,49 @@ class AccountWithdrawalLifecycleTest {
     }
 
     @Test
-    void cleanupAnonymizesExpiredAccountAndDeletesPushDevices() {
-        UserRepository userRepository = mock(UserRepository.class);
-        PushDeviceRepository pushDeviceRepository = mock(PushDeviceRepository.class);
-        JobVerificationEvidenceCleanupService evidenceCleanup =
-                mock(JobVerificationEvidenceCleanupService.class);
-        WithdrawnAccountCleanupService service =
-                new WithdrawnAccountCleanupService(userRepository, pushDeviceRepository, evidenceCleanup);
+    void cleanupConfirmsExpiredAccountAndEnqueuesDurableDeletion() {
+        UserRepository repository = mock(UserRepository.class);
+        MemberDeletionService deletion = mock(MemberDeletionService.class);
+        WithdrawnAccountCleanupService service = new WithdrawnAccountCleanupService(repository, deletion);
         User user = activeUser();
         LocalDateTime now = LocalDateTime.of(2026, 8, 20, 3, 0);
         user.deactivate(now.minusDays(30));
-
-        when(userRepository.findAllByStatusAndWithdrawnAtLessThanEqual(
-                UserStatus.INACTIVE, now.minusDays(30))).thenReturn(List.of(user));
-
+        when(repository.findAllByStatusAndWithdrawnAtLessThanEqual(UserStatus.INACTIVE, now.minusDays(30)))
+                .thenReturn(List.of(user));
         assertThat(service.anonymizeExpiredAccounts(now)).isEqualTo(1);
-        assertThat(user.getStatus()).isEqualTo(UserStatus.DELETED);
-        assertThat(user.getEmail()).startsWith("deleted-").endsWith("@deleted.invalid");
-        assertThat(user.getName()).isEqualTo("탈퇴한 사용자");
-        assertThat(user.getDeletedAt()).isEqualTo(now);
-        assertThat(user.getMatchingEnabled()).isFalse();
-        verify(pushDeviceRepository).deleteAllByUserUuidIn(List.of(user.getUuid()));
-        verify(evidenceCleanup).deleteForUsers(List.of(user.getId()));
+        assertThat(user.getStatus()).isEqualTo(UserStatus.WITHDRAWAL_CONFIRMED);
+        assertThat(user.canRecover(now)).isFalse();
+        verify(deletion).enqueue(user, now);
+    }
+
+    @Test
+    void recoveryPreservesOnboardingAndSuspension() {
+        User user = activeUser();
+        user.setStatus(UserStatus.ONBOARD_B);
+        user.suspend();
+        user.deactivate(LocalDateTime.now());
+        assertThat(user.onboardingStatus()).isEqualTo(UserStatus.ONBOARD_B);
+        user.reactivate();
+        assertThat(user.getStatus()).isEqualTo(UserStatus.SUSPENDED);
+        user.unsuspend();
+        assertThat(user.getStatus()).isEqualTo(UserStatus.ONBOARD_B);
+    }
+
+    @Test
+    void suspendedAccountCannotLoginOrRefresh() {
+        UserRepository repository = mock(UserRepository.class);
+        PasswordEncoder encoder = mock(PasswordEncoder.class);
+        TokenProvider tokens = mock(TokenProvider.class);
+        AuthService service = new AuthService(repository, encoder, tokens);
+        User user = activeUser();
+        user.updateRefreshToken("old");
+        user.suspend();
+        when(repository.findByEmailForUpdate(user.getEmail())).thenReturn(Optional.of(user));
+        when(encoder.matches("password", user.getPasswordHash())).thenReturn(true);
+        assertThatThrownBy(() -> service.login(new LoginReqDTO(user.getEmail(), "password")))
+            .isInstanceOf(GeneralException.class);
+        assertThat(user.getRefreshToken()).isNull();
+        assertThat(new com.mirrorsoul.mirrorsoul_api.common.security.CustomUserDetails(user).isEnabled()).isFalse();
     }
 
     private User activeUser() {

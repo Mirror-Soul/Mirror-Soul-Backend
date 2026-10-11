@@ -138,7 +138,9 @@ public class ProfileService {
 
     @Transactional
     public void inactiveAccount(UUID userUuid) {
-        User user = getUser(userUuid);
+        User user = userRepository.findByUuidForUpdate(userUuid)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
+        if (!user.isAccessAllowed()) throw new GeneralException(GeneralErrorCode.FORBIDDEN);
         user.deactivate(LocalDateTime.now());
     }
 

@@ -59,6 +59,8 @@ public class SecurityConfig {
                                 , "/internal/clone-training/*/voice/complete"
                         ).permitAll()
                         .requestMatchers("/internal/ai/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/admin/members", "/admin/members/**")
+                            .hasAnyRole("ADMIN", "ADMIN_VIEWER", "SUPER_ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )

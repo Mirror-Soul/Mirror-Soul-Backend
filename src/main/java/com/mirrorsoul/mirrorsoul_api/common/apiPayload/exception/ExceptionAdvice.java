@@ -21,6 +21,12 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 @RestControllerAdvice(annotations = RestController.class)
 public class ExceptionAdvice {
 
+    @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Object>> handleVersionConflict(Exception e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.onFailure(GeneralErrorCode.MEMBER_VERSION_CONFLICT, "회원 정보가 변경되었습니다."));
+    }
+
     /**
      * GeneralException 처리
      */

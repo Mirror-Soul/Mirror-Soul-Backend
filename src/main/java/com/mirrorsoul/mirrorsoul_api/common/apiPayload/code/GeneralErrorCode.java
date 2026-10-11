@@ -48,6 +48,9 @@ public enum GeneralErrorCode implements BaseErrorCode {
     EXTERNAL_SERVICE_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "SERVER_5041", "외부 서비스 응답 지연"),
 
     // 유저 관련 에러
+    MEMBER_VERSION_CONFLICT(HttpStatus.CONFLICT, "MEMBER_4090", "회원 정보가 변경되었습니다. 다시 조회해 주세요."),
+    MEMBER_ACTION_CONFLICT(HttpStatus.CONFLICT, "MEMBER_4091", "현재 상태에서 수행할 수 없는 조치입니다."),
+    MEMBER_IDEMPOTENCY_CONFLICT(HttpStatus.CONFLICT, "MEMBER_4092", "동일한 요청 키에 다른 조치가 지정되었습니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_4040", "존재하지 않는 사용자입니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "USER_4090", "이미 사용 중인 이메일입니다."),
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "USER_4091", "이미 사용 중인 닉네임입니다."),

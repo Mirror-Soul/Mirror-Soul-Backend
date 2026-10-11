@@ -19,6 +19,12 @@ public class CloneTrainingCallbackService {
     @Value("${clone-training.callback-secret:}")
     private String secret;
 
+    @Value("${clone-training.previous-callback-secret:}")
+    private String previousSecret;
+
+    @Value("${clone-training.previous-secret-expires-at:}")
+    private String previousSecretExpiresAt;
+
     @Value("${voice-result.enabled:false}")
     private boolean voiceResultConsumerEnabled;
 
@@ -41,9 +47,8 @@ public class CloneTrainingCallbackService {
     }
 
     private void authenticate(String suppliedSecret) {
-        if (secret == null || secret.isBlank() || suppliedSecret == null
-                || !MessageDigest.isEqual(secret.getBytes(StandardCharsets.UTF_8),
-                        suppliedSecret.getBytes(StandardCharsets.UTF_8))) {
+        if (!com.mirrorsoul.mirrorsoul_api.access.RotatingSecret.matches(secret, previousSecret,
+                com.mirrorsoul.mirrorsoul_api.access.RotatingSecret.expiry(previousSecretExpiresAt), suppliedSecret)) {
             throw new GeneralException(GeneralErrorCode.FORBIDDEN);
         }
     }

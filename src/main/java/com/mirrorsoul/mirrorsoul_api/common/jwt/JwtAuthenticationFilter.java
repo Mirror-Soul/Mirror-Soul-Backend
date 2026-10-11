@@ -19,6 +19,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    public static final String VERIFIED_USER_ID = "jwt.verifiedUserId";
+
     private final TokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
     private final UserActivityService userActivityService;
@@ -36,6 +38,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 tokenProvider.validateAccessToken(token);
 
                 Long userId = tokenProvider.getUserIdFromToken(token);
+                request.setAttribute(VERIFIED_USER_ID, userId);
                 CustomUserDetails userDetails = customUserDetailsService.loadUserById(userId);
 
                 if (!userDetails.isEnabled() || !java.util.Objects.equals(
@@ -53,7 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 userActivityService.touch(userId);
-            } catch (JwtException | IllegalArgumentException e) {
+            } catch (JwtException | IllegalArgumentException | org.springframework.security.core.AuthenticationException e) {
                 SecurityContextHolder.clearContext();
             }
         }

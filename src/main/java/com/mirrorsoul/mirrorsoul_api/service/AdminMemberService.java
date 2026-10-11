@@ -83,8 +83,8 @@ public class AdminMemberService {
             throw new GeneralException(GeneralErrorCode.FORBIDDEN, "Super admin required.");
         }
         User user = users.findByIdForUpdate(id).orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
-        if (user.getRole() != UserRole.USER && actor.getRole() != UserRole.SUPER_ADMIN) {
-            throw new GeneralException(GeneralErrorCode.FORBIDDEN,"Super admin required to change administrator accounts.");
+        if (user.getRole() != UserRole.USER) {
+            throw new GeneralException(GeneralErrorCode.FORBIDDEN,"Use the reauthenticated staff-management API for administrator accounts.");
         }
         Optional<MemberActionHistory> previous = history.findByMemberIdAndIdempotencyKey(id, request.idempotencyKey());
         if (previous.isPresent()) {

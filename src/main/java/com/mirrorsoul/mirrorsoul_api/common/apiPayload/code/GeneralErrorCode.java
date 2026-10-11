@@ -47,6 +47,9 @@ public enum GeneralErrorCode implements BaseErrorCode {
     SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "SERVER_5031", "서버가 일시적으로 불안정합니다."),
     EXTERNAL_SERVICE_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "SERVER_5041", "외부 서비스 응답 지연"),
 
+    STAFF_CONFLICT(HttpStatus.CONFLICT,"STAFF_4090","직원 정보가 변경되었거나 처리할 수 없는 상태입니다."),
+    STAFF_REAUTH_REQUIRED(HttpStatus.FORBIDDEN,"STAFF_4031","직원 관리에는 최근 재인증이 필요합니다."),
+    STAFF_RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS,"STAFF_4290","재인증 시도 횟수를 초과했습니다."),
     SUPPORT_NOT_FOUND(HttpStatus.NOT_FOUND,"SUPPORT_4040","고객문의를 찾을 수 없습니다."),
     SUPPORT_CONFLICT(HttpStatus.CONFLICT,"SUPPORT_4090","문의 상태가 변경되었거나 처리할 수 없는 상태입니다."),
     SUPPORT_IDEMPOTENCY_CONFLICT(HttpStatus.CONFLICT,"SUPPORT_4091","동일한 요청 키에 다른 내용이 지정되었습니다."),

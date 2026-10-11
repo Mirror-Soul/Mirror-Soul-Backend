@@ -17,7 +17,7 @@ public class SafetySignalingHandshakeInterceptor implements HandshakeInterceptor
     private final AiInternalApiProperties properties;
     @Override public boolean beforeHandshake(ServerHttpRequest request,ServerHttpResponse response,WebSocketHandler handler,Map<String,Object> attributes) {
         String supplied=request.getHeaders().getFirst("X-Internal-Api-Key");
-        if(properties.isConfigured() && supplied!=null && MessageDigest.isEqual(properties.apiKey().getBytes(StandardCharsets.UTF_8),supplied.getBytes(StandardCharsets.UTF_8))) {
+        if(properties.matches(supplied) && properties.allowsSignaling()) {
             attributes.put(AI_ATTRIBUTE,true);return true;
         }
         return request.getPrincipal() instanceof Authentication authentication

@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Alerts for durable administrator audit storage and retention failures
+Parameters:
+  ApplicationLogGroup:
+    Type: String
+    Description: Existing CloudWatch Logs group receiving the backend application logs
+  AlarmTopicArn:
+    Type: String
+    Description: Existing operational SNS topic ARN with confirmed subscriptions
+Resources:
+  AuditStorageFailureFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ApplicationLogGroup
+      FilterPattern: '"Admin audit storage failed"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/AdminSecurity
+          MetricName: AuditFailures
+          MetricValue: '1'
+  AuditCleanupFailureFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ApplicationLogGroup
+      FilterPattern: '"Admin audit cleanup failed"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/AdminSecurity
+          MetricName: AuditFailures
+          MetricValue: '1'
+  AuditFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Administrator audit storage or retention cleanup failed
+      Namespace: MirrorSoul/AdminSecurity
+      MetricName: AuditFailures
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopicArn

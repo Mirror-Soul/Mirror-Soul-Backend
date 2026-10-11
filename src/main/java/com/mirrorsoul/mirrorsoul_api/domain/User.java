@@ -131,6 +131,10 @@ public class User extends BaseTimeEntity {
     @Column(name="session_version",nullable=false)
     private Long sessionVersion = 0L;
 
+    public void revokeAdministrativeSessions() { invalidateSessions(); }
+
+    public void changeAdministrativeRole(UserRole next) { this.role = next; invalidateSessions(); }
+
     private void invalidateSessions() {
         sessionVersion++;
         clearRefreshToken();

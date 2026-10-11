@@ -47,7 +47,7 @@ class CallServiceTest {
         when(caller.getId()).thenReturn(1L);
         when(caller.hasTalkTime()).thenReturn(true);
         when(clone.getUser()).thenReturn(owner);
-        when(userRepository.findByUuid(callerUuid)).thenReturn(Optional.of(caller));
+        when(userRepository.findByUuidForUpdate(callerUuid)).thenReturn(Optional.of(caller));
         when(userRepository.findByUuid(ownerUuid)).thenReturn(Optional.of(owner));
         when(cloneRepository.findByUserUuid(ownerUuid)).thenReturn(Optional.of(clone));
 
@@ -66,6 +66,7 @@ class CallServiceTest {
     private UserBlockRepository userBlockRepository;
     private TalkTimeTransactionRepository talkTimeTransactionRepository;
     private CallService callService;
+    private com.mirrorsoul.mirrorsoul_api.billing.TalkTimeLedger ledger;
 
     @BeforeEach
     void setUp() {
@@ -74,12 +75,15 @@ class CallServiceTest {
         cloneRepository = mock(CloneRepository.class);
         userBlockRepository = mock(UserBlockRepository.class);
         talkTimeTransactionRepository = mock(TalkTimeTransactionRepository.class);
+        ledger = new com.mirrorsoul.mirrorsoul_api.billing.TalkTimeLedger(talkTimeTransactionRepository);
+        when(talkTimeTransactionRepository.balance(any())).thenAnswer(i -> 1800L);
         callService = new CallService(
                 videoCallRepository,
                 userRepository,
                 cloneRepository,
                 userBlockRepository,
-                talkTimeTransactionRepository
+                ledger,
+                mock(com.mirrorsoul.mirrorsoul_api.billing.CallBillingEventRepository.class)
         );
     }
 
@@ -92,7 +96,7 @@ class CallServiceTest {
         when(caller.getId()).thenReturn(1L);
         when(caller.hasTalkTime()).thenReturn(true);
         when(ownClone.getUser()).thenReturn(caller);
-        when(userRepository.findByUuid(userUuid)).thenReturn(Optional.of(caller));
+        when(userRepository.findByUuidForUpdate(userUuid)).thenReturn(Optional.of(caller));
         when(cloneRepository.findByUserUuid(userUuid)).thenReturn(Optional.of(ownClone));
         when(videoCallRepository.save(any(VideoCall.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -123,7 +127,7 @@ class CallServiceTest {
         when(caller.hasTalkTime()).thenReturn(true);
         when(clone.getUser()).thenReturn(owner);
         when(clone.getStatus()).thenReturn("PENDING");
-        when(userRepository.findByUuid(callerUuid)).thenReturn(Optional.of(caller));
+        when(userRepository.findByUuidForUpdate(callerUuid)).thenReturn(Optional.of(caller));
         when(cloneRepository.findByUserUuid(ownerUuid)).thenReturn(Optional.of(clone));
 
         assertThatThrownBy(() -> callService.startCloneCall(
@@ -143,7 +147,10 @@ class CallServiceTest {
         Clone clone = Clone.builder().user(caller).build();
         VideoCall call = VideoCall.builder().user(caller).clone(clone)
                 .roomId("call-test").mediaType(CallMediaType.VOICE).build();
-        ReflectionTestUtils.setField(call, "startedAt", LocalDateTime.now().minusSeconds(120));
+        ReflectionTestUtils.setField(call, "id", 10L);
+        call.start(LocalDateTime.now().minusSeconds(120), null);
+        when(talkTimeTransactionRepository.balance(1L)).thenAnswer(i -> (long) caller.getRemainingTalkTime());
+        when(talkTimeTransactionRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
         when(videoCallRepository.findByIdForUpdate(10L)).thenReturn(Optional.of(call));
         when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(caller));
 
@@ -152,7 +159,7 @@ class CallServiceTest {
         assertThat(result.remainingTalkTime()).isZero();
         ArgumentCaptor<TalkTimeTransaction> transactionCaptor =
                 ArgumentCaptor.forClass(TalkTimeTransaction.class);
-        verify(talkTimeTransactionRepository).save(transactionCaptor.capture());
+        verify(talkTimeTransactionRepository).saveAndFlush(transactionCaptor.capture());
         TalkTimeTransaction transaction = transactionCaptor.getValue();
         assertThat(transaction.getReason()).isEqualTo(TalkTimeTransactionReason.CALL_USAGE);
         assertThat(transaction.getVideoCall()).isSameAs(call);

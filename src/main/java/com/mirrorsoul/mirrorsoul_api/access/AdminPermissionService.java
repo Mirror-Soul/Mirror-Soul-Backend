@@ -22,8 +22,8 @@ public class AdminPermissionService {
  }
  public static Set<AdminPermission> defaults(UserRole role) {
   if(role==UserRole.SUPER_ADMIN) return Set.of(AdminPermission.values());
-  if(role==UserRole.ADMIN) return Set.of(AdminPermission.job_review,AdminPermission.member_read,AdminPermission.member_manage,AdminPermission.moderation_read,AdminPermission.moderation,AdminPermission.support_read,AdminPermission.support_reply);
-  if(role==UserRole.ADMIN_VIEWER) return Set.of(AdminPermission.member_read,AdminPermission.moderation_read,AdminPermission.support_read);
+  if(role==UserRole.ADMIN) return Set.of(AdminPermission.job_review,AdminPermission.member_read,AdminPermission.member_manage,AdminPermission.moderation_read,AdminPermission.moderation,AdminPermission.support_read,AdminPermission.support_reply,AdminPermission.billing_read);
+  if(role==UserRole.ADMIN_VIEWER) return Set.of(AdminPermission.member_read,AdminPermission.moderation_read,AdminPermission.support_read,AdminPermission.billing_read);
   return Set.of();
  }
  public void require(Long id,AdminPermission permission) {if(!permissions(id).contains(permission)) AccessSupport.denied();}
@@ -34,6 +34,9 @@ public class AdminPermissionService {
   if(path.startsWith("/admin/staff")) return read?AdminPermission.staff_read:AdminPermission.staff_manage;
   if(path.startsWith("/admin/audit-events")) return AdminPermission.audit_read;
   if(path.startsWith("/admin/job-verifications")) return AdminPermission.job_review;
+  if(path.startsWith("/admin/payments")) return read?AdminPermission.billing_read:AdminPermission.billing_adjust;
+  if(path.equals("/admin/talk-time-adjustments")) return AdminPermission.billing_adjust;
+  if(path.matches("/admin/members/[0-9]+/talk-time-ledger")) return AdminPermission.billing_read;
   if(path.startsWith("/admin/members")) return read?AdminPermission.member_read:AdminPermission.member_manage;
   if(path.startsWith("/admin/reports")) return path.endsWith("/audits")?AdminPermission.audit_read:read?AdminPermission.moderation_read:AdminPermission.moderation;
   if(path.startsWith("/admin/support-tickets")) return read?AdminPermission.support_read:AdminPermission.support_reply;

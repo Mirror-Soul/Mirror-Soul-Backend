@@ -257,6 +257,10 @@ public class User extends BaseTimeEntity {
         this.remainingTalkTime = Math.addExact(getSafeRemainingTalkTime(), seconds);
     }
 
+    public void updateTalkTimeBalance(int seconds) {
+        this.remainingTalkTime = seconds;
+    }
+
     public void useTalkTime(int seconds) {
         this.remainingTalkTime = Math.max(0, getSafeRemainingTalkTime() - seconds);
     }

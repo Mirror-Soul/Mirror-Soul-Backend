@@ -36,6 +36,7 @@ class HomeServiceTest {
     private UserPreferredRegionRepository preferredRegionRepository;
     private NearbyRegionFinder nearbyRegionFinder;
     private HomeService homeService;
+    private com.mirrorsoul.mirrorsoul_api.repository.TalkTimeTransactionRepository talkTimeTransactionRepository;
 
     @BeforeEach
     void setUp() {
@@ -45,13 +46,15 @@ class HomeServiceTest {
         regionRepository = mock(RegionRepository.class);
         preferredRegionRepository = mock(UserPreferredRegionRepository.class);
         nearbyRegionFinder = mock(NearbyRegionFinder.class);
+        talkTimeTransactionRepository = mock(com.mirrorsoul.mirrorsoul_api.repository.TalkTimeTransactionRepository.class);
         homeService = new HomeService(
                 userRepository,
                 preferredSigunguRepository,
                 sigunguRepository,
                 regionRepository,
                 preferredRegionRepository,
-                nearbyRegionFinder
+                nearbyRegionFinder,
+                talkTimeTransactionRepository
         );
     }
 
@@ -64,7 +67,8 @@ class HomeServiceTest {
 
         when(userRepository.findByUuid(userUuid)).thenReturn(Optional.of(user));
         when(user.getId()).thenReturn(1L);
-        when(user.getRemainingTalkTime()).thenReturn(9_000);
+        when(user.getRemainingTalkTime()).thenReturn(1); // Stale cache is not used for billing.
+        when(talkTimeTransactionRepository.balance(1L)).thenReturn(9_000L);
         when(preferredRegionRepository.findByUserId(1L)).thenReturn(Optional.of(preferredRegion));
         when(preferredRegion.getAnchorRegion()).thenReturn(region);
         when(preferredRegion.getNearbyCount()).thenReturn(3);
@@ -93,6 +97,7 @@ class HomeServiceTest {
         when(userRepository.findByUuid(userUuid)).thenReturn(Optional.of(user));
         when(user.getId()).thenReturn(1L);
         when(user.getRemainingTalkTime()).thenReturn(-1);
+        when(talkTimeTransactionRepository.balance(1L)).thenReturn(-1L);
         when(preferredRegionRepository.findByUserId(1L)).thenReturn(Optional.empty());
 
         HomeResDTO.HomeDTO result = homeService.getHome(userUuid);

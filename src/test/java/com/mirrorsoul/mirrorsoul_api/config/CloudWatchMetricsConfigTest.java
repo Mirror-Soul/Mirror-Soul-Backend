@@ -15,7 +15,7 @@ import static org.mockito.Mockito.when;
 
 class CloudWatchMetricsConfigTest {
     @Test
-    void exportsOnlyPoolMetricsWithDeploymentDimensions() {
+    void exportsPoolAndBillingMetricsWithDeploymentDimensions() {
         CloudWatchAsyncClient client = mock(CloudWatchAsyncClient.class);
         when(client.putMetricData(any(PutMetricDataRequest.class)))
                 .thenReturn(CompletableFuture.completedFuture(PutMetricDataResponse.builder().build()));
@@ -26,8 +26,10 @@ class CloudWatchMetricsConfigTest {
             registry.stop();
             registry.counter("http.requests", "uri", "/users/123").increment();
             registry.counter("hikaricp.connections.timeout", "pool", "mysql").increment();
+            registry.counter("billing.jobs.failed", "action", "CONSUME").increment();
 
             assertThat(registry.find("http.requests").counter()).isNull();
+            assertThat(registry.get("billing.jobs.failed").counter().getId().getTag("action")).isEqualTo("CONSUME");
             var meter = registry.get("hikaricp.connections.timeout").counter();
             assertThat(meter.getId().getTag("pool")).isEqualTo("mysql");
             assertThat(meter.getId().getTag("application")).isEqualTo("mirrorsoul-api");

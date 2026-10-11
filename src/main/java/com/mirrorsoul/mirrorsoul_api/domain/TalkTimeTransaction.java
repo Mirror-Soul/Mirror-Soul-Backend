@@ -52,6 +52,17 @@ public class TalkTimeTransaction {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "payment_id")
+    private Long paymentId;
+    @Column(name = "operation_key", unique = true, length = 100)
+    private String operationKey;
+    @Column(name = "actor_id")
+    private Long actorId;
+    @Column(name = "memo", length = 500)
+    private String memo;
+    @Column(name = "request_hash", length = 64)
+    private String requestHash;
+
     private TalkTimeTransaction(User user, VideoCall videoCall,
             TalkTimeTransactionReason reason, int deltaSeconds, int balanceAfterSeconds) {
         this.user = user;
@@ -65,5 +76,13 @@ public class TalkTimeTransaction {
             TalkTimeTransactionReason reason, int deltaSeconds) {
         return new TalkTimeTransaction(user, videoCall, reason,
                 deltaSeconds, user.getRemainingTalkTime());
+    }
+
+    public static TalkTimeTransaction ledger(User user, VideoCall call, TalkTimeTransactionReason reason,
+            int delta, Long paymentId, String operationKey, Long actorId, String memo, String requestHash) {
+        var entry = record(user, call, reason, delta);
+        entry.paymentId = paymentId; entry.operationKey = operationKey; entry.actorId = actorId;
+        entry.memo = memo; entry.requestHash = requestHash;
+        return entry;
     }
 }

@@ -21,6 +21,10 @@ public interface VideoCallRepository extends JpaRepository<VideoCall, Long> {
     Optional<VideoCall> findByIdForUpdate(@Param("callId") Long callId);
 
     boolean existsByCloneIdAndStatusIn(Long cloneId, Collection<VideoCallStatus> statuses);
+    boolean existsByUserIdAndStatusIn(Long userId, Collection<VideoCallStatus> statuses);
+
+    @Query("select v.id from VideoCall v where v.status = 'IN_PROGRESS' and v.billingDeadlineAt <= :now order by v.billingDeadlineAt")
+    List<Long> findBillingExpired(@Param("now") LocalDateTime now, org.springframework.data.domain.Pageable pageable);
 
     @Query("""
             select videoCall

@@ -48,7 +48,7 @@ internal:
     api-key: ${AI_INTERNAL_API_KEY:}
     previous-api-key: ${AI_INTERNAL_PREVIOUS_API_KEY:}
     previous-key-expires-at: ${AI_INTERNAL_PREVIOUS_KEY_EXPIRES_AT:}
-    scopes: ${AI_INTERNAL_SCOPES:call_context,talk_log,safety,member_deletion,signaling}
+    scopes: ${AI_INTERNAL_SCOPES:call_context,talk_log,call_billing,safety,member_deletion,signaling}
 
 chat:
   websocket:
@@ -181,3 +181,29 @@ security:
     allowed-origins: ${ADMIN_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
     invite-encryption-key: ${ADMIN_INVITE_ENCRYPTION_KEY:}
     audit-retention-days: ${ADMIN_AUDIT_RETENTION_DAYS:365}
+
+# Configure product IDs and seconds before enabling sales; zero-second entries cannot grant time.
+billing:
+  encryption-key: ${BILLING_ENCRYPTION_KEY:}
+  retry-interval-ms: ${BILLING_RETRY_INTERVAL_MS:30000}
+  call-expiry-interval-ms: ${BILLING_CALL_EXPIRY_INTERVAL_MS:5000}
+  apple-products: {}
+  google-products: {}
+  apple:
+    product-id: ${APPLE_TALK_TIME_PRODUCT_ID:}
+    product-seconds: ${APPLE_TALK_TIME_PRODUCT_SECONDS:0}
+    bundle-id: ${APPLE_BUNDLE_ID:}
+    app-apple-id: ${APPLE_APP_ID:}
+    issuer-id: ${APPLE_ISSUER_ID:}
+    key-id: ${APPLE_KEY_ID:}
+    private-key-path: ${APPLE_PRIVATE_KEY_PATH:}
+    root-certificate-paths: ${APPLE_ROOT_CERTIFICATE_PATHS:}
+    environment: ${APPLE_STORE_ENVIRONMENT:PRODUCTION}
+  google:
+    product-id: ${GOOGLE_TALK_TIME_PRODUCT_ID:}
+    product-seconds: ${GOOGLE_TALK_TIME_PRODUCT_SECONDS:0}
+    package-name: ${GOOGLE_PLAY_PACKAGE_NAME:}
+    credentials-path: ${GOOGLE_PLAY_CREDENTIALS_PATH:}
+    push-audience: ${GOOGLE_PLAY_PUSH_AUDIENCE:}
+    push-service-account: ${GOOGLE_PLAY_PUSH_SERVICE_ACCOUNT:}
+    allow-test-purchases: ${GOOGLE_PLAY_ALLOW_TEST_PURCHASES:false}

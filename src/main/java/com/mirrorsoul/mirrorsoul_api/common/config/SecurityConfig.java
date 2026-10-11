@@ -67,6 +67,9 @@ public class SecurityConfig {
                                 , "/internal/clone-training/*/voice/complete"
                         ).permitAll()
                         .requestMatchers("/internal/ai/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/payments/notifications/apple", "/payments/notifications/google").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/admin/payments", "/admin/payments/**")
+                            .hasAnyRole("ADMIN", "ADMIN_VIEWER", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/me", "/admin/staff", "/admin/audit-events", "/admin/members", "/admin/members/**")
                             .hasAnyRole("ADMIN", "ADMIN_VIEWER", "SUPER_ADMIN")
                         .requestMatchers(HttpMethod.GET, "/admin/reports", "/admin/reports/*", "/admin/reports/*/decisions")

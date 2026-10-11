@@ -51,7 +51,7 @@ public class CloudWatchMetricsConfig {
         registry.config()
                 .commonTags("application", "mirrorsoul-api", "environment", environment,
                         "instance", instance)
-                .meterFilter(MeterFilter.deny(id -> !id.getName().startsWith("hikaricp.")));
+                .meterFilter(MeterFilter.deny(id -> !id.getName().startsWith("hikaricp.") && !id.getName().startsWith("billing.")));
         return registry;
     }
 }

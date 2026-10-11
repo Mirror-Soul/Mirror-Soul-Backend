@@ -12,6 +12,7 @@ public record AiInternalApiProperties(String apiKey,String previousApiKey,Instan
  public boolean matches(String actual) {return RotatingSecret.matches(apiKey,previousApiKey,previousKeyExpiresAt,actual);}
  public boolean allows(String method,String path) {
   String scope=path.startsWith("/internal/ai/safety/")?"safety":path.startsWith("/internal/ai/member-deletions")?"member_deletion":path.matches("/internal/ai/calls/[0-9]+/context")&&method.equals("GET")?"call_context":path.matches("/internal/ai/calls/[0-9]+/talk-logs")&&method.equals("POST")?"talk_log":null;
+  if(path.matches("/internal/ai/calls/[0-9]+/billing-events")&&method.equals("POST")) scope="call_billing";
   return scope!=null&&(scopes==null||scopes.contains(scope));
  }
  public boolean allowsSignaling() {return scopes==null||scopes.contains("signaling");}

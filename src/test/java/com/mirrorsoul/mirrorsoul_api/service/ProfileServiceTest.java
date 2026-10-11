@@ -27,23 +27,17 @@ class ProfileServiceTest {
             userRepository, fileService, talkTimeTransactionRepository);
 
     @Test
-    void buyTimeRecordsBalanceIncrease() {
+    void buyTimeRejectsUnverifiedClientSeconds() {
         UUID userUuid = UUID.randomUUID();
         User user = User.builder().id(1L).uuid(userUuid).remainingTalkTime(1800).build();
         ProfileReqDTO.buyTimeReqDTO request = new ProfileReqDTO.buyTimeReqDTO();
         request.setBuyTime(600);
         when(userRepository.findByUuidForUpdate(userUuid)).thenReturn(Optional.of(user));
 
-        ProfileResDTO.timeStatusDTO result = service.buyTime(userUuid, request);
-
-        assertThat(result.getRemainingTalkTime()).isEqualTo(2400);
-        ArgumentCaptor<TalkTimeTransaction> transactionCaptor =
-                ArgumentCaptor.forClass(TalkTimeTransaction.class);
-        verify(talkTimeTransactionRepository).save(transactionCaptor.capture());
-        TalkTimeTransaction transaction = transactionCaptor.getValue();
-        assertThat(transaction.getReason()).isEqualTo(TalkTimeTransactionReason.TOP_UP);
-        assertThat(transaction.getDeltaSeconds()).isEqualTo(600);
-        assertThat(transaction.getBalanceAfterSeconds()).isEqualTo(2400);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.buyTime(userUuid, request))
+                .isInstanceOfSatisfying(com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException.class,
+                        e -> assertThat(e.getCode()).isEqualTo(com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode.PAYMENT_INVALID));
+        org.mockito.Mockito.verifyNoInteractions(talkTimeTransactionRepository);
     }
 
     @Test

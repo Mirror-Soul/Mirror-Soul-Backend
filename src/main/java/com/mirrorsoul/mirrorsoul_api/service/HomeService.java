@@ -37,6 +37,7 @@ public class HomeService {
     private final RegionRepository regionRepository;
     private final UserPreferredRegionRepository preferredRegionRepository;
     private final NearbyRegionFinder nearbyRegionFinder;
+    private final com.mirrorsoul.mirrorsoul_api.repository.TalkTimeTransactionRepository talkTimeTransactionRepository;
 
     public HomeResDTO.HomeDTO getHome(UUID userUuid) {
         User user = userRepository.findByUuid(userUuid)
@@ -47,10 +48,8 @@ public class HomeService {
                 .map(this::toPreferredRegionSetting)
                 .orElse(null);
 
-        int remainingTalkTimeInSeconds = Math.max(
-                user.getRemainingTalkTime() == null ? 0 : user.getRemainingTalkTime(),
-                0
-        );
+        int remainingTalkTimeInSeconds = Math.max(0,
+                Math.toIntExact(talkTimeTransactionRepository.balance(user.getId())));
 
         return new HomeResDTO.HomeDTO(
                 toTalkTime(remainingTalkTimeInSeconds),

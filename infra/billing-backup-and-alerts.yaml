@@ -1,0 +1,180 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Billing database recovery, secret access, and durable job processing alerts
+Parameters:
+  ApplicationRoleName:
+    Type: String
+  ApplicationLogGroup:
+    Type: String
+  AlarmTopicArn:
+    Type: String
+  AppleKeySecretArn:
+    Type: String
+  GoogleCredentialsSecretArn:
+    Type: String
+  BillingEncryptionKeySecretArn:
+    Type: String
+  SecretsKmsKeyArn:
+    Type: String
+  DatabaseArn:
+    Type: String
+    Description: ARN of the RDS database containing payments and the talk-time ledger
+Resources:
+  SecretAccess:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Roles: [!Ref ApplicationRoleName]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: secretsmanager:GetSecretValue
+            Resource: [!Ref AppleKeySecretArn, !Ref GoogleCredentialsSecretArn, !Ref BillingEncryptionKeySecretArn]
+          - Effect: Allow
+            Action: kms:Decrypt
+            Resource: !Ref SecretsKmsKeyArn
+            Condition:
+              StringEquals:
+                kms:ViaService: !Sub 'secretsmanager.${AWS::Region}.amazonaws.com'
+  BackupKey:
+    Type: AWS::KMS::Key
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:root'
+            Action: kms:*
+            Resource: '*'
+  BillingBackupVault:
+    Type: AWS::Backup::BackupVault
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BackupVaultName: !Sub '${AWS::StackName}-billing'
+      EncryptionKeyArn: !GetAtt BackupKey.Arn
+  BackupRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: backup.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSBackupServiceRolePolicyForBackup'
+  BillingBackupPlan:
+    Type: AWS::Backup::BackupPlan
+    Properties:
+      BackupPlan:
+        BackupPlanName: !Sub '${AWS::StackName}-billing'
+        BackupPlanRule:
+          - RuleName: daily-and-point-in-time
+            TargetBackupVault: !Ref BillingBackupVault
+            ScheduleExpression: 'cron(0 16 * * ? *)'
+            EnableContinuousBackup: true
+            StartWindowMinutes: 60
+            CompletionWindowMinutes: 180
+            Lifecycle:
+              DeleteAfterDays: 35
+  BillingBackupSelection:
+    Type: AWS::Backup::BackupSelection
+    Properties:
+      BackupPlanId: !Ref BillingBackupPlan
+      BackupSelection:
+        SelectionName: billing-database
+        IamRoleArn: !GetAtt BackupRole.Arn
+        Resources: [!Ref DatabaseArn]
+  ProcessingFailureMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ApplicationLogGroup
+      FilterPattern: '"Billing job failed"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/Billing
+          MetricName: ProcessingFailures
+          MetricValue: '1'
+  ProcessingFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: MirrorSoul/Billing
+      MetricName: ProcessingFailures
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  DeadJobsMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ApplicationLogGroup
+      FilterPattern: '"Billing dead jobs detected"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/Billing
+          MetricName: DeadJobsDetected
+          MetricValue: '1'
+  DeadJobsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: MirrorSoul/Billing
+      MetricName: DeadJobsDetected
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  ReconciliationMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ApplicationLogGroup
+      FilterPattern: '"Billing reconciliation mismatch"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/Billing
+          MetricName: LedgerMismatchDetected
+          MetricValue: '1'
+  ReconciliationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: MirrorSoul/Billing
+      MetricName: LedgerMismatchDetected
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  QueueDelayMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ApplicationLogGroup
+      FilterPattern: '"Billing queue delayed"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/Billing
+          MetricName: QueueDelayDetected
+          MetricValue: '1'
+  QueueDelayAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: MirrorSoul/Billing
+      MetricName: QueueDelayDetected
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+Outputs:
+  BackupVault:
+    Value: !Ref BillingBackupVault
+  SecretAccessPolicy:
+    Value: !Ref SecretAccess

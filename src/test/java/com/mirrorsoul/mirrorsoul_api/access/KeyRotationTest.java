@@ -12,6 +12,10 @@ class KeyRotationTest {
   var p=new AiInternalApiProperties("current","previous",Instant.now().plusSeconds(60),Set.of("call_context"));
   assertThat(p.matches("previous")).isTrue();assertThat(p.allows("GET","/internal/ai/calls/1/context")).isTrue();assertThat(p.allows("POST","/internal/ai/calls/1/talk-logs")).isFalse();assertThat(p.allowsSignaling()).isFalse();
   assertThat(new AiInternalApiProperties("current","previous",Instant.now().minusSeconds(1),Set.of()).matches("previous")).isFalse();assertThat(p.toString()).doesNotContain("previous","current");
+  assertThat(p.allows("POST","/internal/ai/calls/1/billing-events")).isFalse();
+  var billing=new AiInternalApiProperties("billing-key",null,null,Set.of("call_billing"));
+  assertThat(billing.allows("POST","/internal/ai/calls/1/billing-events")).isTrue();
+  assertThat(billing.allows("GET","/internal/ai/calls/1/context")).isFalse();
  }
  @Test void jwtRotationAcceptsOldSignatureOnlyDuringGraceAndSignsNewTokensWithCurrentKey() {
   String old="old-signing-secret-key-64-bytes-for-hs512-validation-1234567890123456",next="new-signing-secret-key-more-than-32-bytes";

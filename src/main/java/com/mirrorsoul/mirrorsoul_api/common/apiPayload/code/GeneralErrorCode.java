@@ -8,6 +8,9 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum GeneralErrorCode implements BaseErrorCode {
 
+    PAYMENT_INVALID(HttpStatus.BAD_REQUEST, "PAYMENT_4000", "검증된 스토어 구매 정보를 확인해 주세요."),
+    PAYMENT_CONFLICT(HttpStatus.CONFLICT, "PAYMENT_4090", "결제 또는 멱등키 상태가 요청과 일치하지 않습니다."),
+    PAYMENT_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "PAYMENT_5030", "스토어 검증 서비스를 사용할 수 없습니다."),
     // 인증 에러
     DUPLICATE_LOGINID(HttpStatus.BAD_REQUEST,"AUTH_4000","중복되는 아이디가 존재합니다."),
     NOT_AGREED_TERM(HttpStatus.BAD_REQUEST,"AUTH_4001","서비스 이용약관 동의는 필수입니다."),

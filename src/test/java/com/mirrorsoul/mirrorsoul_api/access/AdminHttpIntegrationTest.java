@@ -33,6 +33,23 @@ class AdminHttpIntegrationTest {
   assertThat(audits.findAll().stream().anyMatch(e->ordinary.getId().equals(e.getStaffId())&&"DENIED".equals(e.getResult()))).isTrue();
  }
  @Autowired com.mirrorsoul.mirrorsoul_api.repository.JobVerificationRequestRepository jobRequests;
+ @Test void billingRoutesRequireDedicatedPermissionAndProduceLinkedAudit() throws Exception {
+  var root=user(UserRole.SUPER_ADMIN);var admin=user(UserRole.ADMIN);var viewer=user(UserRole.ADMIN_VIEWER);var owner=user(UserRole.USER);
+  String body="{\"memberId\":"+owner.getId()+",\"deltaSeconds\":60,\"reason\":\"support return\",\"idempotencyKey\":\"billing-http\"}";
+  mvc.perform(get("/admin/payments").header("Authorization","Bearer "+tokens.createAccessToken(viewer))).andExpect(status().isOk());
+  mvc.perform(post("/admin/talk-time-adjustments").header("Authorization","Bearer "+tokens.createAccessToken(admin)).contentType("application/json").content(body))
+   .andExpect(status().isForbidden());
+  mvc.perform(post("/admin/talk-time-adjustments").header("Authorization","Bearer "+tokens.createAccessToken(root)).contentType("application/json").content(body))
+   .andExpect(status().isOk()).andExpect(jsonPath("$.result.deltaSeconds").value(60)).andExpect(jsonPath("$.result.actorId").value(root.getId()));
+  mvc.perform(get("/admin/members/"+owner.getId()+"/talk-time-ledger").header("Authorization","Bearer "+tokens.createAccessToken(viewer)))
+   .andExpect(status().isOk()).andExpect(jsonPath("$.result.content[0].reason").value("ADMIN_ADJUSTMENT"));
+  mvc.perform(post("/admin/talk-time-adjustments").header("Authorization","Bearer "+tokens.createAccessToken(root)).contentType("application/json")
+   .content(body.replace("support return","different reason"))).andExpect(status().isConflict());
+  assertThat(audits.findAll().stream().anyMatch(e->root.getId().equals(e.getStaffId())&&"TALK_TIME_ADJUSTMENT".equals(e.getAction())&&"SUCCESS".equals(e.getResult()))).isTrue();
+  mvc.perform(post("/payments/notifications/google").contentType("application/json")
+   .content("{\"message\":{\"data\":\"e30=\",\"messageId\":\"1\"}}")).andExpect(status().isForbidden());
+  mvc.perform(post("/internal/ai/calls/1/billing-events").contentType("application/json").content("{}")).andExpect(status().isServiceUnavailable());
+ }
  @Test void jobHistoryAndRetryUseRealPermissionChecksAndAuditAdvisor() throws Exception {
   var root=user(UserRole.SUPER_ADMIN);var viewer=user(UserRole.ADMIN_VIEWER);var owner=user(UserRole.USER);
   var request=com.mirrorsoul.mirrorsoul_api.domain.JobVerificationRequest.pending(owner,Job.IT_TECH);

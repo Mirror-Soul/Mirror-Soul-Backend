@@ -66,6 +66,20 @@ public class FaceTrainingJob {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "base_clone_version") private Long baseCloneVersion;
+    @Column(name = "result_clone_version") private Long resultCloneVersion;
+    @Column(name = "retry_count", nullable = false) private int retryCount;
+    @Column(name = "retried_from_job_id") private Long retriedFromJobId;
+
+    public void traceVersion(long version) { if (baseCloneVersion == null) baseCloneVersion = version; }
+    public void resultVersion(long version) { resultCloneVersion = version; }
+    public void retryOf(FaceTrainingJob original) { retriedFromJobId = original.id; retryCount = original.retryCount + 1; }
+    public void trainingFailure(String code, boolean retryAllowed) {
+        if (isTerminal()) return;
+        recordFailure(code, null, retryAllowed);
+        status = FaceTrainingJobStatus.FAILED; finishedAt = LocalDateTime.now();
+    }
+
     private FaceTrainingJob(User user, FaceTrainingJobSource source) {
         this.user = user;
         this.source = source;
@@ -117,8 +131,11 @@ public class FaceTrainingJob {
     }
 
     public void markDispatchFailed(String errorMessage) {
+        if (isTerminal()) return;
         this.status = FaceTrainingJobStatus.FAILED;
         this.errorMessage = errorMessage;
+        this.errorCode = "DISPATCH_FAILED";
+        this.errorRetryable = true;
         this.finishedAt = LocalDateTime.now();
     }
 }

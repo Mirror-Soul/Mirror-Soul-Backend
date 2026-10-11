@@ -88,6 +88,9 @@ public class CallService {
 
         return CallResDTO.StartCallDTO.builder()
                 .callId(savedCall.getId())
+                .correlationId(UUID.fromString(savedCall.diagnosticCorrelationId()))
+                .cloneVersion(savedCall.getCloneVersion())
+                .trainingJobIds(com.mirrorsoul.mirrorsoul_api.quality.CallDiagnosticsReadService.trainingIds(savedCall))
                 .roomId(savedRoomId)
                 .mediaType(savedCall.getMediaType())
                 .status(savedCall.getStatus())

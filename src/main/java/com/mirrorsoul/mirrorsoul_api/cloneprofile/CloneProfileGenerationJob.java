@@ -55,9 +55,22 @@ public class CloneProfileGenerationJob extends BaseTimeEntity {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @Column(name = "base_clone_version") private Long baseCloneVersion;
+    @Column(name = "result_clone_version") private Long resultCloneVersion;
+    @Column(name = "retry_count", nullable = false) private int retryCount;
+    @Column(name = "retried_from_job_id") private Long retriedFromJobId;
+    @Column(name = "retry_allowed") private Boolean retryAllowed;
+
+    public void resultVersion(long version) { resultCloneVersion = version; }
+    public void retryOf(CloneProfileGenerationJob original) { retriedFromJobId = original.id; retryCount = original.retryCount + 1; }
+    public void trainingFailure(String code, boolean retryAllowed) {
+        fail(LocalDateTime.now(), code, null); this.retryAllowed = retryAllowed;
+    }
+
     private CloneProfileGenerationJob(Clone clone, CloneProfileTrigger triggerType,
                                       String sourceHash, String promptVersion) {
         this.clone = clone;
+        this.baseCloneVersion = clone.getCloneVersion();
         this.triggerType = triggerType;
         this.sourceHash = sourceHash;
         this.promptVersion = promptVersion;
@@ -116,6 +129,9 @@ public class CloneProfileGenerationJob extends BaseTimeEntity {
         this.completedAt = now;
         this.errorCode = errorCode;
         this.errorMessage = truncate(errorMessage);
+        this.retryAllowed = !"INVALID_GENERATED_PROFILE".equals(errorCode)
+                && !"GEMINI_HTTP_400".equals(errorCode) && !"GEMINI_HTTP_401".equals(errorCode)
+                && !"GEMINI_HTTP_403".equals(errorCode);
     }
 
     public void recover(LocalDateTime now) {

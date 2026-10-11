@@ -30,6 +30,7 @@ public class VoiceTrainingJobPublisher {
     private final AwsSqsProperties awsSqsProperties;
     private final SqsClient sqsClient;
     private final ObjectMapper objectMapper;
+    private final com.mirrorsoul.mirrorsoul_api.repository.CloneRepository clones;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void publish(Long voiceTrainingJobId) {
@@ -37,6 +38,8 @@ public class VoiceTrainingJobPublisher {
                 .orElseThrow(() -> new IllegalArgumentException("VoiceTrainingJob not found: " + voiceTrainingJobId));
 
         if (job.isTerminal() || job.getSqsMessageId() != null) return;
+        var clone = clones.findByUserUuid(job.getUser().getUuid()).orElseThrow();
+        job.traceVersion(clone.getCloneVersion());
 
         List<String> objectKeys = job.getFiles().stream()
                 .map(VoiceTrainingJobFile::getObjectKey)
@@ -48,7 +51,9 @@ public class VoiceTrainingJobPublisher {
                 job.getUser().getUuid(),
                 awsS3Properties.getBucket(),
                 objectKeys
-        );
+        ).withTrace(new com.mirrorsoul.mirrorsoul_api.quality.TrainingDtos.Trace("VOICE-" + job.getId(),
+                clone.getId(),job.getBaseCloneVersion(),
+                com.mirrorsoul.mirrorsoul_api.quality.QualitySupport.correlation("VOICE-" + job.getId()),job.getRetryCount()));
 
         try {
             String messageBody = objectMapper.writeValueAsString(message);
@@ -60,8 +65,8 @@ public class VoiceTrainingJobPublisher {
             job.markMessageSent(response.messageId());
             log.info("Published voice training job. jobId={}, sqsMessageId={}", job.getId(), response.messageId());
         } catch (JsonProcessingException | SqsException | SdkClientException e) {
-            job.markDispatchFailed(e.getMessage());
-            log.error("Failed to publish voice training job. jobId={}", job.getId(), e);
+            job.markDispatchFailed("DISPATCH_FAILED");
+            log.error("Training dispatch failed trainingJobId=VOICE-{} failureCode=DISPATCH_FAILED", job.getId());
         }
     }
 }

@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class FaceTrainingResultService {
     private final FaceTrainingJobRepository jobs;
     private final CloneRepository clones;
@@ -34,7 +35,9 @@ public class FaceTrainingResultService {
         require(Objects.equals(job.getUser().getUuid(), message.userUuid())
                 && Objects.equals(clone.getUser().getUuid(), message.userUuid()), "Result owner mismatch");
         // A committed terminal result is immutable, including on SQS redelivery.
-        if (job.isTerminal()) return;
+        if (job.isTerminal()) {
+            log.info("Training callback duplicate trainingJobId=FACE-{}",job.getId()); return;
+        }
         switch (message.status()) {
             case "PROCESSING" -> job.markProcessing();
             case "FAILED" -> {
@@ -80,6 +83,7 @@ public class FaceTrainingResultService {
         else {
             activeProfiles.forEach(AiFaceProfile::deactivate);
             clone.updateFaceSimilarity(job.getId(), faceScore);
+            job.resultVersion(clone.getCloneVersion());
         }
         profile.updateRenderingQuality(faceScore);
         profiles.saveAndFlush(profile);

@@ -54,7 +54,7 @@ public class StaffService {
   superActor(actor);validate(input.permissions());String hash=AccessSupport.hash("GRANT",targetId,input.version(),new TreeSet<>(input.permissions()));
   var prior=previous(actor,input.idempotencyKey(),hash);if(prior!=null) return view(users.findById(targetId).orElseThrow());consume(actor,token);
   var target=target(targetId,actor);var s=materialize(target);
-  if(target.getRole()==UserRole.ADMIN_VIEWER&&!Set.of(AdminPermission.member_read,AdminPermission.moderation_read,AdminPermission.support_read,AdminPermission.billing_read,AdminPermission.audit_read,AdminPermission.staff_read).containsAll(input.permissions())) AccessSupport.denied();
+  if(target.getRole()==UserRole.ADMIN_VIEWER&&!Set.of(AdminPermission.member_read,AdminPermission.moderation_read,AdminPermission.support_read,AdminPermission.billing_read,AdminPermission.clone_training_read,AdminPermission.call_diagnostics_read,AdminPermission.audit_read,AdminPermission.staff_read).containsAll(input.permissions())) AccessSupport.denied();
   if(!Objects.equals(s.getVersion(),input.version())||s.getState()!=StaffAccount.State.ACTIVE) throw new GeneralException(GeneralErrorCode.STAFF_CONFLICT,"Staff version mismatch actual="+s.getVersion()+" expected="+input.version()+" state="+s.getState());validate(input.permissions());
   s.permissions(input.permissions(),AccessSupport.now());target.revokeAdministrativeSessions();staff.flush();commands.save(new AdminCommand(actor,input.idempotencyKey(),hash,targetId));record(actor,"STAFF_PERMISSIONS","staff:"+targetId);return view(target);
  }

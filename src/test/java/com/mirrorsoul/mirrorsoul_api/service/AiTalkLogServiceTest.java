@@ -140,6 +140,7 @@ class AiTalkLogServiceTest {
         Long callId = 1L;
         UUID eventId = UUID.randomUUID();
         VideoCall readyCall = VideoCall.builder()
+                .clone(com.mirrorsoul.mirrorsoul_api.domain.Clone.builder().build())
                 .roomId("call-abc")
                 .mediaType(CallMediaType.VIDEO)
                 .build();
@@ -198,6 +199,7 @@ class AiTalkLogServiceTest {
 
     private VideoCall inProgressCall(Long id) {
         VideoCall call = VideoCall.builder()
+                .clone(com.mirrorsoul.mirrorsoul_api.domain.Clone.builder().build())
                 .roomId("call-abc")
                 .mediaType(CallMediaType.VIDEO)
                 .build();

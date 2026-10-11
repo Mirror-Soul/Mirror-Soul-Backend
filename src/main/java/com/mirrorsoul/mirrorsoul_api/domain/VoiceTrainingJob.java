@@ -85,6 +85,23 @@ public class VoiceTrainingJob {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "base_clone_version") private Long baseCloneVersion;
+    @Column(name = "result_clone_version") private Long resultCloneVersion;
+    @Column(name = "retry_count", nullable = false) private int retryCount;
+    @Column(name = "retried_from_job_id") private Long retriedFromJobId;
+
+    public void traceVersion(long version) { if (baseCloneVersion == null) baseCloneVersion = version; }
+    public void resultVersion(long version) { resultCloneVersion = version; }
+    public void retryOf(VoiceTrainingJob original) {
+        retriedFromJobId = original.id; retryCount = original.retryCount + 1;
+        voiceTrainingSentence = original.voiceTrainingSentence;
+    }
+    public void trainingFailure(String code, boolean retryAllowed) {
+        if (isTerminal()) return;
+        recordFailure(code, null, retryAllowed);
+        status = VoiceTrainingJobStatus.FAILED; finishedAt = LocalDateTime.now();
+    }
+
     private VoiceTrainingJob(User user, VoiceTrainingJobSource source) {
         this.user = user;
         this.source = source;
@@ -118,6 +135,8 @@ public class VoiceTrainingJob {
         if (isTerminal()) return;
         this.status = VoiceTrainingJobStatus.FAILED;
         this.errorMessage = errorMessage;
+        this.errorCode = "DISPATCH_FAILED";
+        this.errorRetryable = true;
         this.finishedAt = LocalDateTime.now();
     }
 

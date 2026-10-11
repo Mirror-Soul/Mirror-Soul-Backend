@@ -25,4 +25,16 @@ class KeyRotationTest {
   assertThatThrownBy(()->new JwtTokenProvider(new JwtProperties(next,3600,3600,old,Instant.now().minusSeconds(1))).validateAccessToken(token)).isInstanceOf(io.jsonwebtoken.JwtException.class);
   assertThatThrownBy(()->original.validateAccessToken(rotated.createAccessToken(user))).isInstanceOf(io.jsonwebtoken.JwtException.class);
  }
+ @Test void qualityScopesAreBoundToOperationMethodAndTypedJobId() {
+  var call=new AiInternalApiProperties("key",null,null,Set.of("call_diagnostics"));
+  assertThat(call.allows("POST","/internal/ai/calls/123/diagnostics")).isTrue();
+  assertThat(call.allows("GET","/internal/ai/calls/123/diagnostics")).isFalse();
+  assertThat(call.allows("POST","/internal/ai/calls/123/billing-events")).isFalse();
+  assertThat(call.allows("POST","/internal/ai/clone-training-jobs/VOICE-1/events")).isFalse();
+  var training=new AiInternalApiProperties("key",null,null,Set.of("training_status"));
+  assertThat(training.allows("POST","/internal/ai/clone-training-jobs/FACE-1/events")).isTrue();
+  assertThat(training.allows("POST","/internal/ai/clone-training-jobs/RAG-12-3/events")).isTrue();
+  assertThat(training.allows("GET","/internal/ai/clone-training-jobs/VOICE-1/events")).isFalse();
+  assertThat(training.allows("POST","/internal/ai/clone-training-jobs/1/events")).isFalse();
+ }
 }

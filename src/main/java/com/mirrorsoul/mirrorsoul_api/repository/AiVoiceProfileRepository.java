@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface AiVoiceProfileRepository extends JpaRepository<AiVoiceProfile, Long> {
+    Optional<AiVoiceProfile> findByCloneIdAndVoiceTrainingJob_Id(Long cloneId,Long jobId);
     boolean existsByCloneIdAndActiveTrueAndStatus(Long cloneId, String status);
 
     boolean existsByCloneIdAndVoiceTrainingJob_IdAndActiveTrueAndStatus(Long cloneId, Long jobId, String status);

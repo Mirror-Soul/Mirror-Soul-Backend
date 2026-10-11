@@ -1,0 +1,242 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Twin training and call quality alarms for existing queues and application logs
+Parameters:
+  LogGroupName:
+    Type: String
+    Description: Existing application log group receiving backend logs
+    AllowedPattern: '[A-Za-z0-9_./-]+'
+  AlarmTopicArn:
+    Type: String
+    Description: Existing SNS alarm topic ARN
+  QueueAgeSeconds:
+    Type: Number
+    Default: 900
+    MinValue: 60
+  DashboardName:
+    Type: String
+    Default: mirrorsoul-twin-call-quality
+  VoiceRequestQueueName:
+    Type: String
+    Description: Existing VoiceRequest SQS queue name, not URL
+  FaceRequestQueueName:
+    Type: String
+    Description: Existing FaceRequest SQS queue name, not URL
+  VoiceResultQueueName:
+    Type: String
+    Description: Existing VoiceResult SQS queue name, not URL
+  FaceResultQueueName:
+    Type: String
+    Description: Existing FaceResult SQS queue name, not URL
+  VoiceResultDlqName:
+    Type: String
+    Description: Existing VoiceResult dead letter queue name
+  FaceResultDlqName:
+    Type: String
+    Description: Existing FaceResult dead letter queue name
+Resources:
+  FailedLogMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref LogGroupName
+      FilterPattern: '"Training jobs failed"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/Quality
+          MetricName: FailedObservations
+          MetricValue: '1'
+          DefaultValue: 0
+  FailedAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Training jobs failed; inspect typed job IDs and current admin job status
+      Namespace: MirrorSoul/Quality
+      MetricName: FailedObservations
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  StalledLogMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref LogGroupName
+      FilterPattern: '"Training jobs stalled"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/Quality
+          MetricName: StalledObservations
+          MetricValue: '1'
+          DefaultValue: 0
+  StalledAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Training jobs stalled; inspect typed job IDs and current admin job status
+      Namespace: MirrorSoul/Quality
+      MetricName: StalledObservations
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 2
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  DuplicateLogMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref LogGroupName
+      FilterPattern: '"Training callback duplicate"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/Quality
+          MetricName: DuplicateObservations
+          MetricValue: '1'
+          DefaultValue: 0
+  DuplicateAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Training callback duplicate; inspect typed job IDs and current admin job status
+      Namespace: MirrorSoul/Quality
+      MetricName: DuplicateObservations
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 20
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  RetryLogMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref LogGroupName
+      FilterPattern: '"Training retry scheduled"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/Quality
+          MetricName: RetryObservations
+          MetricValue: '1'
+          DefaultValue: 0
+  VoiceRequestAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Training queue age exceeds configured processing budget
+      Namespace: AWS/SQS
+      MetricName: ApproximateAgeOfOldestMessage
+      Dimensions:
+        - Name: QueueName
+          Value: !Ref VoiceRequestQueueName
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 3
+      Threshold: !Ref QueueAgeSeconds
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  FaceRequestAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Training queue age exceeds configured processing budget
+      Namespace: AWS/SQS
+      MetricName: ApproximateAgeOfOldestMessage
+      Dimensions:
+        - Name: QueueName
+          Value: !Ref FaceRequestQueueName
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 3
+      Threshold: !Ref QueueAgeSeconds
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  VoiceResultAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Training queue age exceeds configured processing budget
+      Namespace: AWS/SQS
+      MetricName: ApproximateAgeOfOldestMessage
+      Dimensions:
+        - Name: QueueName
+          Value: !Ref VoiceResultQueueName
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 3
+      Threshold: !Ref QueueAgeSeconds
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  FaceResultAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Training queue age exceeds configured processing budget
+      Namespace: AWS/SQS
+      MetricName: ApproximateAgeOfOldestMessage
+      Dimensions:
+        - Name: QueueName
+          Value: !Ref FaceResultQueueName
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 3
+      Threshold: !Ref QueueAgeSeconds
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  VoiceResultDlqAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Training results in DLQ require diagnosis before redrive
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !Ref VoiceResultDlqName
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  FaceResultDlqAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Training results in DLQ require diagnosis before redrive
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !Ref FaceResultDlqName
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  QualityDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Ref DashboardName
+      DashboardBody: !Sub |
+        {
+          "start": "-PT24H",
+          "widgets": [
+            {
+              "type": "log", "x": 0, "y": 0, "width": 24, "height": 8,
+              "properties": {
+                "region": "${AWS::Region}",
+                "title": "Measured latency by stage, media and clone version (selected period)",
+                "view": "table",
+                "query": "SOURCE '${LogGroupName}' | filter @message like /Call stage measured/ | parse @message 'Call stage measured callId=* cloneId=* cloneVersion=* correlationId=* mediaType=* stage=* latencyMs=*' as callId, cloneId, cloneVersion, correlationId, mediaType, stage, latencyMs | stats count(*) as samples, pct(latencyMs,50) as p50Ms, pct(latencyMs,95) as p95Ms by stage,mediaType,cloneVersion"
+              }
+            },
+            {
+              "type": "log", "x": 0, "y": 8, "width": 24, "height": 8,
+              "properties": {
+                "region": "${AWS::Region}",
+                "title": "Training retries, failures, stalls and duplicate callbacks",
+                "view": "table",
+                "query": "SOURCE '${LogGroupName}' | fields @timestamp,@message | filter @message like /Training retry scheduled|Training callback duplicate|Training dispatch failed|Training jobs failed|Training jobs stalled/ | sort @timestamp desc | limit 200"
+              }
+            }
+          ]
+        }
+Outputs:
+  DashboardName:
+    Value: !Ref QualityDashboard

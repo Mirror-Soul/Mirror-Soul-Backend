@@ -75,12 +75,18 @@ public class Clone extends BaseTimeEntity {
     @Column(name = "personality_training_completed", nullable = false)
     private boolean personalityTrainingCompleted;
 
+    @lombok.Builder.Default
+    @Column(name = "clone_version", nullable = false)
+    private long cloneVersion = 0;
+
     public void updateProfile(String summary, String profileSourceHash) {
+        if (!java.util.Objects.equals(this.profileSourceHash, profileSourceHash)) cloneVersion++;
         this.summary = summary;
         this.profileSourceHash = profileSourceHash;
     }
 
     public void updatePersonalityTrainingCompleted(boolean completed) {
+        if (completed && !personalityTrainingCompleted) cloneVersion++;
         personalityTrainingCompleted = completed;
     }
 
@@ -98,6 +104,7 @@ public class Clone extends BaseTimeEntity {
         if (similarityFaceJobId != null && jobId <= similarityFaceJobId) return false;
         CloneSimilarityCalculator.validateScore(score);
         similarityFaceJobId = jobId;
+        cloneVersion++;
         faceSimilarityScore = score;
         recalculateSimilarity();
         return true;
@@ -109,6 +116,7 @@ public class Clone extends BaseTimeEntity {
         if (score == null) throw new IllegalArgumentException("Voice score is required");
         CloneSimilarityCalculator.validateScore(score);
         similarityVoiceJobId = jobId;
+        cloneVersion++;
         voiceSimilarityScore = score;
         recalculateSimilarity();
         return true;
@@ -130,6 +138,7 @@ public class Clone extends BaseTimeEntity {
         dataReliabilityScore = reliability;
         similarityPenalty = penalty;
         similarityProfileRevision = incoming;
+        cloneVersion++;
         recalculateSimilarity();
         return true;
     }

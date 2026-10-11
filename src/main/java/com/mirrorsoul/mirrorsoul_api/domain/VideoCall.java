@@ -59,9 +59,25 @@ public class VideoCall {
     @Column(name = "video_url", length = 500)
     private String videoUrl;
 
+    @Column(name = "correlation_id", length = 36)
+    private String correlationId;
+    @Column(name = "clone_version")
+    private Long cloneVersion;
+    @Column(name = "voice_training_job_id")
+    private Long voiceTrainingJobId;
+    @Column(name = "face_training_job_id")
+    private Long faceTrainingJobId;
+    @Column(name = "personality_revision")
+    private Long personalityRevision;
+
     @Builder
     private VideoCall(Clone clone, User user, String roomId, CallMediaType mediaType) {
         this.clone = clone;
+        this.correlationId = java.util.UUID.randomUUID().toString();
+        this.cloneVersion = clone.getCloneVersion();
+        this.voiceTrainingJobId = clone.getSimilarityVoiceJobId();
+        this.faceTrainingJobId = clone.getSimilarityFaceJobId();
+        this.personalityRevision = clone.getSimilarityProfileRevision();
         this.user = user;
         this.roomId = roomId;
         this.mediaType = mediaType;
@@ -114,5 +130,9 @@ public class VideoCall {
 
     public void updateRecordingUrl(String videoUrl) {
         this.videoUrl = videoUrl;
+    }
+
+    public String diagnosticCorrelationId() {
+        return correlationId == null ? com.mirrorsoul.mirrorsoul_api.quality.QualitySupport.correlation("CALL-" + id).toString() : correlationId;
     }
 }

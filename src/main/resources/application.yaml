@@ -48,7 +48,7 @@ internal:
     api-key: ${AI_INTERNAL_API_KEY:}
     previous-api-key: ${AI_INTERNAL_PREVIOUS_API_KEY:}
     previous-key-expires-at: ${AI_INTERNAL_PREVIOUS_KEY_EXPIRES_AT:}
-    scopes: ${AI_INTERNAL_SCOPES:call_context,talk_log,call_billing,safety,member_deletion,signaling}
+    scopes: ${AI_INTERNAL_SCOPES:call_context,talk_log,call_billing,call_diagnostics,training_status,safety,member_deletion,signaling}
 
 chat:
   websocket:
@@ -207,3 +207,10 @@ billing:
     push-audience: ${GOOGLE_PLAY_PUSH_AUDIENCE:}
     push-service-account: ${GOOGLE_PLAY_PUSH_SERVICE_ACCOUNT:}
     allow-test-purchases: ${GOOGLE_PLAY_ALLOW_TEST_PURCHASES:false}
+
+quality:
+  max-training-retries: ${MAX_TRAINING_RETRIES:3}
+  training-dispatch-enabled: ${TRAINING_DISPATCH_RECOVERY_ENABLED:false}
+  dispatch-recovery-ms: ${TRAINING_DISPATCH_RECOVERY_MS:30000}
+  training-stall-seconds: ${TRAINING_STALL_SECONDS:900}
+  monitor-ms: ${QUALITY_MONITOR_INTERVAL_MS:60000}

@@ -57,11 +57,13 @@ public class AiCallContextService {
                 .map(MbtiProfile::getMbti)
                 .orElse(null);
 
-        AiVoiceProfile voiceProfile = aiVoiceProfileRepository
+        AiVoiceProfile voiceProfile = (call.getVoiceTrainingJobId()!=null
+                ? aiVoiceProfileRepository.findByCloneIdAndVoiceTrainingJob_Id(clone.getId(),call.getVoiceTrainingJobId())
+                : aiVoiceProfileRepository
                 .findFirstByCloneIdAndActiveTrueAndStatusOrderByCreatedAtDescIdDesc(
                         clone.getId(),
                         ACTIVE_VOICE_STATUS
-                )
+                ))
                 .filter(profile -> hasText(profile.getElevenlabsVoiceId()))
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.VOICE_PROFILE_NOT_READY));
 
@@ -89,7 +91,10 @@ public class AiCallContextService {
                                 VOICE_PROVIDER,
                                 voiceProfile.getElevenlabsVoiceId()
                         )
-                )
+                ),
+                java.util.UUID.fromString(call.diagnosticCorrelationId()),
+                call.getCloneVersion(),
+                com.mirrorsoul.mirrorsoul_api.quality.CallDiagnosticsReadService.trainingIds(call)
         );
     }
 

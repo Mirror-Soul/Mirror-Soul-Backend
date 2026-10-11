@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class VoiceTrainingResultService {
     private final VoiceTrainingJobRepository jobs;
     private final CloneRepository clones;
@@ -38,7 +39,9 @@ public class VoiceTrainingResultService {
                 .orElseThrow(() -> new IllegalArgumentException("Unknown voice job"));
         require(Objects.equals(clone.getUser().getUuid(), message.userUuid())
                 && Objects.equals(job.getUser().getUuid(), message.userUuid()), "Result owner mismatch");
-        if (job.isTerminal()) return;
+        if (job.isTerminal()) {
+            log.info("Training callback duplicate trainingJobId=VOICE-{}",job.getId()); return;
+        }
         switch (message.status()) {
             case "PROCESSING" -> job.markProcessing();
             case "FAILED" -> {
@@ -84,7 +87,10 @@ public class VoiceTrainingResultService {
             activate = profiles.existsByCloneIdAndVoiceTrainingJob_IdAndActiveTrueAndStatus(
                     clone.getId(), job.getId(), "ACTIVE") && !newerActive && !newerScore;
         }
-        if (activate) clone.updateVoiceSimilarity(job.getId(), result.voiceScore());
+        if (activate) {
+            clone.updateVoiceSimilarity(job.getId(), result.voiceScore());
+            job.resultVersion(clone.getCloneVersion());
+        }
         job.complete();
         readiness.refreshLocked(clone);
     }

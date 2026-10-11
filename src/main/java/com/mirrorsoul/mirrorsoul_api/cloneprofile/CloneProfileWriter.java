@@ -42,6 +42,7 @@ public class CloneProfileWriter {
         }
 
         clone.updateProfile(generated.summary(), requestedSourceHash);
+        job.resultVersion(clone.getCloneVersion());
         tagRepository.deleteAllByCloneId(clone.getId());
         tagRepository.flush();
         for (int index = 0; index < generated.personalityTags().size(); index++) {

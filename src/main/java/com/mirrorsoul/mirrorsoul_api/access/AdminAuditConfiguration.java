@@ -11,7 +11,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 public class AdminAuditConfiguration {
  @Bean @Role(org.springframework.beans.factory.config.BeanDefinition.ROLE_INFRASTRUCTURE) public DefaultPointcutAdvisor adminBusinessAuditAdvisor(org.springframework.beans.factory.ObjectProvider<AdminAuditWriter> auditWriter) {
   var pointcut=new StaticMethodMatcherPointcut() {
-   @Override public boolean matches(Method method,Class<?> type) {return Set.of("AdminMemberService","JobVerificationReviewService","SafetyReportService","SafetyDecisionService","SafetyEvidenceService","SupportTicketService","SupportAttachmentService").contains(type.getSimpleName())&&java.lang.reflect.Modifier.isPublic(method.getModifiers());}
+   @Override public boolean matches(Method method,Class<?> type) {return Set.of("AdminMemberService","JobVerificationReviewService","JobReviewExtensionService","SafetyReportService","SafetyDecisionService","SafetyEvidenceService","SupportTicketService","SupportAttachmentService").contains(type.getSimpleName())&&java.lang.reflect.Modifier.isPublic(method.getModifiers());}
   };
   MethodInterceptor advice=invocation -> {
    var c=AdminAuditContext.get();if(c==null) return invocation.proceed();

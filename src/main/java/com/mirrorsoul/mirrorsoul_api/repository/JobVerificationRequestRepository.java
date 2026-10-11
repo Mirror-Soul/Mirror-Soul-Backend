@@ -14,7 +14,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
 
-public interface JobVerificationRequestRepository extends JpaRepository<JobVerificationRequest, Long> {
+public interface JobVerificationRequestRepository extends JpaRepository<JobVerificationRequest, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<JobVerificationRequest> {
+    @Query("select r.id from JobVerificationRequest r where r.evidenceExpiresAt <= :now and r.evidenceDeletedAt is null order by r.evidenceExpiresAt, r.id")
+    List<Long> expiredEvidence(@Param("now") java.time.LocalDateTime now, Pageable pageable);
+
+    @Query("select r.id from JobVerificationRequest r where r.notificationState = 'PENDING' or (r.notificationState = 'SENDING' and r.notificationUpdatedAt < :stale) order by r.id")
+    List<Long> notificationQueue(@Param("stale") java.time.LocalDateTime stale, Pageable pageable);
+
     List<JobVerificationRequest> findByUser_IdAndStatus(Long userId, JobVerificationRequestStatus status);
 
     List<JobVerificationRequest> findByUser_IdIn(List<Long> userIds);

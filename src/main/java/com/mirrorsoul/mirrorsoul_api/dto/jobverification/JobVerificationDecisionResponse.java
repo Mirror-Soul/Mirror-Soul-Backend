@@ -7,6 +7,11 @@ public record JobVerificationDecisionResponse(
         Long requestId,
         JobVerificationRequestStatus status,
         LocalDateTime reviewedAt,
-        String rejectionReason
+        String rejectionReason,
+        Long version
 ) {
+    public JobVerificationDecisionResponse(Long requestId, JobVerificationRequestStatus status,
+            LocalDateTime reviewedAt, String rejectionReason) {
+        this(requestId,status,reviewedAt,rejectionReason,null);
+    }
 }

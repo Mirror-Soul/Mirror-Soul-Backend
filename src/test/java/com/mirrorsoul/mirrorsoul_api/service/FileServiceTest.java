@@ -55,6 +55,19 @@ class FileServiceTest {
     }
 
     @Test
+    void retentionDeletesOnlyTheCapturedVersionOrEtag() {
+        UUID owner=UUID.randomUUID(); String key="job-certifications/"+owner+"/photo.jpg";
+        service.deleteJobCertificationSnapshot(owner,new FileService.VerifiedJobCertificationImage("test-bucket",key,"version-1","etag"));
+        service.deleteJobCertificationSnapshot(owner,new FileService.VerifiedJobCertificationImage("test-bucket",key,null,"etag-2"));
+        var captured=ArgumentCaptor.forClass(DeleteObjectRequest.class);
+        verify(s3Client,times(2)).deleteObject(captured.capture());
+        assertThat(captured.getAllValues().get(0).versionId()).isEqualTo("version-1");
+        assertThat(captured.getAllValues().get(1).ifMatch()).isEqualTo("etag-2");
+        assertThatThrownBy(()->service.deleteJobCertificationSnapshot(UUID.randomUUID(),new FileService.VerifiedJobCertificationImage("test-bucket",key,"version-1","etag")))
+                .isInstanceOf(GeneralException.class);
+    }
+
+    @Test
     void createsPresignedUrlForProfileImage() throws Exception {
         PresignedPutObjectRequest presignedRequest = mock(PresignedPutObjectRequest.class);
         when(s3Presigner.presignPutObject(any(PutObjectPresignRequest.class)))

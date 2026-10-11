@@ -42,18 +42,19 @@ public class AdminJobVerificationController {
 
     @Operation(summary = "심사 요청 상세 및 사진 조회 URL")
     @GetMapping("/{requestId}")
-    public ApiResponse<JobVerificationReviewDetail> detail(@PathVariable Long requestId) {
-        return ApiResponse.onSuccess("심사 요청 상세입니다.", service.detail(requestId));
+    public ApiResponse<JobVerificationReviewDetail> detail(@PathVariable Long requestId, @AuthenticationPrincipal CustomUserDetails currentUser) {
+        return ApiResponse.onSuccess("심사 요청 상세입니다.", service.detail(currentUser.getUuid(), requestId));
     }
 
     @Operation(summary = "직업 증빙 서류 승인", description = "서류 심사 완료이며 PASS 전 최종 인증은 아닙니다.")
     @PostMapping("/{requestId}/approve")
     public ApiResponse<JobVerificationDecisionResponse> approve(
             @PathVariable Long requestId,
+            @org.springframework.web.bind.annotation.RequestHeader(value="X-Request-Version", required=false) Long version,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         return ApiResponse.onSuccess("서류 심사를 승인했습니다.",
-                service.approve(currentUser.getUuid(), requestId));
+                service.approve(currentUser.getUuid(), requestId, version));
     }
 
     @Operation(summary = "직업 증빙 서류 거부")
@@ -61,9 +62,10 @@ public class AdminJobVerificationController {
     public ApiResponse<JobVerificationDecisionResponse> reject(
             @PathVariable Long requestId,
             @Valid @RequestBody JobVerificationRejectRequest body,
+            @org.springframework.web.bind.annotation.RequestHeader(value="X-Request-Version", required=false) Long version,
             @AuthenticationPrincipal CustomUserDetails currentUser
     ) {
         return ApiResponse.onSuccess("서류 심사를 거부했습니다.",
-                service.reject(currentUser.getUuid(), requestId, body.reason()));
+                service.reject(currentUser.getUuid(), requestId, body.reason(), version));
     }
 }

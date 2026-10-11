@@ -33,6 +33,9 @@ public class JobVerificationReviewService {
     private final FileService fileService;
     private final ApplicationEventPublisher events;
 
+    @org.springframework.beans.factory.annotation.Value("${job-verification.evidence.reviewed-retention-days:30}")
+    private int reviewedRetentionDays = 30;
+
     @Transactional(readOnly = true)
     public Page<JobVerificationReviewSummary> pending(int page, int size) {
         if (page < 0 || size < 1 || size > 100) {
@@ -51,12 +54,40 @@ public class JobVerificationReviewService {
     public JobVerificationReviewDetail detail(Long requestId) {
         JobVerificationRequest request = requestRepository.findById(requestId)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.JOB_VERIFICATION_REQUEST_NOT_FOUND));
+        if (request.getStatus() != JobVerificationRequestStatus.PENDING) {
+            throw new GeneralException(GeneralErrorCode.FORBIDDEN);
+        }
+        return buildDetail(request);
+    }
+
+    @Transactional(readOnly = true)
+    public JobVerificationReviewDetail detail(UUID actorUuid, Long requestId) {
+        User actor = userRepository.findByUuid(actorUuid)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.FORBIDDEN));
+        if (actor.getStatus() != UserStatus.ACTIVE ||
+                (actor.getRole() != UserRole.ADMIN && actor.getRole() != UserRole.SUPER_ADMIN)) {
+            throw new GeneralException(GeneralErrorCode.FORBIDDEN);
+        }
+        var request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.JOB_VERIFICATION_REQUEST_NOT_FOUND));
+        if (request.getStatus() != JobVerificationRequestStatus.PENDING
+                && actor.getRole() != UserRole.SUPER_ADMIN
+                && (request.getReviewer() == null || !actor.getId().equals(request.getReviewer().getId()))) {
+            throw new GeneralException(GeneralErrorCode.FORBIDDEN);
+        }
+        return buildDetail(request);
+    }
+
+    private JobVerificationReviewDetail buildDetail(JobVerificationRequest request) {
         UUID userUuid = request.getUser().getUuid();
-        var photos = request.getFiles().stream().map(file -> {
-            var access = fileService.createJobVerificationReviewAccess(
-                        userUuid, file.getBucket(), file.getObjectKey(),
-                        file.getObjectVersionId(), file.getObjectEtag()
-                );
+        var photos = request.getFiles().stream()
+                .filter(file -> request.getEvidenceDeletedAt() == null
+                        && request.getEvidenceExpiresAt().isAfter(LocalDateTime.now()))
+                .map(file -> {
+            var remaining = java.time.Duration.between(LocalDateTime.now(), request.getEvidenceExpiresAt());
+            var access = remaining.compareTo(java.time.Duration.ofMinutes(5)) >= 0
+                    ? fileService.createJobVerificationReviewAccess(userUuid, file.getBucket(), file.getObjectKey(), file.getObjectVersionId(), file.getObjectEtag())
+                    : fileService.createJobVerificationReviewAccess(userUuid, file.getBucket(), file.getObjectKey(), file.getObjectVersionId(), file.getObjectEtag(), remaining);
             return new JobVerificationReviewDetail.Photo(
                     file.getId(), file.getDisplayOrder(), access.url(), access.signedHeaders()
             );
@@ -64,13 +95,16 @@ public class JobVerificationReviewService {
         return new JobVerificationReviewDetail(
                 request.getId(), userUuid, request.getClaimedJob(),
                 request.getStatus(), request.getCreatedAt(), request.getReviewedAt(),
-                request.getRejectionReason(), photos
+                request.getRejectionReason(), photos, request.getVersion(),
+                request.getReviewer() == null ? null : request.getReviewer().getId(),
+                request.getEvidenceExpiresAt(), request.getEvidenceDeletedAt() != null ? "DELETED"
+                        : request.getEvidenceExpiresAt().isAfter(LocalDateTime.now()) ? "AVAILABLE" : "EXPIRED"
         );
     }
 
     @Transactional
     public JobVerificationDecisionResponse approve(UUID reviewerUuid, Long requestId) {
-        return decide(reviewerUuid, requestId, null);
+        return decide(reviewerUuid, requestId, null, null);
     }
 
     @Transactional
@@ -79,17 +113,33 @@ public class JobVerificationReviewService {
             throw new GeneralException(GeneralErrorCode.INVALID_PARAMETER,
                     "A rejection reason of at most 500 characters is required.");
         }
-        return decide(reviewerUuid, requestId, reason.trim());
+        return decide(reviewerUuid, requestId, reason.trim(), null);
     }
 
-    private JobVerificationDecisionResponse decide(UUID reviewerUuid, Long requestId, String reason) {
+    @Transactional
+    public JobVerificationDecisionResponse approve(UUID reviewerUuid, Long requestId, Long expectedVersion) {
+        return decide(reviewerUuid, requestId, null, expectedVersion);
+    }
+
+    @Transactional
+    public JobVerificationDecisionResponse reject(UUID reviewerUuid, Long requestId, String reason, Long expectedVersion) {
+        if (reason == null || reason.isBlank() || reason.trim().length() > 500) {
+            throw new GeneralException(GeneralErrorCode.INVALID_PARAMETER);
+        }
+        return decide(reviewerUuid, requestId, reason.trim(), expectedVersion);
+    }
+
+    private JobVerificationDecisionResponse decide(UUID reviewerUuid, Long requestId, String reason, Long expectedVersion) {
         User reviewer = userRepository.findByUuid(reviewerUuid)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
-        if (reviewer.getRole() != UserRole.ADMIN || reviewer.getStatus() != UserStatus.ACTIVE) {
+        if ((reviewer.getRole() != UserRole.ADMIN && reviewer.getRole() != UserRole.SUPER_ADMIN) || reviewer.getStatus() != UserStatus.ACTIVE) {
             throw new GeneralException(GeneralErrorCode.FORBIDDEN);
         }
         JobVerificationRequest request = requestRepository.findByIdForUpdate(requestId)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.JOB_VERIFICATION_REQUEST_NOT_FOUND));
+        if (expectedVersion != null && !expectedVersion.equals(request.getVersion())) {
+            throw new GeneralException(GeneralErrorCode.INVALID_PARAMETER, "The request version has changed.");
+        }
         if (request.getStatus() != JobVerificationRequestStatus.PENDING) {
             throw new GeneralException(GeneralErrorCode.JOB_VERIFICATION_ALREADY_REVIEWED);
         }
@@ -98,16 +148,21 @@ public class JobVerificationReviewService {
                     "Administrators cannot review their own job verification request.");
         }
         LocalDateTime now = LocalDateTime.now();
+        if (reason == null && (request.getEvidenceDeletedAt() != null || !request.getEvidenceExpiresAt().isAfter(now))) {
+            throw new GeneralException(GeneralErrorCode.INVALID_PARAMETER, "Expired evidence cannot be approved.");
+        }
         if (reason == null) {
             request.approve(reviewer, now);
         } else {
             request.reject(reviewer, reason, now);
         }
+        request.startRetention(now, Math.max(1, Math.min(365, reviewedRetentionDays)));
+        requestRepository.flush();
         events.publishEvent(new JobVerificationReviewedEvent(
                 request.getId(), request.getUser().getUuid(), request.getStatus()
         ));
         return new JobVerificationDecisionResponse(
-                request.getId(), request.getStatus(), request.getReviewedAt(), request.getRejectionReason()
+                request.getId(), request.getStatus(), request.getReviewedAt(), request.getRejectionReason(), request.getVersion()
         );
     }
 

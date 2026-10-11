@@ -32,4 +32,20 @@ class AdminHttpIntegrationTest {
   assertThat(audits.findAll().stream().filter(e->root.getId().equals(e.getStaffId())&&"SUCCESS".equals(e.getResult())).count()).isGreaterThanOrEqualTo(2);
   assertThat(audits.findAll().stream().anyMatch(e->ordinary.getId().equals(e.getStaffId())&&"DENIED".equals(e.getResult()))).isTrue();
  }
+ @Autowired com.mirrorsoul.mirrorsoul_api.repository.JobVerificationRequestRepository jobRequests;
+ @Test void jobHistoryAndRetryUseRealPermissionChecksAndAuditAdvisor() throws Exception {
+  var root=user(UserRole.SUPER_ADMIN);var viewer=user(UserRole.ADMIN_VIEWER);var owner=user(UserRole.USER);
+  var request=com.mirrorsoul.mirrorsoul_api.domain.JobVerificationRequest.pending(owner,Job.IT_TECH);
+  request.approve(root,java.time.LocalDateTime.now());request.startRetention(java.time.LocalDateTime.now(),30);
+  request.notification("UNKNOWN","DELIVERY_INTERRUPTED",java.time.LocalDateTime.now());
+  request=jobRequests.saveAndFlush(request);Long id=request.getId();
+  mvc.perform(get("/admin/job-verifications/history").param("requestId",id.toString()).header("Authorization","Bearer "+tokens.createAccessToken(root)))
+   .andExpect(status().isOk()).andExpect(jsonPath("$.result.content[0].requestId").value(id));
+  mvc.perform(get("/admin/job-verifications/history").header("Authorization","Bearer "+tokens.createAccessToken(viewer)))
+   .andExpect(status().isForbidden());
+  mvc.perform(post("/admin/job-verifications/"+id+"/notification/retry").header("Authorization","Bearer "+tokens.createAccessToken(root))
+   .contentType("application/json").content("{\"version\":"+request.getVersion()+",\"possibleDuplicateAcknowledged\":true}"))
+   .andExpect(status().isOk()).andExpect(jsonPath("$.result.notificationState").value("PENDING"));
+  assertThat(audits.findAll().stream().anyMatch(e->root.getId().equals(e.getStaffId())&&"JobReviewExtensionController.retry".equals(e.getAction())&&"SUCCESS".equals(e.getResult()))).isTrue();
+ }
 }

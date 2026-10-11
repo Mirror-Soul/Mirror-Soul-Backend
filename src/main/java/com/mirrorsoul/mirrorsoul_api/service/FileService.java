@@ -125,6 +125,11 @@ public class FileService {
     public JobVerificationReviewAccess createJobVerificationReviewAccess(
             UUID ownerUuid, String bucket, String objectKey, String versionId, String etag
     ) {
+        return createJobVerificationReviewAccess(ownerUuid, bucket, objectKey, versionId, etag, Duration.ofMinutes(5));
+    }
+
+    public JobVerificationReviewAccess createJobVerificationReviewAccess(
+            UUID ownerUuid, String bucket, String objectKey, String versionId, String etag, Duration duration) {
         String normalizedObjectKey = normalizeObjectKey(objectKey);
         if (!awsS3Properties.getBucket().equals(bucket)
                 || !normalizedObjectKey.startsWith("job-certifications/" + ownerUuid + "/")
@@ -143,7 +148,7 @@ public class FileService {
         }
         try {
             var presigned = s3Presigner.presignGetObject(GetObjectPresignRequest.builder()
-                    .signatureDuration(Duration.ofMinutes(5))
+                    .signatureDuration(duration.compareTo(Duration.ofMinutes(5)) < 0 ? duration : Duration.ofMinutes(5))
                     .getObjectRequest(getRequest.build())
                     .build());
             Map<String, List<String>> requiredHeaders = presigned.signedHeaders().entrySet().stream()
@@ -239,6 +244,27 @@ public class FileService {
             throw new GeneralException(GeneralErrorCode.S3_DELETE_FAILED,
                     "Failed to delete job certification image.");
         }
+    }
+
+    /** Deletes the captured snapshot only; a later replacement must survive retention cleanup. */
+    public void deleteJobCertificationSnapshot(UUID userUuid, VerifiedJobCertificationImage image) {
+        if (!awsS3Properties.getBucket().equals(image.bucket())
+                || !normalizeObjectKey(image.objectKey()).startsWith(UploadFileType.JOB_CERTIFICATION_IMAGE.requiredPrefix(userUuid))) {
+            throw new GeneralException(GeneralErrorCode.INVALID_PARAMETER);
+        }
+        var builder = DeleteObjectRequest.builder().bucket(image.bucket()).key(image.objectKey());
+        if (image.objectVersionId() != null && !image.objectVersionId().isBlank()) {
+            builder.versionId(image.objectVersionId());
+        } else if (image.objectEtag() != null && !image.objectEtag().isBlank()) {
+            builder.ifMatch(image.objectEtag());
+        } else { throw new GeneralException(GeneralErrorCode.INVALID_PARAMETER); }
+        try { s3Client.deleteObject(builder.build()); }
+        catch (software.amazon.awssdk.services.s3.model.S3Exception e) {
+            // A missing or replaced unversioned snapshot no longer retains the submitted evidence.
+            if (e.statusCode() != 404 && e.statusCode() != 412) {
+                throw new GeneralException(GeneralErrorCode.S3_DELETE_FAILED);
+            }
+        } catch (SdkClientException e) { throw new GeneralException(GeneralErrorCode.S3_DELETE_FAILED); }
     }
 
     private boolean matchesImageSignature(String contentType, byte[] bytes) {

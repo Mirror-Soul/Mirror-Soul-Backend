@@ -36,6 +36,7 @@ public class RagProfileJobService {
         LocalDateTime now = LocalDateTime.now();
         var job = jobs.findLockedById(clone.getId())
                 .orElseGet(() -> jobs.save(RagProfileJob.create(clone.getId(), now)));
+        job.traceVersion(clone.getCloneVersion());
         job.request(now);
     }
 
@@ -60,7 +61,10 @@ public class RagProfileJobService {
         var request = new RagProfileRequest(user.getUuid(), cloneId, "clone-" + cloneId,
                 user.getBirthDate() == null ? null : Period.between(user.getBirthDate(), LocalDate.now()).getYears(),
                 user.getGender() == null ? null : user.getGender().name().toLowerCase(Locale.ROOT),
-                mbti, user.getSelfIntroduction(), List.of(), List.of(), samples, 12, job.getRequestedRevision());
+                mbti, user.getSelfIntroduction(), List.of(), List.of(), samples, 12, job.getRequestedRevision())
+                .withTrace(new com.mirrorsoul.mirrorsoul_api.quality.TrainingDtos.Trace(
+                        "RAG-"+cloneId+"-"+job.getRequestedRevision(),cloneId,job.getBaseCloneVersion()==null?0L:job.getBaseCloneVersion(),
+                        com.mirrorsoul.mirrorsoul_api.quality.QualitySupport.correlation("RAG-"+cloneId+"-"+job.getRequestedRevision()),job.getRetryCount()));
         return new ClaimedProfile(cloneId, job.getRequestedRevision(), token, request);
     }
 

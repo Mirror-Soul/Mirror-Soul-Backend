@@ -18,12 +18,10 @@ import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.HttpStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
 @Tag(name = "Home", description = "홈 화면 관련 API")
 @SecurityRequirement(name = "bearerAuth")
@@ -48,13 +46,15 @@ public class HomeController {
         );
     }
 
-    @Operation(summary = "대화 시간 충전", description = "로그인 사용자의 대화 시간을 초 단위로 충전합니다.")
+    @Operation(summary = "기존 대화 시간 충전 API (종료)", description = "직접 시간 충전은 지원하지 않습니다. POST /payments/verify로 스토어 구매를 검증해야 합니다.", deprecated = true)
     @PostMapping("/talk-time/refill")
     public ApiResponse<HomeResDTO.TalkTimeDTO> refillTalkTime(
             @AuthenticationPrincipal CustomUserDetails currentUser,
             @Valid @RequestBody HomeReqDTO.RefillTalkTimeDTO request
     ) {
-        throw notImplemented();
+        throw new com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException(
+                com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode.PAYMENT_INVALID,
+                "POST /payments/verify 로 스토어 구매를 검증해 주세요.");
     }
 
     @Operation(summary = "선호 지역 설정", description = "홈 화면 추천에 사용할 시군구를 1개 이상 3개 이하로 설정합니다.")
@@ -133,7 +133,4 @@ public class HomeController {
         return ApiResponse.onSuccess("추천 유저 스와이프 처리에 성공했습니다.");
     }
 
-    private ResponseStatusException notImplemented() {
-        return new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED, "서비스 로직 구현 예정입니다.");
-    }
 }

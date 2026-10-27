@@ -13,6 +13,8 @@ import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
 
 public interface VoiceTrainingJobRepository extends JpaRepository<VoiceTrainingJob, Long> {
+    @Query("select j.id from VoiceTrainingJob j where j.status='PENDING' and j.sqsMessageId is null and j.createdAt<=:cutoff order by j.id")
+    List<Long> findUndispatched(@Param("cutoff") LocalDateTime cutoff,org.springframework.data.domain.Pageable page);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select j from VoiceTrainingJob j where j.id = :id")

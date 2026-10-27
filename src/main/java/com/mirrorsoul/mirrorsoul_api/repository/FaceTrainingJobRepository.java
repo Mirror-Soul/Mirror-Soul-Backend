@@ -9,6 +9,8 @@ import jakarta.persistence.LockModeType;
 import java.util.Optional;
 
 public interface FaceTrainingJobRepository extends JpaRepository<FaceTrainingJob, Long> {
+    @Query("select j.id from FaceTrainingJob j where j.status='PENDING' and j.sqsMessageId is null and j.createdAt<=:cutoff order by j.id")
+    java.util.List<Long> findUndispatched(@Param("cutoff") java.time.LocalDateTime cutoff,org.springframework.data.domain.Pageable page);
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select j from FaceTrainingJob j where j.id = :id")
     Optional<FaceTrainingJob> findLockedById(@Param("id") Long id);

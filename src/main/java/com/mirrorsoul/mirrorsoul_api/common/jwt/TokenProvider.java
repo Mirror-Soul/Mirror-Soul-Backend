@@ -12,6 +12,8 @@ public interface TokenProvider {
 
     Long getUserIdFromAccessTokenAllowExpired(String token);
 
+    default Long getSessionVersion(String token) { return 0L; }
+
     void validateAccessToken(String token);
 
     void validateRefreshToken(String token);

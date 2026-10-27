@@ -124,7 +124,79 @@ public class User extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     @Setter
     @Column(nullable = false, length = 20)
+    @Builder.Default
     private UserStatus status = UserStatus.ACTIVE;
+
+    @Builder.Default
+    @Column(name="session_version",nullable=false)
+    private Long sessionVersion = 0L;
+
+    public void revokeAdministrativeSessions() { invalidateSessions(); }
+
+    public void changeAdministrativeRole(UserRole next) { this.role = next; invalidateSessions(); }
+
+    private void invalidateSessions() {
+        sessionVersion++;
+        clearRefreshToken();
+    }
+
+    @Version
+    @Builder.Default
+    @Column(name = "version", nullable = false)
+    private Long version = 0L;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_before_withdrawal", length = 20)
+    private UserStatus statusBeforeWithdrawal;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status_before_suspension", length = 20)
+    private UserStatus statusBeforeSuspension;
+
+    @Column(name="safety_restricted_until")
+    private LocalDateTime safetyRestrictedUntil;
+
+    public boolean isSafetyRestricted(LocalDateTime now) {
+        return safetyRestrictedUntil!=null && now.isBefore(safetyRestrictedUntil);
+    }
+
+    public boolean isAiWorkAllowed(LocalDateTime now) {
+        return isAccessAllowed() && !isSafetyRestricted(now);
+    }
+
+    public void updateSafetyRestriction(LocalDateTime until) {
+        safetyRestrictedUntil=until;
+    }
+
+    public boolean isAccessAllowed() {
+        return status != UserStatus.INACTIVE && status != UserStatus.DELETED
+                && status != UserStatus.SUSPENDED && status != UserStatus.WITHDRAWAL_CONFIRMED;
+    }
+
+    public UserStatus onboardingStatus() {
+        UserStatus stage = status == UserStatus.INACTIVE || status == UserStatus.WITHDRAWAL_CONFIRMED || status == UserStatus.DELETED
+                ? statusBeforeWithdrawal : status;
+        return stage == UserStatus.SUSPENDED ? statusBeforeSuspension : stage;
+    }
+
+    public void suspend() {
+        if (!isAccessAllowed()) throw new IllegalStateException("Account cannot be suspended.");
+        statusBeforeSuspension = status;
+        status = UserStatus.SUSPENDED;
+        invalidateSessions();
+    }
+
+    public void unsuspend() {
+        if (status != UserStatus.SUSPENDED) throw new IllegalStateException("Account is not suspended.");
+        status = statusBeforeSuspension == null ? UserStatus.ACTIVE : statusBeforeSuspension;
+        statusBeforeSuspension = null;
+    }
+
+    public void confirmWithdrawal() {
+        if (status != UserStatus.INACTIVE) throw new IllegalStateException("Account is not withdrawn.");
+        status = UserStatus.WITHDRAWAL_CONFIRMED;
+        clearRefreshToken();
+    }
 
     public void updateRefreshToken(String refreshToken) {
         this.refreshToken = refreshToken;
@@ -135,9 +207,13 @@ public class User extends BaseTimeEntity {
     }
 
     public void deactivate(LocalDateTime withdrawnAt) {
+        if (!isAccessAllowed() && status != UserStatus.SUSPENDED) {
+            throw new IllegalStateException("Account cannot be withdrawn.");
+        }
+        this.statusBeforeWithdrawal = this.status;
         this.status = UserStatus.INACTIVE;
         this.withdrawnAt = withdrawnAt;
-        clearRefreshToken();
+        invalidateSessions();
     }
 
     public boolean canRecover(LocalDateTime now) {
@@ -147,7 +223,8 @@ public class User extends BaseTimeEntity {
     }
 
     public void reactivate() {
-        this.status = UserStatus.ACTIVE;
+        this.status = statusBeforeWithdrawal == null ? UserStatus.ACTIVE : statusBeforeWithdrawal;
+        this.statusBeforeWithdrawal = null;
         this.withdrawnAt = null;
     }
 
@@ -173,11 +250,15 @@ public class User extends BaseTimeEntity {
 
     public void updatePassword(String passwordHash) {
         this.passwordHash = passwordHash;
-        clearRefreshToken();
+        invalidateSessions();
     }
 
     public void addTalkTime(int seconds) {
         this.remainingTalkTime = Math.addExact(getSafeRemainingTalkTime(), seconds);
+    }
+
+    public void updateTalkTimeBalance(int seconds) {
+        this.remainingTalkTime = seconds;
     }
 
     public void useTalkTime(int seconds) {

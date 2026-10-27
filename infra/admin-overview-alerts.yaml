@@ -1,0 +1,107 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Admin overview query failure and latency monitoring for existing application logs
+Parameters:
+  LogGroupName:
+    Type: String
+    Description: Existing application log group receiving backend logs
+    AllowedPattern: '[A-Za-z0-9_./#-]+'
+  AlarmTopicArn:
+    Type: String
+    Description: Existing SNS alarm topic ARN
+  SlowObservationsThreshold:
+    Type: Number
+    Default: 5
+    MinValue: 1
+  DashboardName:
+    Type: String
+    Default: mirrorsoul-admin-overview
+    AllowedPattern: '[A-Za-z0-9_-]+'
+Resources:
+  FailureMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref LogGroupName
+      FilterPattern: '"Admin overview card failed"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/AdminOverview
+          MetricName: FailedCardQueries
+          MetricValue: '1'
+          DefaultValue: 0
+  FailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: An overview card query failed; inspect card name and database health
+      Namespace: MirrorSoul/AdminOverview
+      MetricName: FailedCardQueries
+      Statistic: Sum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  SlowMetric:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref LogGroupName
+      FilterPattern: '"Admin overview slow card="'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/AdminOverview
+          MetricName: SlowCardQueries
+          MetricValue: '1'
+          DefaultValue: 0
+  SlowAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Overview queries repeatedly exceed the application latency threshold
+      Namespace: MirrorSoul/AdminOverview
+      MetricName: SlowCardQueries
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: !Ref SlowObservationsThreshold
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  OverviewDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Ref DashboardName
+      DashboardBody: !Sub |
+        {
+          "start": "-PT6H",
+          "widgets": [
+            {
+              "type": "metric", "x": 0, "y": 0, "width": 24, "height": 6,
+              "properties": {
+                "region": "${AWS::Region}", "title": "Overview failed and slow card queries",
+                "view": "timeSeries", "stat": "Sum", "period": 60,
+                "metrics": [
+                  ["MirrorSoul/AdminOverview", "FailedCardQueries"],
+                  ["MirrorSoul/AdminOverview", "SlowCardQueries"]
+                ]
+              }
+            },
+            {
+              "type": "log", "x": 0, "y": 6, "width": 24, "height": 8,
+              "properties": {
+                "region": "${AWS::Region}", "title": "Slow queries by card", "view": "table",
+                "query": "SOURCE '${LogGroupName}' | filter @message like /Admin overview slow card=/ | parse @message 'Admin overview slow card=* durationMs=*' as card,durationMs | stats count(*) as slowQueries, max(durationMs) as maxMs, pct(durationMs,95) as p95Ms by card"
+              }
+            },
+            {
+              "type": "log", "x": 0, "y": 14, "width": 24, "height": 8,
+              "properties": {
+                "region": "${AWS::Region}", "title": "Failed queries and incomplete responses", "view": "table",
+                "query": "SOURCE '${LogGroupName}' | fields @timestamp,@message | filter @message like /Admin overview card failed|Admin overview incomplete/ | sort @timestamp desc | limit 100"
+              }
+            }
+          ]
+        }
+Outputs:
+  Dashboard:
+    Value: !Ref OverviewDashboard
+  FailureAlarmArn:
+    Value: !GetAtt FailureAlarm.Arn
+  SlowAlarmArn:
+    Value: !GetAtt SlowAlarm.Arn

@@ -161,6 +161,7 @@ class ChatServiceTest {
         User user = user(1L, userUuid);
         ChatRoom room = room(10L);
         ChatRoomMember member = member(100L, room, user);
+        when(chatRoomMemberRepository.findUserForCommunication(org.mockito.ArgumentMatchers.any())).thenReturn(Optional.of(User.builder().status(com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE).build()));
         when(chatRoomMemberRepository.findActiveByRoomIdAndUserUuidForUpdate(10L, userUuid))
                 .thenReturn(Optional.of(member));
 
@@ -183,6 +184,7 @@ class ChatServiceTest {
         ChatRoomMember receiverMember = member(101L, room, receiver);
         LocalDateTime createdAt = LocalDateTime.now();
 
+        when(chatRoomMemberRepository.findUserForCommunication(org.mockito.ArgumentMatchers.any())).thenReturn(Optional.of(User.builder().status(com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE).build()));
         when(chatRoomMemberRepository.findActiveByRoomIdAndUserUuidForUpdate(10L, senderUuid))
                 .thenReturn(Optional.of(senderMember));
         when(chatMessageRepository.findByChatRoomIdAndSenderUuidAndClientMessageId(
@@ -222,6 +224,7 @@ class ChatServiceTest {
         ChatMessage existing = message(
                 500L, room, sender, clientMessageId, "안녕하세요", LocalDateTime.now());
 
+        when(chatRoomMemberRepository.findUserForCommunication(org.mockito.ArgumentMatchers.any())).thenReturn(Optional.of(User.builder().status(com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE).build()));
         when(chatRoomMemberRepository.findActiveByRoomIdAndUserUuidForUpdate(10L, senderUuid))
                 .thenReturn(Optional.of(senderMember));
         when(chatMessageRepository.findByChatRoomIdAndSenderUuidAndClientMessageId(
@@ -269,6 +272,7 @@ class ChatServiceTest {
         ChatMessage message = message(
                 50L, room, receiver, UUID.randomUUID(), "읽을 메시지", LocalDateTime.now());
 
+        when(chatRoomMemberRepository.findUserForCommunication(org.mockito.ArgumentMatchers.any())).thenReturn(Optional.of(User.builder().status(com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE).build()));
         when(chatRoomMemberRepository.findActiveByRoomIdAndUserUuidForUpdate(10L, userUuid))
                 .thenReturn(Optional.of(member));
         when(chatMessageRepository.findById(50L)).thenReturn(Optional.of(message));

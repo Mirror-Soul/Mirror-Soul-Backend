@@ -28,7 +28,7 @@ public class AiInternalApiKeyFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith(INTERNAL_AI_PATH_PREFIX);
+        return !request.getRequestURI().substring(request.getContextPath().length()).startsWith(INTERNAL_AI_PATH_PREFIX);
     }
 
     @Override
@@ -43,11 +43,15 @@ public class AiInternalApiKeyFilter extends OncePerRequestFilter {
         }
 
         String providedKey = request.getHeader(API_KEY_HEADER);
-        if (!matches(properties.apiKey(), providedKey)) {
+        if (!properties.matches(providedKey)) {
             writeError(response, GeneralErrorCode.INTERNAL_AUTH_INVALID);
             return;
         }
 
+        if (!properties.allows(request.getMethod(), request.getRequestURI().substring(request.getContextPath().length()))) {
+            writeError(response, GeneralErrorCode.FORBIDDEN);
+            return;
+        }
         filterChain.doFilter(request, response);
     }
 

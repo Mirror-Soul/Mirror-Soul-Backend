@@ -11,8 +11,15 @@ public record FaceTrainingMessageDTO(
         UUID userUuid,
         Long cloneId,
         String bucket,
-        List<String> objectKeys
+        List<String> objectKeys,
+        com.mirrorsoul.mirrorsoul_api.quality.TrainingDtos.Trace trace
 ) {
+    public FaceTrainingMessageDTO(int schemaVersion,String jobType,Long jobId,String source,UUID userUuid,Long cloneId,String bucket,List<String> keys) {
+        this(schemaVersion,jobType,jobId,source,userUuid,cloneId,bucket,keys,null);
+    }
+    public FaceTrainingMessageDTO withTrace(com.mirrorsoul.mirrorsoul_api.quality.TrainingDtos.Trace trace) {
+        return new FaceTrainingMessageDTO(schemaVersion,jobType,jobId,source,userUuid,cloneId,bucket,objectKeys,trace);
+    }
     private static final int CURRENT_SCHEMA_VERSION = 1;
     private static final String JOB_TYPE = "FACE_PROFILE_BUILD";
 

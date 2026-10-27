@@ -69,6 +69,54 @@ class SecurityConfigTest {
         }
     }
 
+    @Test
+    void memberViewerCanReadButCannotAct() throws Exception {
+        AuthorizationFilter authorization = (AuthorizationFilter) securityFilterChain.getFilters()
+                .stream().filter(AuthorizationFilter.class::isInstance).findFirst().orElseThrow();
+        try {
+            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("viewer",null,
+                    List.of(new SimpleGrantedAuthority("ROLE_ADMIN_VIEWER"))));
+            MockHttpServletRequest read=new MockHttpServletRequest("GET","/admin/members/1");
+            read.setServletPath("/admin/members/1");
+            authorization.doFilter(read,new MockHttpServletResponse(),new MockFilterChain());
+            MockHttpServletRequest write=new MockHttpServletRequest("POST","/admin/members/1/actions");
+            write.setServletPath("/admin/members/1/actions");
+            assertThatThrownBy(() -> authorization.doFilter(write,new MockHttpServletResponse(),new MockFilterChain()))
+                    .isInstanceOf(AccessDeniedException.class);
+        } finally { SecurityContextHolder.clearContext(); }
+    }
+
+    @Test
+    void reportViewerCannotReadEvidenceOrMakeDecisions() throws Exception {
+        AuthorizationFilter authorization=(AuthorizationFilter)securityFilterChain.getFilters().stream()
+            .filter(AuthorizationFilter.class::isInstance).findFirst().orElseThrow();
+        try {
+            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("viewer",null,
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN_VIEWER"))));
+            MockHttpServletRequest read=new MockHttpServletRequest("GET","/admin/reports/1");read.setServletPath("/admin/reports/1");
+            authorization.doFilter(read,new MockHttpServletResponse(),new MockFilterChain());
+            for(String path:List.of("/admin/reports/1/decisions","/admin/reports/1/evidence/access")) {
+                MockHttpServletRequest mutation=new MockHttpServletRequest("POST",path);mutation.setServletPath(path);
+                assertThatThrownBy(() -> authorization.doFilter(mutation,new MockHttpServletResponse(),new MockFilterChain()))
+                    .isInstanceOf(AccessDeniedException.class);
+            }
+        } finally { SecurityContextHolder.clearContext(); }
+    }
+
+    @Test
+    void supportViewerCanReadButCannotReplyOrAccessAttachments() throws Exception {
+        AuthorizationFilter authorization=(AuthorizationFilter)securityFilterChain.getFilters().stream().filter(AuthorizationFilter.class::isInstance).findFirst().orElseThrow();
+        try {
+            SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("viewer",null,List.of(new SimpleGrantedAuthority("ROLE_ADMIN_VIEWER"))));
+            MockHttpServletRequest read=new MockHttpServletRequest("GET","/admin/support-tickets/1");read.setServletPath("/admin/support-tickets/1");
+            authorization.doFilter(read,new MockHttpServletResponse(),new MockFilterChain());
+            for(String path:List.of("/admin/support-tickets/1/replies","/admin/support-tickets/1/notes","/admin/support-tickets/1/attachments/1/access")) {
+                MockHttpServletRequest write=new MockHttpServletRequest("POST",path);write.setServletPath(path);
+                assertThatThrownBy(()->authorization.doFilter(write,new MockHttpServletResponse(),new MockFilterChain())).isInstanceOf(AccessDeniedException.class);
+            }
+        } finally {SecurityContextHolder.clearContext();}
+    }
+
     private int indexOf(List<?> filters, Class<?> filterClass) {
         for (int index = 0; index < filters.size(); index++) {
             if (filterClass.isInstance(filters.get(index))) {

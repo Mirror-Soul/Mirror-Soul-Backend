@@ -20,6 +20,7 @@ public class CustomUserDetails implements UserDetails {
     private final String password;
     private final UserRole role;
     private final UserStatus status;
+    private final Long sessionVersion;
 
     public CustomUserDetails(User user) {
         this.id = user.getId();
@@ -28,6 +29,7 @@ public class CustomUserDetails implements UserDetails {
         this.password = user.getPasswordHash();
         this.role = user.getRole();
         this.status = user.getStatus();
+        this.sessionVersion = user.getSessionVersion();
     }
 
     @Override
@@ -35,9 +37,19 @@ public class CustomUserDetails implements UserDetails {
         if (status != UserStatus.ACTIVE) {
             return Collections.emptyList();
         }
-        return role == UserRole.ADMIN
-                ? Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))
+        if (role == UserRole.SUPER_ADMIN) {
+            return java.util.List.of(new SimpleGrantedAuthority("ROLE_ADMIN"),
+                    new SimpleGrantedAuthority("ROLE_SUPER_ADMIN"));
+        }
+        return role == UserRole.ADMIN || role == UserRole.ADMIN_VIEWER
+                ? Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role.name()))
                 : Collections.emptyList();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return status != UserStatus.INACTIVE && status != UserStatus.DELETED
+                && status != UserStatus.SUSPENDED && status != UserStatus.WITHDRAWAL_CONFIRMED;
     }
 
     @Override

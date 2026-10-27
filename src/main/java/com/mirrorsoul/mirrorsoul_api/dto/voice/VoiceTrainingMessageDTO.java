@@ -11,8 +11,15 @@ public record VoiceTrainingMessageDTO(
         UUID userUuid,
         String bucket,
         List<String> audioObjectKeys,
-        OffsetDateTime requestedAt
+        OffsetDateTime requestedAt,
+        com.mirrorsoul.mirrorsoul_api.quality.TrainingDtos.Trace trace
 ) {
+    public VoiceTrainingMessageDTO(String jobType,String source,Long jobId,UUID userUuid,String bucket,List<String> keys,OffsetDateTime at) {
+        this(jobType,source,jobId,userUuid,bucket,keys,at,null);
+    }
+    public VoiceTrainingMessageDTO withTrace(com.mirrorsoul.mirrorsoul_api.quality.TrainingDtos.Trace trace) {
+        return new VoiceTrainingMessageDTO(jobType,source,jobId,userUuid,bucket,audioObjectKeys,requestedAt,trace);
+    }
     public static VoiceTrainingMessageDTO of(
             String source,
             Long jobId,

@@ -28,12 +28,20 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableConfigurationProperties({JwtProperties.class, AiInternalApiProperties.class})
 public class SecurityConfig {
 
+    @org.springframework.beans.factory.annotation.Value("${security.cors.allowed-origin-patterns:http://localhost:3000,http://localhost:5173}")
+    private String allowedOrigins;
+
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    private com.mirrorsoul.mirrorsoul_api.access.AdminAuditWriter adminAuditWriter;
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final AiInternalApiKeyFilter aiInternalApiKeyFilter;
 
     @Bean
     @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        if (adminAuditWriter != null) http.addFilterAfter(new com.mirrorsoul.mirrorsoul_api.access.AdminSecurityAuditFilter(adminAuditWriter), JwtAuthenticationFilter.class);
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
@@ -59,10 +67,20 @@ public class SecurityConfig {
                                 , "/internal/clone-training/*/voice/complete"
                         ).permitAll()
                         .requestMatchers("/internal/ai/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/payments/notifications/apple", "/payments/notifications/google").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/admin/overview", "/admin/clone-training-jobs", "/admin/calls/**")
+                            .hasAnyRole("ADMIN", "ADMIN_VIEWER", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/admin/payments", "/admin/payments/**")
+                            .hasAnyRole("ADMIN", "ADMIN_VIEWER", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/admin/me", "/admin/staff", "/admin/audit-events", "/admin/members", "/admin/members/**")
+                            .hasAnyRole("ADMIN", "ADMIN_VIEWER", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/admin/reports", "/admin/reports/*", "/admin/reports/*/decisions")
+                            .hasAnyRole("ADMIN", "ADMIN_VIEWER", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/admin/support-tickets", "/admin/support-tickets/*")
+                            .hasAnyRole("ADMIN", "ADMIN_VIEWER", "SUPER_ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(aiInternalApiKeyFilter, JwtAuthenticationFilter.class)
                 .cors(Customizer.withDefaults())
                 .build();
@@ -77,10 +95,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedOriginPatterns(java.util.Arrays.stream(allowedOrigins.split(",")).map(String::trim).filter(v -> !v.isBlank()).toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowCredentials(false);
+        configuration.setExposedHeaders(List.of("X-Correlation-Id"));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

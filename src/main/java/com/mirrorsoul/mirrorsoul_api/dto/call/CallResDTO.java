@@ -14,7 +14,10 @@ public class CallResDTO {
             VideoCallStatus status,
             String callerSignalId,
             String aiSignalId,
-            String signalingUrl
+            String signalingUrl,
+            java.util.UUID correlationId,
+            Long cloneVersion,
+            java.util.List<String> trainingJobIds
     ) {
     }
 

@@ -24,7 +24,12 @@ public class CloneProfileGenerationJobService {
                 || (job.getNextAttemptAt() != null && job.getNextAttemptAt().isAfter(now))) {
             return Optional.empty();
         }
+        if (!job.getClone().getUser().isAiWorkAllowed(now)) {
+            job.markStale(now);
+            return Optional.empty();
+        }
         if (job.getSourceHash().equals(job.getClone().getProfileSourceHash())) {
+            job.resultVersion(job.getClone().getCloneVersion());
             job.complete(now);
             return Optional.empty();
         }
@@ -42,6 +47,7 @@ public class CloneProfileGenerationJobService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleFailure(Long jobId, RuntimeException exception) {
         jobRepository.findByIdForUpdate(jobId).ifPresent(job -> {
+            if (job.getStatus() != CloneProfileGenerationJobStatus.PROCESSING) return;
             CloneProfileGenerationException known = exception instanceof CloneProfileGenerationException value
                     ? value : null;
             String code = known == null ? "UNEXPECTED_ERROR" : known.getErrorCode();

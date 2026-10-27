@@ -53,16 +53,21 @@ class AiCallContextServiceTest {
         VideoCall call = mock(VideoCall.class);
         Clone clone = mock(Clone.class);
         User owner = mock(User.class);
+        when(owner.isAiWorkAllowed(org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        when(call.getUser()).thenReturn(User.builder().status(com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE).build());
         MbtiProfile mbtiProfile = mock(MbtiProfile.class);
         AiVoiceProfile voiceProfile = mock(AiVoiceProfile.class);
         VoiceTrainingJob voiceJob = mock(VoiceTrainingJob.class);
 
         when(videoCallRepository.findByIdWithParticipants(1L)).thenReturn(Optional.of(call));
         when(call.getId()).thenReturn(1L);
+        when(call.diagnosticCorrelationId()).thenReturn(UUID.randomUUID().toString());
+        when(call.getCloneVersion()).thenReturn(7L);
         when(call.getRoomId()).thenReturn("call-abc");
         when(call.getMediaType()).thenReturn(CallMediaType.VIDEO);
         when(call.getStatus()).thenReturn(VideoCallStatus.READY);
         when(call.getClone()).thenReturn(clone);
+        when(call.getVoiceTrainingJobId()).thenReturn(41L);
         when(clone.getId()).thenReturn(10L);
         when(clone.getStatus()).thenReturn("READY");
         when(clone.getUser()).thenReturn(owner);
@@ -76,8 +81,7 @@ class AiCallContextServiceTest {
         when(owner.getSelfIntroduction()).thenReturn("영화와 음악을 좋아합니다.");
         when(mbtiProfileRepository.findByUser_Id(20L)).thenReturn(Optional.of(mbtiProfile));
         when(mbtiProfile.getMbti()).thenReturn(MbtiType.INFP);
-        when(aiVoiceProfileRepository
-                .findFirstByCloneIdAndActiveTrueAndStatusOrderByCreatedAtDescIdDesc(10L, "ACTIVE"))
+        when(aiVoiceProfileRepository.findByCloneIdAndVoiceTrainingJob_Id(10L, 41L))
                 .thenReturn(Optional.of(voiceProfile));
         when(voiceProfile.getId()).thenReturn(32L);
         when(voiceProfile.getVoiceTrainingJob()).thenReturn(voiceJob);
@@ -88,6 +92,8 @@ class AiCallContextServiceTest {
 
         assertThat(result.schemaVersion()).isEqualTo(1);
         assertThat(result.callId()).isEqualTo(1L);
+        assertThat(result.cloneVersion()).isEqualTo(7L);
+        assertThat(result.trainingJobIds()).contains("VOICE-41");
         assertThat(result.roomId()).isEqualTo("call-abc");
         assertThat(result.mediaType()).isEqualTo(CallMediaType.VIDEO);
         assertThat(result.status()).isEqualTo(VideoCallStatus.READY);
@@ -136,9 +142,12 @@ class AiCallContextServiceTest {
         VideoCall call = mock(VideoCall.class);
         Clone clone = mock(Clone.class);
         User owner = mock(User.class);
+        when(owner.isAiWorkAllowed(org.mockito.ArgumentMatchers.any())).thenReturn(true);
+        when(call.getUser()).thenReturn(User.builder().status(com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE).build());
         when(videoCallRepository.findByIdWithParticipants(1L)).thenReturn(Optional.of(call));
         when(call.getStatus()).thenReturn(VideoCallStatus.READY);
         when(call.getClone()).thenReturn(clone);
+        when(call.getVoiceTrainingJobId()).thenReturn(null);
         when(clone.getId()).thenReturn(10L);
         when(clone.getStatus()).thenReturn("READY");
         when(clone.getUser()).thenReturn(owner);

@@ -43,7 +43,7 @@ public class FaceTrainingResultConsumer {
             sqs.deleteMessage(DeleteMessageRequest.builder().queueUrl(properties.getQueueUrl())
                     .receiptHandle(message.receiptHandle()).build());
         } catch (Exception exception) {
-            log.error("Face result was not acknowledged. messageId={}", message.messageId(), exception);
+            log.error("Face result was not acknowledged. messageId={} failureType={}", message.messageId(), exception.getClass().getSimpleName());
         }
     }
 }

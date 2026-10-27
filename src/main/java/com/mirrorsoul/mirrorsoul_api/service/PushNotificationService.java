@@ -67,7 +67,7 @@ public class PushNotificationService {
         }
     }
 
-    @Transactional
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.NOT_SUPPORTED)
     public void sendJobVerificationResult(JobVerificationReviewedEvent event) {
         List<PushDevice> devices = pushDeviceRepository
                 .findAllByUserUuidInAndEnabledTrue(List.of(event.userUuid()));
@@ -107,6 +107,9 @@ public class PushNotificationService {
         try {
             BatchResponse response = firebaseMessaging.sendEachForMulticast(message);
             disableUnregisteredDevices(devices, response.getResponses());
+            if (response.getFailureCount() > 0) {
+                throw new com.mirrorsoul.mirrorsoul_api.jobreview.JobNotificationDeliveryException();
+            }
         } catch (FirebaseMessagingException exception) {
             throw new IllegalStateException("Firebase job verification result send failed", exception);
         }
@@ -171,6 +174,7 @@ public class PushNotificationService {
             }
         }
         if (!disabledDeviceIds.isEmpty()) {
+            pushDeviceRepository.saveAll(devices.stream().filter(device -> disabledDeviceIds.contains(device.getId())).toList());
             log.info("Disabled unregistered push devices. deviceIds={}", disabledDeviceIds);
         }
     }

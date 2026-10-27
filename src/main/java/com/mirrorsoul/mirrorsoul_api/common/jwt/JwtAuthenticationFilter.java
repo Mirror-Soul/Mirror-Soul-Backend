@@ -19,9 +19,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
+    public static final String VERIFIED_USER_ID = "jwt.verifiedUserId";
+
     private final TokenProvider tokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
     private final UserActivityService userActivityService;
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI().substring(request.getContextPath().length());
+        return path.equals("/payments/notifications/apple") || path.equals("/payments/notifications/google");
+    }
 
     @Override
     protected void doFilterInternal(
@@ -36,8 +44,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 tokenProvider.validateAccessToken(token);
 
                 Long userId = tokenProvider.getUserIdFromToken(token);
+                request.setAttribute(VERIFIED_USER_ID, userId);
                 CustomUserDetails userDetails = customUserDetailsService.loadUserById(userId);
 
+                if (!userDetails.isEnabled() || !java.util.Objects.equals(
+                        userDetails.getSessionVersion(), tokenProvider.getSessionVersion(token))) {
+                    SecurityContextHolder.clearContext();
+                    filterChain.doFilter(request, response);
+                    return;
+                }
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails,
@@ -47,7 +62,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 userActivityService.touch(userId);
-            } catch (JwtException | IllegalArgumentException e) {
+            } catch (JwtException | IllegalArgumentException | org.springframework.security.core.AuthenticationException e) {
                 SecurityContextHolder.clearContext();
             }
         }

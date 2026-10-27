@@ -15,7 +15,10 @@ public record AiCallContextDTO(
         String roomId,
         CallMediaType mediaType,
         VideoCallStatus status,
-        @JsonProperty("clone") CloneContext cloneContext
+        @JsonProperty("clone") CloneContext cloneContext,
+        UUID correlationId,
+        Long cloneVersion,
+        java.util.List<String> trainingJobIds
 ) {
 
     public record CloneContext(

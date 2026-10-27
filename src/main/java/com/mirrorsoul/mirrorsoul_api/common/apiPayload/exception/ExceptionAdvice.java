@@ -21,13 +21,19 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 @RestControllerAdvice(annotations = RestController.class)
 public class ExceptionAdvice {
 
+    @ExceptionHandler(org.springframework.orm.ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ApiResponse<Object>> handleVersionConflict(Exception e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.onFailure(GeneralErrorCode.MEMBER_VERSION_CONFLICT, "회원 정보가 변경되었습니다."));
+    }
+
     /**
      * GeneralException 처리
      */
     @ExceptionHandler(GeneralException.class)
     public ResponseEntity<ApiResponse<Object>> handleCustomException(GeneralException e) {
         BaseErrorCode code = e.getCode();
-        log.error("GeneralException: code={}, message={}", code.getCode(), code.getMessage(), e);
+        log.error("GeneralException: code={}, message={}", code.getCode(), code.getMessage());
 
         return ResponseEntity
                 .status(code.getHttpStatus())
@@ -40,7 +46,7 @@ public class ExceptionAdvice {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Object>> handleValidationException(MethodArgumentNotValidException e) {
         String errorDetail = e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
-        log.error("Validation Exception: {}", errorDetail, e);
+        log.warn("Validation failure fieldCount={}", e.getBindingResult().getErrorCount());
 
         BaseErrorCode code = GeneralErrorCode.INVALID_PARAMETER;
         return ResponseEntity
@@ -53,7 +59,7 @@ public class ExceptionAdvice {
      */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ApiResponse<Object>> handleMissingParams(MissingServletRequestParameterException e) {
-        log.error("Missing Parameter: {}", e.getParameterName(), e);
+        log.warn("Missing parameter name={}", e.getParameterName());
 
         BaseErrorCode code = GeneralErrorCode.MISSING_PARAMETER;
         return ResponseEntity
@@ -66,7 +72,7 @@ public class ExceptionAdvice {
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiResponse<Object>> handleTypeMismatch(MethodArgumentTypeMismatchException e) {
-        log.error("Type Mismatch: {}", e.getName(), e);
+        log.warn("Parameter type mismatch name={}", e.getName());
 
         BaseErrorCode code = GeneralErrorCode.INVALID_PARAMETER;
         return ResponseEntity
@@ -82,7 +88,7 @@ public class ExceptionAdvice {
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ApiResponse<Object>> handleHttpMessageNotReadable(HttpMessageNotReadableException e) {
-        log.error("Message Not Readable Exception", e);
+        log.warn("Request body could not be parsed");
 
         BaseErrorCode code = GeneralErrorCode.INVALID_PARAMETER;
         return ResponseEntity
@@ -95,7 +101,7 @@ public class ExceptionAdvice {
      */
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public ResponseEntity<ApiResponse<Object>> handleHttpMediaTypeNotSupported(HttpMediaTypeNotSupportedException e) {
-        log.error("Media Type Not Supported: {}", e.getContentType(), e);
+        log.warn("Unsupported media type");
 
         BaseErrorCode code = GeneralErrorCode.UNSUPPORTED_FILE_TYPE;
         return ResponseEntity
@@ -111,7 +117,7 @@ public class ExceptionAdvice {
      */
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<ApiResponse<Object>> handleNoHandlerFound(NoHandlerFoundException e) {
-        log.error("No Handler Found: {} {}", e.getHttpMethod(), e.getRequestURL(), e);
+        log.warn("Request handler not found");
 
         BaseErrorCode code = GeneralErrorCode.API_NOT_FOUND;
         return ResponseEntity
@@ -124,7 +130,7 @@ public class ExceptionAdvice {
      */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ApiResponse<Object>> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException e) {
-        log.error("Method Not Supported: {}", e.getMethod(), e);
+        log.warn("Unsupported HTTP method");
 
         BaseErrorCode code = GeneralErrorCode.METHOD_NOT_ALLOWED;
         return ResponseEntity
@@ -140,11 +146,11 @@ public class ExceptionAdvice {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Object>> handleException(Exception e) {
-        log.error("Unhandled Exception", e);
+        log.error("Unhandled exception type={}", e.getClass().getSimpleName());
 
         BaseErrorCode code = GeneralErrorCode.INTERNAL_SERVER_ERROR;
         return ResponseEntity
                 .status(code.getHttpStatus())
-                .body(ApiResponse.onFailure(code, e.getMessage()));
+                .body(ApiResponse.onFailure(code, code.getMessage()));
     }
 }

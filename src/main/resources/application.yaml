@@ -22,8 +22,8 @@ spring:
     port: 8080
 
   mail:
-    host: smtp.gmail.com
-    port: 587
+    host: ${SMTP_HOST:smtp.gmail.com}
+    port: ${SMTP_PORT:587}
     username: ${SMTP_USERNAME}
     password: ${SMTP_PASSWORD}
     properties:
@@ -31,17 +31,24 @@ spring:
         smtp:
           auth: true
           timeout: 5000
+          connectiontimeout: 5000
+          writetimeout: 5000
           starttls:
             enable: true
 
 jwt:
-  secret: ${JWT_SECRET:mirrorsoul-jwt-secret-key-must-be-at-least-32-bytes}
+  secret: ${JWT_SECRET}
+  previous-secret: ${JWT_PREVIOUS_SECRET:}
+  previous-secret-expires-at: ${JWT_PREVIOUS_SECRET_EXPIRES_AT:}
   access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:3600}
   refresh-token-expiration-seconds: ${JWT_REFRESH_TOKEN_EXPIRATION_SECONDS:1209600}
 
 internal:
   ai:
     api-key: ${AI_INTERNAL_API_KEY:}
+    previous-api-key: ${AI_INTERNAL_PREVIOUS_API_KEY:}
+    previous-key-expires-at: ${AI_INTERNAL_PREVIOUS_KEY_EXPIRES_AT:}
+    scopes: ${AI_INTERNAL_SCOPES:call_context,talk_log,call_billing,call_diagnostics,training_status,safety,member_deletion,signaling}
 
 chat:
   websocket:
@@ -65,6 +72,8 @@ aws:
 
 value-balance:
   callback-secret: ${VALUE_BALANCE_CALLBACK_SECRET}
+  previous-callback-secret: ${VALUE_BALANCE_PREVIOUS_CALLBACK_SECRET:}
+  previous-secret-expires-at: ${VALUE_BALANCE_PREVIOUS_SECRET_EXPIRES_AT:}
 
 face-result:
   enabled: ${FACE_RESULT_CONSUMER_ENABLED:false}
@@ -80,6 +89,8 @@ voice-result:
 
 clone-training:
   callback-secret: ${CLONE_TRAINING_CALLBACK_SECRET:}
+  previous-callback-secret: ${CLONE_TRAINING_PREVIOUS_CALLBACK_SECRET:}
+  previous-secret-expires-at: ${CLONE_TRAINING_PREVIOUS_SECRET_EXPIRES_AT:}
 
 rag:
   profile:
@@ -151,3 +162,60 @@ monitoring:
     step: ${CLOUDWATCH_METRICS_STEP:60s}
     environment: ${APP_ENV:local}
     instance: ${METRICS_INSTANCE_ID:api-1}
+
+# SMTP credentials use the existing SMTP_USERNAME / SMTP_PASSWORD environment variables.
+support:
+  mail:
+    enabled: ${SUPPORT_MAIL_ENABLED:false}
+    from: ${SUPPORT_MAIL_FROM:}
+    interval-ms: ${SUPPORT_MAIL_INTERVAL_MS:30000}
+  attachments:
+    bucket: ${AWS_SUPPORT_BUCKET:}
+    retention-days: ${SUPPORT_ATTACHMENT_RETENTION_DAYS:30}
+    cleanup-interval-ms: ${SUPPORT_ATTACHMENT_CLEANUP_INTERVAL_MS:3600000}
+
+security:
+  cors:
+    allowed-origin-patterns: ${CORS_ALLOWED_ORIGIN_PATTERNS:http://localhost:3000,http://localhost:5173}
+  admin:
+    allowed-origins: ${ADMIN_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+    invite-encryption-key: ${ADMIN_INVITE_ENCRYPTION_KEY:}
+    audit-retention-days: ${ADMIN_AUDIT_RETENTION_DAYS:365}
+
+# Configure product IDs and seconds before enabling sales; zero-second entries cannot grant time.
+billing:
+  encryption-key: ${BILLING_ENCRYPTION_KEY:}
+  retry-interval-ms: ${BILLING_RETRY_INTERVAL_MS:30000}
+  call-expiry-interval-ms: ${BILLING_CALL_EXPIRY_INTERVAL_MS:5000}
+  apple-products: {}
+  google-products: {}
+  apple:
+    product-id: ${APPLE_TALK_TIME_PRODUCT_ID:}
+    product-seconds: ${APPLE_TALK_TIME_PRODUCT_SECONDS:0}
+    bundle-id: ${APPLE_BUNDLE_ID:}
+    app-apple-id: ${APPLE_APP_ID:}
+    issuer-id: ${APPLE_ISSUER_ID:}
+    key-id: ${APPLE_KEY_ID:}
+    private-key-path: ${APPLE_PRIVATE_KEY_PATH:}
+    root-certificate-paths: ${APPLE_ROOT_CERTIFICATE_PATHS:}
+    environment: ${APPLE_STORE_ENVIRONMENT:PRODUCTION}
+  google:
+    product-id: ${GOOGLE_TALK_TIME_PRODUCT_ID:}
+    product-seconds: ${GOOGLE_TALK_TIME_PRODUCT_SECONDS:0}
+    package-name: ${GOOGLE_PLAY_PACKAGE_NAME:}
+    credentials-path: ${GOOGLE_PLAY_CREDENTIALS_PATH:}
+    push-audience: ${GOOGLE_PLAY_PUSH_AUDIENCE:}
+    push-service-account: ${GOOGLE_PLAY_PUSH_SERVICE_ACCOUNT:}
+    allow-test-purchases: ${GOOGLE_PLAY_ALLOW_TEST_PURCHASES:false}
+
+quality:
+  max-training-retries: ${MAX_TRAINING_RETRIES:3}
+  training-dispatch-enabled: ${TRAINING_DISPATCH_RECOVERY_ENABLED:false}
+  dispatch-recovery-ms: ${TRAINING_DISPATCH_RECOVERY_MS:30000}
+  training-stall-seconds: ${TRAINING_STALL_SECONDS:900}
+  monitor-ms: ${QUALITY_MONITOR_INTERVAL_MS:60000}
+
+admin:
+  overview:
+    query-timeout-seconds: ${ADMIN_OVERVIEW_QUERY_TIMEOUT_SECONDS:3}
+    slow-query-ms: ${ADMIN_OVERVIEW_SLOW_QUERY_MS:1000}

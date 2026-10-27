@@ -100,7 +100,7 @@ public class ProfileController {
         );
     }
 
-    @Operation(summary = "대화 시간 채우기 api", description = "시간은 초단위로 계산하므로, 30분 추가->1800, 2시간 추가->7200, 10시간 추가->36000 으로 입력합니다.")
+    @Operation(summary = "기존 대화 시간 충전 API (종료)", description = "직접 시간 충전은 지원하지 않습니다. POST /payments/verify로 스토어 구매를 검증해야 합니다.", deprecated = true)
     @PostMapping("/buy-time")
     public ApiResponse<ProfileResDTO.timeStatusDTO> buyTime(
             @AuthenticationPrincipal CustomUserDetails currentUser,

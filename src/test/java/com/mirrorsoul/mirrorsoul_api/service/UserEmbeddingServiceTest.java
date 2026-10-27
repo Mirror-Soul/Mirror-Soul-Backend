@@ -57,6 +57,7 @@ class UserEmbeddingServiceTest {
     void generatesAndStoresChangedProfileEmbedding() {
         UUID userUuid = UUID.randomUUID();
         User user = mock(User.class);
+        when(user.isAiWorkAllowed(any())).thenReturn(true);
         float[] embedding = new float[1536];
         when(embeddingClientProvider.getIfAvailable()).thenReturn(embeddingClient);
         when(embeddingRepositoryProvider.getIfAvailable()).thenReturn(embeddingRepository);
@@ -82,6 +83,7 @@ class UserEmbeddingServiceTest {
     void skipsGeminiWhenSourceHashIsUnchanged() {
         UUID userUuid = UUID.randomUUID();
         User user = mock(User.class);
+        when(user.isAiWorkAllowed(any())).thenReturn(true);
         float[] embedding = new float[1536];
         when(embeddingClientProvider.getIfAvailable()).thenReturn(embeddingClient);
         when(embeddingRepositoryProvider.getIfAvailable()).thenReturn(embeddingRepository);
@@ -129,6 +131,7 @@ class UserEmbeddingServiceTest {
     void generatesAndStoresChangedCloneSummaryEmbedding() {
         UUID userUuid = UUID.randomUUID();
         User user = mock(User.class);
+        when(user.isAiWorkAllowed(any())).thenReturn(true);
         Clone clone = mock(Clone.class);
         float[] embedding = new float[1536];
         when(embeddingClientProvider.getIfAvailable()).thenReturn(embeddingClient);

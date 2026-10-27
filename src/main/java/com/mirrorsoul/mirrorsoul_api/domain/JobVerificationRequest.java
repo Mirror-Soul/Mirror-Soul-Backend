@@ -34,6 +34,49 @@ public class JobVerificationRequest extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @jakarta.persistence.Version
+    private Long version;
+
+    @Column(name = "evidence_expires_at", nullable = false)
+    private LocalDateTime evidenceExpiresAt = LocalDateTime.now().plusDays(90);
+
+    @Column(name = "evidence_deleted_at")
+    private LocalDateTime evidenceDeletedAt;
+
+    @Column(name = "evidence_delete_attempts", nullable = false)
+    private int evidenceDeleteAttempts;
+
+    @Column(name = "evidence_delete_error", length = 40)
+    private String evidenceDeleteError;
+
+    @Column(name = "notification_state", nullable = false, length = 20)
+    private String notificationState = "NONE";
+
+    @Column(name = "notification_attempts", nullable = false)
+    private int notificationAttempts;
+
+    @Column(name = "notification_updated_at")
+    private LocalDateTime notificationUpdatedAt;
+
+    @Column(name = "notification_error", length = 40)
+    private String notificationError;
+
+    public void startRetention(LocalDateTime now, int days) {
+        if (evidenceExpiresAt.isAfter(now)) evidenceExpiresAt = now.plusDays(days);
+        notificationState = "PENDING";
+        notificationUpdatedAt = now;
+    }
+    public void evidenceDeletion(boolean success, LocalDateTime now) {
+        evidenceDeleteAttempts++;
+        evidenceDeleteError = success ? null : "STORAGE_DELETE_FAILED";
+        if (success) evidenceDeletedAt = now;
+    }
+    public void notification(String state, String error, LocalDateTime now) {
+        notificationState = state; notificationError = error; notificationUpdatedAt = now;
+        if ("SENDING".equals(state)) notificationAttempts++;
+    }
+
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false,
             foreignKey = @ForeignKey(name = "fk_job_verification_requests_user"))

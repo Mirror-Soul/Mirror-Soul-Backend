@@ -1,0 +1,139 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Job verification object access audit and operational failure alarms
+Parameters:
+  EvidenceBucketName:
+    Type: String
+  ApplicationRoleName:
+    Type: String
+  ApplicationLogGroup:
+    Type: String
+  AlarmTopicArn:
+    Type: String
+Resources:
+  EvidenceRolePolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Roles: [!Ref ApplicationRoleName]
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: [s3:GetObject, s3:GetObjectVersion, s3:PutObject, s3:DeleteObject, s3:DeleteObjectVersion]
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${EvidenceBucketName}/job-certifications/*'
+  AccessLogBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: RetainObjectAuditOneYear
+            Status: Enabled
+            ExpirationInDays: 365
+  AccessLogPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AccessLogBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: CloudTrailAcl
+            Effect: Allow
+            Principal: {Service: cloudtrail.amazonaws.com}
+            Action: s3:GetBucketAcl
+            Resource: !GetAtt AccessLogBucket.Arn
+            Condition:
+              StringEquals:
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/${AWS::StackName}-job-evidence'
+          - Sid: CloudTrailWrite
+            Effect: Allow
+            Principal: {Service: cloudtrail.amazonaws.com}
+            Action: s3:PutObject
+            Resource: !Sub '${AccessLogBucket.Arn}/AWSLogs/${AWS::AccountId}/*'
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+                aws:SourceArn: !Sub 'arn:${AWS::Partition}:cloudtrail:${AWS::Region}:${AWS::AccountId}:trail/${AWS::StackName}-job-evidence'
+          - Sid: RequireTLS
+            Effect: Deny
+            Principal: '*'
+            Action: s3:*
+            Resource: [!GetAtt AccessLogBucket.Arn, !Sub '${AccessLogBucket.Arn}/*']
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+  EvidenceAccessTrail:
+    Type: AWS::CloudTrail::Trail
+    DependsOn: AccessLogPolicy
+    Properties:
+      TrailName: !Sub '${AWS::StackName}-job-evidence'
+      S3BucketName: !Ref AccessLogBucket
+      IsLogging: true
+      IsMultiRegionTrail: false
+      IncludeGlobalServiceEvents: false
+      EnableLogFileValidation: true
+      EventSelectors:
+        - IncludeManagementEvents: false
+          ReadWriteType: All
+          DataResources:
+            - Type: AWS::S3::Object
+              Values: [!Sub 'arn:${AWS::Partition}:s3:::${EvidenceBucketName}/job-certifications/']
+  CleanupFailureFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ApplicationLogGroup
+      FilterPattern: '"Job evidence cleanup failed"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/JobReview
+          MetricName: CleanupFailures
+          MetricValue: '1'
+  NotificationFailureFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ApplicationLogGroup
+      FilterPattern: '"Job notification" "failed"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/JobReview
+          MetricName: NotificationFailures
+          MetricValue: '1'
+  CleanupFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: MirrorSoul/JobReview
+      MetricName: CleanupFailures
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+  NotificationFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      Namespace: MirrorSoul/JobReview
+      MetricName: NotificationFailures
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopicArn]
+Outputs:
+  AccessLogBucketName:
+    Value: !Ref AccessLogBucket
+  EvidenceAccessTrailArn:
+    Value: !GetAtt EvidenceAccessTrail.Arn

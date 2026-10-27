@@ -1,0 +1,133 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Private customer support attachments and delivery failure alarms
+Parameters:
+  ApplicationLogGroup:
+    Type: String
+    Description: Existing application CloudWatch Logs group
+  AlarmTopicArn:
+    Type: String
+    Description: Existing SNS topic ARN with confirmed operational subscriptions
+  FrontendOrigin:
+    Type: String
+    Description: Frontend origin allowed to PUT and GET signed attachments
+  AttachmentRetentionDays:
+    Type: Number
+    Default: 30
+    MinValue: 1
+    MaxValue: 365
+Resources:
+  SupportAttachmentBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        IgnorePublicAcls: true
+        BlockPublicPolicy: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - !Ref FrontendOrigin
+            AllowedMethods: [GET, PUT, HEAD]
+            AllowedHeaders: ['*']
+            ExposedHeaders: [ETag]
+            MaxAge: 300
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: ExpireSupportAttachments
+            Status: Enabled
+            Prefix: support-private/
+            ExpirationInDays: !Ref AttachmentRetentionDays
+            NoncurrentVersionExpiration:
+              NoncurrentDays: !Ref AttachmentRetentionDays
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+  SupportAttachmentPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref SupportAttachmentBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: RequireTLS
+            Effect: Deny
+            Principal: '*'
+            Action: s3:*
+            Resource:
+              - !GetAtt SupportAttachmentBucket.Arn
+              - !Sub '${SupportAttachmentBucket.Arn}/*'
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+  FailedMailFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ApplicationLogGroup
+      FilterPattern: '"Support mail failed"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/Support
+          MetricName: DeliveryFailures
+          MetricValue: '1'
+  UncertainMailFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ApplicationLogGroup
+      FilterPattern: '"Support mail uncertain"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/Support
+          MetricName: DeliveryFailures
+          MetricValue: '1'
+  AttachmentCleanupFilter:
+    Type: AWS::Logs::MetricFilter
+    Properties:
+      LogGroupName: !Ref ApplicationLogGroup
+      FilterPattern: '"Support attachment cleanup failed"'
+      MetricTransformations:
+        - MetricNamespace: MirrorSoul/Support
+          MetricName: AttachmentCleanupFailures
+          MetricValue: '1'
+  DeliveryFailureAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Customer support reply delivery failed or acceptance is uncertain
+      Namespace: MirrorSoul/Support
+      MetricName: DeliveryFailures
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopicArn
+  AttachmentCleanupAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Private support attachment expiry cleanup failed
+      Namespace: MirrorSoul/Support
+      MetricName: AttachmentCleanupFailures
+      Statistic: Sum
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions:
+        - !Ref AlarmTopicArn
+Outputs:
+  SupportBucketName:
+    Description: Set AWS_SUPPORT_BUCKET to this value
+    Value: !Ref SupportAttachmentBucket
+  SupportBucketArn:
+    Value: !GetAtt SupportAttachmentBucket.Arn

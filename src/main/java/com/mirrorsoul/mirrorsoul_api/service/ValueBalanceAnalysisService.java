@@ -23,11 +23,16 @@ public class ValueBalanceAnalysisService {
     @Value("${value-balance.callback-secret}")
     private String callbackSecret;
 
+    @Value("${value-balance.previous-callback-secret:}")
+    private String previousSecret;
+
+    @Value("${value-balance.previous-secret-expires-at:}")
+    private String previousSecretExpiresAt;
+
     @Transactional
     public void complete(Long jobId, String suppliedSecret, ValueBalanceAnalysisCallbackDTO request) {
-        if (suppliedSecret == null || !MessageDigest.isEqual(
-                callbackSecret.getBytes(StandardCharsets.UTF_8),
-                suppliedSecret.getBytes(StandardCharsets.UTF_8))) {
+        if (!com.mirrorsoul.mirrorsoul_api.access.RotatingSecret.matches(callbackSecret, previousSecret,
+                com.mirrorsoul.mirrorsoul_api.access.RotatingSecret.expiry(previousSecretExpiresAt), suppliedSecret)) {
             throw new GeneralException(GeneralErrorCode.FORBIDDEN);
         }
         ValueBalanceAnalysisJob job = jobRepository.findById(jobId)

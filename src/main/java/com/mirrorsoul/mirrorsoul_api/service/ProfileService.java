@@ -3,8 +3,6 @@ package com.mirrorsoul.mirrorsoul_api.service;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.code.GeneralErrorCode;
 import com.mirrorsoul.mirrorsoul_api.common.apiPayload.exception.GeneralException;
 import com.mirrorsoul.mirrorsoul_api.domain.User;
-import com.mirrorsoul.mirrorsoul_api.domain.TalkTimeTransaction;
-import com.mirrorsoul.mirrorsoul_api.domain.enums.TalkTimeTransactionReason;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
 import com.mirrorsoul.mirrorsoul_api.dto.profile.ProfileReqDTO;
 import com.mirrorsoul.mirrorsoul_api.dto.profile.ProfileResDTO;
@@ -37,18 +35,12 @@ public class ProfileService {
 
     public ProfileResDTO.timeStatusDTO getMyTime(UUID userUuid) {
         User user = getUser(userUuid);
-        return toTimeStatus(user.getRemainingTalkTime());
+        return toTimeStatus(Math.toIntExact(talkTimeTransactionRepository.balance(user.getId())));
     }
 
     @Transactional
     public ProfileResDTO.timeStatusDTO buyTime(UUID userUuid, ProfileReqDTO.buyTimeReqDTO request) {
-        User user = userRepository.findByUuidForUpdate(userUuid)
-                .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
-        user.addTalkTime(request.getBuyTime());
-        talkTimeTransactionRepository.save(TalkTimeTransaction.record(
-                user, null, TalkTimeTransactionReason.TOP_UP, request.getBuyTime()));
-
-        return toTimeStatus(user.getRemainingTalkTime());
+        throw new GeneralException(GeneralErrorCode.PAYMENT_INVALID, "POST /payments/verify 로 스토어 구매를 검증해 주세요.");
     }
 
     public ProfileResDTO.audioSettingsDTO getAudioSettings(UUID userUuid) {
@@ -138,7 +130,9 @@ public class ProfileService {
 
     @Transactional
     public void inactiveAccount(UUID userUuid) {
-        User user = getUser(userUuid);
+        User user = userRepository.findByUuidForUpdate(userUuid)
+                .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
+        if (!user.isAccessAllowed()) throw new GeneralException(GeneralErrorCode.FORBIDDEN);
         user.deactivate(LocalDateTime.now());
     }
 

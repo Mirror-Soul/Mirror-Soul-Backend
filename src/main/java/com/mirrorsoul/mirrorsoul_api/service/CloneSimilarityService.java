@@ -25,16 +25,20 @@ public class CloneSimilarityService {
     public void completePersonality(Long cloneId, ClonePersonalityCompleteRequest request) {
         require(CloneSimilarityCalculator.VERSION.equals(request.calculationVersion()), "Unsupported calculation version");
         Clone clone = findLocked(cloneId);
+        com.mirrorsoul.mirrorsoul_api.domain.RagProfileJob trainingJob = null;
         if (request.sourceRevision() != null) {
             // Same lock order as RAG request registration: clone, then outbox.
             var job = ragJobs.findLockedById(cloneId)
                     .orElseThrow(() -> invalid("Unknown RAG revision"));
             if (request.sourceRevision() < job.getRequestedRevision()) return;
             require(request.sourceRevision() == job.getRequestedRevision(), "Unknown RAG revision");
+            if ("FAILED".equals(job.getTrainingStatus())) return;
+            trainingJob = job;
         }
         if (!clone.updateProfileSimilarity(request.sourceRevision(), request.profileScore(),
                 request.dataReliabilityScore(), request.penaltyScore())) return;
         clone.updatePersonalityTrainingCompleted(true);
+        if (trainingJob != null) trainingJob.trainingCompleted(clone.getCloneVersion(),java.time.LocalDateTime.now());
         readiness.refreshLocked(clone);
     }
 

@@ -15,7 +15,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, Long>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<User> {
 
     Optional<User> findByEmail(String email);
 
@@ -50,6 +50,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
           and candidate.status =
               com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus.ACTIVE
+
+          and (candidate.safetyRestrictedUntil is null or candidate.safetyRestrictedUntil <= CURRENT_TIMESTAMP)
 
           and candidate.matchingEnabled = true
 

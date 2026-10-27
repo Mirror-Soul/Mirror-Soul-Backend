@@ -8,6 +8,15 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum GeneralErrorCode implements BaseErrorCode {
 
+    OVERVIEW_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "OVERVIEW_5030", "운영 집계를 조회할 수 없습니다."),
+
+    QUALITY_INVALID(HttpStatus.BAD_REQUEST, "QUALITY_4000", "품질 이벤트 또는 조회 범위를 확인해 주세요."),
+    QUALITY_CONFLICT(HttpStatus.CONFLICT, "QUALITY_4090", "작업 상태 또는 이벤트 내용이 일치하지 않습니다."),
+    QUALITY_NOT_FOUND(HttpStatus.NOT_FOUND, "QUALITY_4040", "학습 작업 또는 통화 정보를 찾을 수 없습니다."),
+
+    PAYMENT_INVALID(HttpStatus.BAD_REQUEST, "PAYMENT_4000", "검증된 스토어 구매 정보를 확인해 주세요."),
+    PAYMENT_CONFLICT(HttpStatus.CONFLICT, "PAYMENT_4090", "결제 또는 멱등키 상태가 요청과 일치하지 않습니다."),
+    PAYMENT_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "PAYMENT_5030", "스토어 검증 서비스를 사용할 수 없습니다."),
     // 인증 에러
     DUPLICATE_LOGINID(HttpStatus.BAD_REQUEST,"AUTH_4000","중복되는 아이디가 존재합니다."),
     NOT_AGREED_TERM(HttpStatus.BAD_REQUEST,"AUTH_4001","서비스 이용약관 동의는 필수입니다."),
@@ -47,7 +56,22 @@ public enum GeneralErrorCode implements BaseErrorCode {
     SERVICE_UNAVAILABLE(HttpStatus.SERVICE_UNAVAILABLE, "SERVER_5031", "서버가 일시적으로 불안정합니다."),
     EXTERNAL_SERVICE_TIMEOUT(HttpStatus.GATEWAY_TIMEOUT, "SERVER_5041", "외부 서비스 응답 지연"),
 
+    STAFF_CONFLICT(HttpStatus.CONFLICT,"STAFF_4090","직원 정보가 변경되었거나 처리할 수 없는 상태입니다."),
+    STAFF_REAUTH_REQUIRED(HttpStatus.FORBIDDEN,"STAFF_4031","직원 관리에는 최근 재인증이 필요합니다."),
+    STAFF_RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS,"STAFF_4290","재인증 시도 횟수를 초과했습니다."),
+    SUPPORT_NOT_FOUND(HttpStatus.NOT_FOUND,"SUPPORT_4040","고객문의를 찾을 수 없습니다."),
+    SUPPORT_CONFLICT(HttpStatus.CONFLICT,"SUPPORT_4090","문의 상태가 변경되었거나 처리할 수 없는 상태입니다."),
+    SUPPORT_IDEMPOTENCY_CONFLICT(HttpStatus.CONFLICT,"SUPPORT_4091","동일한 요청 키에 다른 내용이 지정되었습니다."),
+    SUPPORT_RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS,"SUPPORT_4290","문의 접수 횟수를 초과했습니다."),
     // 유저 관련 에러
+    MEMBER_VERSION_CONFLICT(HttpStatus.CONFLICT, "MEMBER_4090", "회원 정보가 변경되었습니다. 다시 조회해 주세요."),
+    MEMBER_ACTION_CONFLICT(HttpStatus.CONFLICT, "MEMBER_4091", "현재 상태에서 수행할 수 없는 조치입니다."),
+    MEMBER_IDEMPOTENCY_CONFLICT(HttpStatus.CONFLICT, "MEMBER_4092", "동일한 요청 키에 다른 조치가 지정되었습니다."),
+    REPORT_NOT_FOUND(HttpStatus.NOT_FOUND,"SAFETY_4040","신고를 찾을 수 없습니다."),
+    REPORT_CONFLICT(HttpStatus.CONFLICT,"SAFETY_4090","신고 정보가 변경되었거나 처리할 수 없는 상태입니다."),
+    REPORT_IDEMPOTENCY_CONFLICT(HttpStatus.CONFLICT,"SAFETY_4091","동일한 요청 키에 다른 내용이 지정되었습니다."),
+    REPORT_RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS,"SAFETY_4290","신고 접수 횟수를 초과했습니다."),
+    SAFETY_RESTRICTED(HttpStatus.FORBIDDEN,"SAFETY_4030","안전 정책에 따라 해당 기능의 이용이 제한되었습니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_4040", "존재하지 않는 사용자입니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "USER_4090", "이미 사용 중인 이메일입니다."),
     DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "USER_4091", "이미 사용 중인 닉네임입니다."),

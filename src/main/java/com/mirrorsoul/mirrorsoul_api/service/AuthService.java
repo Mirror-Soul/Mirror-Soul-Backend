@@ -41,11 +41,17 @@ public class AuthService {
             if (!user.canRecover(LocalDateTime.now())) {
                 throw new GeneralException(GeneralErrorCode.FORBIDDEN, "Account recovery period has expired.");
             }
+            if (user.getStatusBeforeWithdrawal() == UserStatus.SUSPENDED) {
+                throw new GeneralException(GeneralErrorCode.FORBIDDEN, "Suspended account requires administrator recovery.");
+            }
             user.reactivate();
         } else if (UserStatus.DELETED.equals(user.getStatus())) {
             throw new GeneralException(GeneralErrorCode.FORBIDDEN, "Deleted user.");
         }
 
+        if (!user.isAccessAllowed()) {
+            throw new GeneralException(GeneralErrorCode.FORBIDDEN, "Account access is restricted.");
+        }
         String accessToken = tokenProvider.createAccessToken(user);
         String refreshToken = tokenProvider.createRefreshToken(user);
         user.updateRefreshToken(refreshToken);
@@ -67,7 +73,7 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.INVALID_TOKEN, "User for token not found."));
 
-        if (UserStatus.INACTIVE.equals(user.getStatus()) || UserStatus.DELETED.equals(user.getStatus())) {
+        if (!user.isAccessAllowed()) {
             throw new GeneralException(GeneralErrorCode.FORBIDDEN, "Inactive user.");
         }
 

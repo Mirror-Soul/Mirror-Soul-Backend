@@ -4,5 +4,9 @@ public enum TalkTimeTransactionReason {
     OPENING_BALANCE,
     SIGNUP_GRANT,
     TOP_UP,
-    CALL_USAGE
+    CALL_USAGE,
+    PURCHASE_GRANT,
+    PAYMENT_REFUND,
+    PAYMENT_RETURN,
+    ADMIN_ADJUSTMENT
 }

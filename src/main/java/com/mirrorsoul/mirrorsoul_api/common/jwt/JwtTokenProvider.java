@@ -56,6 +56,12 @@ public class JwtTokenProvider implements TokenProvider {
         validateTokenType(token, "refresh");
     }
 
+    @Override
+    public Long getSessionVersion(String token) {
+        Number version = parseClaims(token).get("sessionVersion", Number.class);
+        return version == null ? 0L : version.longValue();
+    }
+
     private void validateTokenType(String token, String expectedTokenType) {
         try {
             Claims claims = parseClaims(token);
@@ -81,6 +87,7 @@ public class JwtTokenProvider implements TokenProvider {
                 .subject(String.valueOf(user.getId()))
                 .claim("email", user.getEmail())
                 .claim("tokenType", tokenType)
+                .claim("sessionVersion", user.getSessionVersion())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusSeconds(expirationSeconds)))
                 .signWith(secretKey)
@@ -88,11 +95,15 @@ public class JwtTokenProvider implements TokenProvider {
     }
 
     private Claims parseClaims(String token) {
-        return Jwts.parser()
-                .verifyWith(secretKey)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
+        try {
+            return Jwts.parser().verifyWith(secretKey).build().parseSignedClaims(token).getPayload();
+        } catch (io.jsonwebtoken.security.SignatureException | io.jsonwebtoken.security.WeakKeyException e) {
+            if (jwtProperties.previousSecret() == null || jwtProperties.previousSecret().isBlank()
+                    || jwtProperties.previousSecretExpiresAt() == null
+                    || !Instant.now().isBefore(jwtProperties.previousSecretExpiresAt())) throw e;
+            SecretKey previous = Keys.hmacShaKeyFor(jwtProperties.previousSecret().getBytes(StandardCharsets.UTF_8));
+            return Jwts.parser().verifyWith(previous).build().parseSignedClaims(token).getPayload();
+        }
     }
 
     private Claims parseClaimsAllowExpired(String token) {

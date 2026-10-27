@@ -1,42 +1,23 @@
 package com.mirrorsoul.mirrorsoul_api.service;
-
 import com.mirrorsoul.mirrorsoul_api.domain.User;
 import com.mirrorsoul.mirrorsoul_api.domain.enums.UserStatus;
-import com.mirrorsoul.mirrorsoul_api.repository.PushDeviceRepository;
 import com.mirrorsoul.mirrorsoul_api.repository.UserRepository;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-@Service
-@RequiredArgsConstructor
+@Service @RequiredArgsConstructor
 public class WithdrawnAccountCleanupService {
-
-    private static final long RECOVERY_PERIOD_DAYS = 30;
-
     private final UserRepository userRepository;
-    private final PushDeviceRepository pushDeviceRepository;
-    private final JobVerificationEvidenceCleanupService jobVerificationEvidenceCleanupService;
-
+    private final MemberDeletionService deletion;
     @Transactional
     public int anonymizeExpiredAccounts(LocalDateTime now) {
-        LocalDateTime cutoff = now.minusDays(RECOVERY_PERIOD_DAYS);
-        List<User> expiredUsers = userRepository
-                .findAllByStatusAndWithdrawnAtLessThanEqual(UserStatus.INACTIVE, cutoff);
-
-        if (expiredUsers.isEmpty()) {
-            return 0;
+        List<User> users=userRepository.findAllByStatusAndWithdrawnAtLessThanEqual(UserStatus.INACTIVE,now.minusDays(30));
+        for (User user:users) {
+            user.confirmWithdrawal();
+            deletion.enqueue(user,now);
         }
-
-        List<UUID> userUuids = expiredUsers.stream().map(User::getUuid).toList();
-        pushDeviceRepository.deleteAllByUserUuidIn(userUuids);
-        jobVerificationEvidenceCleanupService.deleteForUsers(
-                expiredUsers.stream().map(User::getId).toList()
-        );
-        expiredUsers.forEach(user -> user.anonymize(now));
-        return expiredUsers.size();
+        return users.size();
     }
 }

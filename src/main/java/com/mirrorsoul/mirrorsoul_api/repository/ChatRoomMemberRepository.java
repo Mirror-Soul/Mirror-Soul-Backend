@@ -14,6 +14,14 @@ import org.springframework.data.repository.query.Param;
 import jakarta.persistence.LockModeType;
 
 public interface ChatRoomMemberRepository extends JpaRepository<ChatRoomMember, Long> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from User u where u.uuid=:uuid")
+    Optional<com.mirrorsoul.mirrorsoul_api.domain.User> findUserForCommunication(@Param("uuid") UUID uuid);
+
+    @Query("select count(m) from ChatRoomMember m where m.chatRoom.id=:roomId and m.user.id=:userId "
+        + "and m.joinedAt<=:sentAt and (m.leftAt is null or m.leftAt>=:sentAt)")
+    long countMembershipAt(@Param("roomId") Long roomId,@Param("userId") Long userId,@Param("sentAt") java.time.LocalDateTime sentAt);
+
 
     @EntityGraph(attributePaths = {"chatRoom", "user"})
     @Query("""

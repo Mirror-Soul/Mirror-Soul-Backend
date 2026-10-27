@@ -15,8 +15,15 @@ public record JobVerificationReviewDetail(
         LocalDateTime submittedAt,
         LocalDateTime reviewedAt,
         String rejectionReason,
-        List<Photo> photos
+        List<Photo> photos,
+        Long version, Long reviewerId, LocalDateTime evidenceExpiresAt, String evidenceState
 ) {
+    public JobVerificationReviewDetail(Long requestId, UUID userUuid, Job claimedJob,
+            JobVerificationRequestStatus status, LocalDateTime submittedAt, LocalDateTime reviewedAt,
+            String rejectionReason, List<Photo> photos) {
+        this(requestId, userUuid, claimedJob, status, submittedAt, reviewedAt, rejectionReason,
+                photos, null, null, null, null);
+    }
     public record Photo(Long fileId, int displayOrder, String reviewUrl,
                         Map<String, List<String>> signedHeaders) {
     }

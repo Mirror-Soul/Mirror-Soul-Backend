@@ -45,6 +45,7 @@ public class FaceTrainingJobPublisher {
                 .orElseThrow(() -> new IllegalStateException(
                         "Clone not found for user: " + job.getUser().getUuid()
                 ));
+        job.traceVersion(clone.getCloneVersion());
 
         List<String> objectKeys = job.getFiles().stream()
                 .map(FaceTrainingJobFile::getObjectKey)
@@ -56,7 +57,9 @@ public class FaceTrainingJobPublisher {
                 clone.getId(),
                 awsS3Properties.getBucket(),
                 objectKeys
-        );
+        ).withTrace(new com.mirrorsoul.mirrorsoul_api.quality.TrainingDtos.Trace("FACE-" + job.getId(),
+                clone.getId(),job.getBaseCloneVersion(),
+                com.mirrorsoul.mirrorsoul_api.quality.QualitySupport.correlation("FACE-" + job.getId()),job.getRetryCount()));
 
         try {
             String messageBody = objectMapper.writeValueAsString(message);
@@ -69,8 +72,8 @@ public class FaceTrainingJobPublisher {
             log.info("Published face training job. jobId={}, sqsMessageId={}",
                     job.getId(), response.messageId());
         } catch (JsonProcessingException | SqsException | SdkClientException e) {
-            job.markDispatchFailed(e.getMessage());
-            log.error("Failed to publish face training job. jobId={}", job.getId(), e);
+            job.markDispatchFailed("DISPATCH_FAILED");
+            log.error("Training dispatch failed trainingJobId=FACE-{} failureCode=DISPATCH_FAILED", job.getId());
         }
     }
 }

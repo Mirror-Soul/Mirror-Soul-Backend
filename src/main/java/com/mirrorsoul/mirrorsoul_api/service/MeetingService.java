@@ -61,6 +61,9 @@ public class MeetingService {
         User receiver = userRepository.findByUuid(request.receiverUserUuid())
                 .orElseThrow(() -> new GeneralException(GeneralErrorCode.USER_NOT_FOUND));
 
+        if (!sender.isAiWorkAllowed(java.time.LocalDateTime.now()) || !receiver.isAiWorkAllowed(java.time.LocalDateTime.now())) {
+            throw new GeneralException(GeneralErrorCode.SAFETY_RESTRICTED);
+        }
         if (sender.getId().equals(receiver.getId())) {
             throw new GeneralException(GeneralErrorCode.MEETING_SELF_REQUEST);
         }
@@ -186,6 +189,9 @@ public class MeetingService {
     }
 
     private void validateNotBlocked(User first, User second) {
+        if (!first.isAiWorkAllowed(java.time.LocalDateTime.now()) || !second.isAiWorkAllowed(java.time.LocalDateTime.now())) {
+            throw new GeneralException(GeneralErrorCode.SAFETY_RESTRICTED);
+        }
         if (userBlockRepository.existsBetween(first.getId(), second.getId())) {
             throw new GeneralException(GeneralErrorCode.MEETING_RECEIVER_INACTIVE);
         }

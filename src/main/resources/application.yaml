@@ -36,6 +36,9 @@ spring:
           starttls:
             enable: true
 
+server:
+  forward-headers-strategy: none
+
 jwt:
   secret: ${JWT_SECRET}
   previous-secret: ${JWT_PREVIOUS_SECRET:}
@@ -49,6 +52,8 @@ internal:
     previous-api-key: ${AI_INTERNAL_PREVIOUS_API_KEY:}
     previous-key-expires-at: ${AI_INTERNAL_PREVIOUS_KEY_EXPIRES_AT:}
     scopes: ${AI_INTERNAL_SCOPES:call_context,talk_log,call_billing,call_diagnostics,training_status,safety,member_deletion,signaling}
+    legacy-signaling-call-server-ip: ${AI_SIGNALING_LEGACY_CALL_SERVER_IP:}
+    legacy-signaling-trust-loopback-proxy: ${AI_SIGNALING_TRUST_LOOPBACK_PROXY:false}
 
 chat:
   websocket:

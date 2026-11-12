@@ -75,7 +75,7 @@ public class JoinService {
         try {
             // Flush here so a concurrent signup violating uk_users_email is
             // translated before this method returns.
-            userRepository.saveAndFlush(user);
+            user = userRepository.saveAndFlush(user);
         } catch (DataIntegrityViolationException exception) {
             throw new GeneralException(GeneralErrorCode.DUPLICATE_EMAIL);
         }

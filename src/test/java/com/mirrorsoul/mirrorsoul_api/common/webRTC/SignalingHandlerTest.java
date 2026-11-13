@@ -6,6 +6,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.mirrorsoul.mirrorsoul_api.safety.SignalingDeliveryDiagnostics;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,14 +20,14 @@ class SignalingHandlerTest {
     private ObjectMapper objectMapper;
     private WebSocketSessionRegistry registry;
     private SignalingHandler handler;
+    private SignalingDeliveryDiagnostics diagnostics;
 
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
         registry = new WebSocketSessionRegistry();
-        var safety=mock(com.mirrorsoul.mirrorsoul_api.safety.SafetySignalingGuard.class);
-        when(safety.allowed(org.mockito.ArgumentMatchers.any(),org.mockito.ArgumentMatchers.any())).thenReturn(true);
-        handler = new SignalingHandler(objectMapper, registry,safety);
+        diagnostics = mock(SignalingDeliveryDiagnostics.class);
+        handler = new SignalingHandler(objectMapper, registry, diagnostics);
     }
 
     @Test
@@ -51,6 +52,7 @@ class SignalingHandlerTest {
         assertThat(response.get("to")).isEqualTo("signal:call-abc:caller");
         assertThat(data.get("callId")).isEqualTo(42);
         assertThat(data.get("reason")).isEqualTo("AI_SERVER_UNAVAILABLE");
+        verify(diagnostics).deliveryFailed("call-abc");
     }
 
     @Test

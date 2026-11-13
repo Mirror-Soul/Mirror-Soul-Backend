@@ -17,6 +17,5 @@ public record AiInternalApiProperties(String apiKey,String previousApiKey,Instan
   if(path.matches("/internal/ai/clone-training-jobs/(VOICE|FACE|PROFILE)-[0-9]+/events|/internal/ai/clone-training-jobs/RAG-[0-9]+-[0-9]+/events")&&method.equals("POST")) scope="training_status";
   return scope!=null&&(scopes==null||scopes.contains(scope));
  }
- public boolean allowsSignaling() {return scopes==null||scopes.contains("signaling");}
  @Override public String toString() {return "AiInternalApiProperties[REDACTED]";}
 }

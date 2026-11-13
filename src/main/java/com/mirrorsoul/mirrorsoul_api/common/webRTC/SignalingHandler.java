@@ -1,5 +1,6 @@
 package com.mirrorsoul.mirrorsoul_api.common.webRTC;
 
+import com.mirrorsoul.mirrorsoul_api.safety.SignalingDeliveryDiagnostics;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -23,7 +24,7 @@ public class SignalingHandler extends TextWebSocketHandler {
 
     private final ObjectMapper objectMapper;
     private final WebSocketSessionRegistry sessionRegistry;
-    private final com.mirrorsoul.mirrorsoul_api.safety.SafetySignalingGuard safety;
+    private final SignalingDeliveryDiagnostics diagnostics;
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
@@ -46,10 +47,6 @@ public class SignalingHandler extends TextWebSocketHandler {
             return;
         }
 
-        if (!safety.allowed(session,signalingMessage)) {
-            sendProtocolError(session,"Signaling identity or safety permission denied.");
-            return;
-        }
         switch (signalingMessage.getType()) {
             case "JOIN" -> handleJoin(session, signalingMessage);
             case "CALL_INVITE", "CALL_ACCEPT", "CALL_REJECT", "CALL_END",
@@ -100,7 +97,7 @@ public class SignalingHandler extends TextWebSocketHandler {
                     message.getFrom(),
                     message.getTo()
             );
-            safety.deliveryFailed(message.getRoomId());
+            diagnostics.deliveryFailed(message.getRoomId());
             sendDeliveryFailure(senderSession, message);
             return;
         }

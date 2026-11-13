@@ -108,21 +108,7 @@ callId별 이벤트 키는 멱등 처리하고 같은 키의 다른 코드는 �
 AI 서버는 큐에서 받은 기존 작업도 실제 실행 직전에 permissions.aiWorkAllowed를 확인해야 한다.
 제재된 회원은 신규 추천 후보에서 제외한다. 통화 종료는 제재 중에도 가능하다.
 
-시그널링 WebSocket /ws/signaling의 업그레이드에도 인증이 필요하다.
-회원 연결은 Authorization Bearer 인증 principal, AI 서버 연결은 X-Internal-Api-Key를 사용한다.
-회원은 본인 통화의 caller signal ID만 사용 가능하고 ai-server/AI signal ID는 인증된 AI 세션만 사용 가능하다.
-메시지마다 참가자 제재 상태와 roomId/callId 및 회원 세션 버전을 재검사한다. 제재 상태에서도 CALL_END/LEAVE는 허용한다.
-기존 앱 클라이언트는 WebSocket 연결에 회원 인증 정보를 전달해야 한다.
-
-이전 AI 콜 서버를 운영 중이라면 `AI_SIGNALING_LEGACY_CALL_SERVER_IP`에 API 서버가 관측하는 콜 서버의 고정 송신 IPv4 주소 한 개를 설정할 수 있다. 값이 없으면 호환 연결은 비활성화된다. API 키를 보낸 연결은 기존 키 인증을 사용한다. 호환 연결은 `signaling` 권한 범위의 WebSocket에 적용된다.
-
-API 서버와 같은 호스트의 Nginx가 Spring으로 루프백 프록시하는 경우, `/ws/signaling`의 프록시 설정에서 `X-Real-IP`를 실제 접속자 주소로 덮어쓴 뒤 `AI_SIGNALING_TRUST_LOOPBACK_PROXY=true`를 설정한다. 직접 접속한 요청의 `X-Real-IP`는 무시한다. Nginx가 요청 헤더에서 `$remote_addr`를 재작성하는 구성이라면 실제 소켓 접속자 주소인 `$realip_remote_addr`를 사용한다. Spring의 `server.forward-headers-strategy`는 `none`을 사용한다.
-
-```nginx
-proxy_set_header X-Real-IP $remote_addr;
-```
-
-GitHub production 환경 변수를 설정하고 백엔드를 배포한 뒤, 백엔드 로그에서 `signalId=ai-server` 입장과 테스트 통화의 연결 완료를 확인한다. 콜 서버에 키 인증이 적용되면 호환 설정을 제거한다.
+시그널링 WebSocket `/ws/signaling`은 인증 헤더 없이 연결할 수 있다. 메시지 형식과 통화방별 signal ID를 검증하고, 전달할 때 발신 ID가 해당 WebSocket 세션에 등록됐는지 확인한다. 통화 생성·연결 완료·AI 컨텍스트 조회 API에서는 이용 허용 조건을 검사한다.
 
 ## 설정 및 운영 연동
 

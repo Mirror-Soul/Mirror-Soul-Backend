@@ -96,9 +96,8 @@ DB 감사가 커밋된 후에만 `Admin audit committed` 운영 로그를 남긴
 - `CORS_ALLOWED_ORIGIN_PATTERNS`: 실제 앱 Origin 목록을 쉼표로 지정한다. 기본은 localhost:3000/5173이며 공개 wildcard 기본값을 제거했다. JWT 헤더 방식이므로 credential cookie 허용은 껐다.
 - `ADMIN_ALLOWED_ORIGINS`: 관리자 Origin의 정확한 목록이다. Origin을 가진 관리자 요청은 이 목록과 일치해야 한다. 값에 경로나 trailing slash를 붙이지 않는다.
 - Origin이 없는 서버 요청도 JWT·ACTIVE·업무 권한 검사를 통과해야 한다. Vercel 통과 또는 Origin 값만으로 ADMIN이 되지 않는다.
-- 내부 AI 키는 call_context/talk_log/safety/member_deletion/signaling 범위로 제한한다. `AI_INTERNAL_SCOPES`로 필요한 범위만 지정한다. 알려지지 않은 내부 AI 경로는 거절한다.
+- 내부 AI API는 `AI_INTERNAL_SCOPES`로 키에 허용할 작업 범위를 지정한다. 알려지지 않은 내부 AI 경로는 거절한다.
 - `X-Internal-Api-Key` 현재 키: `AI_INTERNAL_API_KEY`. 이전 키: `AI_INTERNAL_PREVIOUS_API_KEY`, 명시적 만료: `AI_INTERNAL_PREVIOUS_KEY_EXPIRES_AT`(UTC ISO-8601).
-- 기존 통화 signaling handshake도 같은 키 교체와 signaling 권한을 확인한다.
 - 가치관 콜백은 별도 `VALUE_BALANCE_CALLBACK_SECRET`, 이전 키/만료는 `VALUE_BALANCE_PREVIOUS_CALLBACK_SECRET` / `VALUE_BALANCE_PREVIOUS_SECRET_EXPIRES_AT`.
 - 클론 콜백은 별도 `CLONE_TRAINING_CALLBACK_SECRET`, 이전 키/만료는 `CLONE_TRAINING_PREVIOUS_CALLBACK_SECRET` / `CLONE_TRAINING_PREVIOUS_SECRET_EXPIRES_AT`.
 - 키 비교는 일정 시간 비교를 사용하고 현재 키가 없으면 이전 키만으로 인증하지 않는다. 다른 업무의 콜백 키를 공유하지 않는다.

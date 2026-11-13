@@ -101,7 +101,11 @@ public class SecurityConfig {
         configuration.setAllowCredentials(false);
         configuration.setExposedHeaders(List.of("X-Correlation-Id"));
 
+        CorsConfiguration signalingConfiguration = new CorsConfiguration(configuration);
+        signalingConfiguration.setAllowedOriginPatterns(List.of("*"));
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/ws/signaling", signalingConfiguration);
         source.registerCorsConfiguration("/**", configuration);
 
         return source;
